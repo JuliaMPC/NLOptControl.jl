@@ -1,5 +1,6 @@
-# The NLOptControl Package for julia
+# NLOptControl.jl
 
+[![Latest](https://img.shields.io/badge/docs-latest-blue.svg)](http://nloptcontrol.readthedocs.io/en/latest/)
 
 NOTE: This package is a work in progress!
 
@@ -14,9 +15,14 @@ A current limitation of optimization modeling software, such as [JuMP](https://g
 
   * The ultimate goal is to eventually utilize and support both [Julia DiffEQ](https://github.com/JuliaDiffEq) and [JuMP](https://github.com/JuliaOpt/JuMP.jl)
 
+## Documentation
+
+The full documentation can be found [here](http://nloptcontrol.readthedocs.io/en/latest/).
+
 ## Installation
 
 In Julia, you can install the NLOptControl.jl package by typing: `Pkg.clone("https://github.com/huckl3b3rry87/NLOptControl.jl")`
+
 
 ## MathProgBase
 
