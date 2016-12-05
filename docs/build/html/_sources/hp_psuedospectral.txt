@@ -1,6 +1,114 @@
 hp-psuedospectral method
 ========================
 
-To solve the integral constraints within the optimal control problem we employs the hp-pseudospectral method.
+To solve the integral constraints within the optimal control problem we employs the hp-pseudospectral method. The hp-psuedospectral method is an form of Gaussian Quadrature, which uses multi-interval collocation points. While detailed information on this approach can be found (and comes from) `here <http://etd.fcla.edu/UF/UFE0042778/darby_c.pdf>`_ this page will cover some basics.
 
-The hp-psuedospectral method is an form of Gaussian Quadrature, which uses multi-interval collocation points. While detailed information on this approach can be found `here <http://etd.fcla.edu/UF/UFE0042778/darby_c.pdf>`_. For completeness, this page will cover the basics.
+Single Phase Optimal Control
+----------------------------
+Find:
+
+  * The state: :math:`\mathbf{x}(t)`
+  * The control: :math:`\mathbf{u}(t)`
+  * The integrals: :math:`\mathbf{q}`
+  * The initial time: :math:`t_0`
+  * The final time: :math:`t_f`
+
+To Minimize:
+ .. math:: J = \Phi(\mathbf{x}(t_0),\mathbf{x}(t_f),\mathbf{q},t_0,t_f)
+
+That Satisfy the Following Constraints:
+
+ * Dynamic Constraints:
+  .. math:: \frac{\mathrm{d}\mathbf{x}}{\mathrm{d}t} = \mathbf{\psi}(\mathbf{x}(t),\mathbf{u}(t),t)
+
+ * Inequality Path Constraints:
+ .. math:: \mathbf{c}_{min} <= \mathbf{c}(\mathbf{x}(t),\mathbf{u}(t),t) <= \mathbf{c}_{max}
+
+ * Integral Constraints:
+ .. math:: q_i = \int_{t_0}^{t_f} \Upsilon_i(\mathbf{x}(t),\mathbf{u}(t),t)\, \mathrm{d}t       (i=1,....,n_q)
+
+ * Event Constraints:
+ .. math:: \mathbf{b}_{min} <= \mathbf{b}(\mathbf{x}(t_0),\mathbf{x}(t_f),t_f,\mathbf{q}) <= \mathbf{b}_{max}
+
+Change of Interval
+------------------
+
+To can change the limits of the integration (in order to apply Quadrature), we introduce :math:`\tau \in [-1,+1]` as a new independent variable and perform a change of variable for :math:`t` in terms of :math:`\tau`, by defining:
+
+  .. math:: t = \frac{t_f - t_0}{2}\tau + \frac{t_f + t_0}{2}
+
+The optimal control problem defined above (TODO: figure out equation references), is now redefined in terms of :math:`\tau` as:
+
+Find:
+
+  * The state: :math:`\mathbf{x}(\tau)`
+  * The control: :math:`\mathbf{u}(\tau)`
+  * The integrals: :math:`\mathbf{q}`
+  * The initial time: :math:`t_0`
+  * The final time: :math:`t_f`
+
+To Minimize:
+ .. math:: J = \Phi(\mathbf{x}(-1)\mathbf{x}(+1),\mathbf{q},t_0,t_f)
+
+That Satisfy the Following Constraints:
+
+ * Dynamic Constraints:
+  .. math::  \frac{\mathrm{d}\mathbf{x}}{\mathrm{d}\tau} = \frac{t_f-t_0}{2} \mathbf{\psi}(\mathbf{x}(\tau),\mathbf{u}(\tau),\tau,t_0,t_f)
+
+ * Inequality Path Constraints:
+ .. math:: \mathbf{c}_{min} <= \mathbf{c}(\mathbf{x}(\tau),\mathbf{u}(\tau),\tau,t_0,t_f) <= \mathbf{c}_{max}
+
+ * Integral Constraints:
+ .. math:: q_i = \frac{t_f-t_0}{2} \int_{-1}^{+1} \Upsilon_i(\mathbf{x}(\tau),\mathbf{u}(\tau),\tau,t_0,t_f)\, \mathrm{d}\tau     (i=1,....,n_q)
+
+ * Event Constraints:
+ .. math:: \mathbf{b}_{min} <= \mathbf{b}(\mathbf{x}(-1),\mathbf{x}(+1),t_f,\mathbf{q}) <= \mathbf{b}_{max}
+
+
+Divide The Interval :math:`\tau \in [-1,+1]`
+--------------------------------------------
+The interval :math:`\tau \in [-1,+1]` is now divided into a mesh of K mesh intervals as:
+  .. math:: [T_{k-1},T_k], k = 1,...,T_K
+
+with :math:`(T_0,...,T_K)` being the mesh points; which satisfy:
+ .. math:: -1 = T_0 < T_1 < T_2 < T_3 < ........... < T_{K-1} < T_K = T_f = +1
+
+Rewrite the Optimal Control Problem using the Mesh
+--------------------------------------------------
+
+Find:
+
+  * The state : :math:`\mathbf{x}^{(k)}(\tau)` **in mesh interval k**
+  * The control: :math:`\mathbf{u}^{(k)}(\tau)` **in mesh interval k**
+  * The integrals: :math:`\mathbf{q}`
+  * The initial time: :math:`t_0`
+  * The final time: :math:`t_f`
+
+To Minimize:
+ .. math:: J = \Phi(\mathbf{x}^{(1)}(-1),\mathbf{x}^{(K)}(+1),\mathbf{q},t_0,t_f)
+
+That Satisfy the Following Constraints:
+
+* Dynamic Constraints:
+ .. math:: \frac{\mathrm{d}\mathbf{x}^{(k)}(\tau^{(k)})}{\mathrm{d}\tau^{(k)}} = \frac{t_f-t_0}{2} \mathbf{\psi}(\mathbf{x}^{(k)}(\tau^{(k)}),\mathbf{u}^{(k)}(\tau^{(k)}),\tau^{(k)},t_0,t_f)
+
+* Inequality Path Constraints:
+.. math:: \mathbf{c}_{min} <= \mathbf{c}(\mathbf{x}^{(k)}(\tau^{(k)}),\mathbf{u}^{(k)}(\tau^{(k)}),\tau^{(k)},t_0,t_f) <= \mathbf{c}_{max}
+
+* Integral Constraints:
+.. math:: q_i = \frac{t_f-t_0}{2} \displaystyle\sum_{k=1}^{K} \int_{T_{k-1}}^{T_k} \Upsilon_i(\mathbf{x}^{(k)}(\tau^{(k)}),\mathbf{u}^{(k)}(\tau^{(k)}),\tau,t_0,t_f)\, \mathrm{d}\tau      (i=1,....,n_q, k=1,...,K)
+
+* Event Constraints:
+.. math:: \mathbf{b}_{min} <= \mathbf{b}(\mathbf{x}^{(1)}(-1),\mathbf{x}^{(K)}(+1),t_f,\mathbf{q}) <= \mathbf{b}_{max}
+
+* State Continuity
+
+    * Also, we must **now** constrain the state to be continuous at each interior mesh point :math:`(T_1,...T_{k-1})` by enforcing:
+    
+      .. math:: \mathbf{y}^{k}(T_k) = \mathbf{y}^{k+1}(T_k)
+
+Optimal Control Problem Approximation
+--------------------------------------
+
+
+Still a WORK IN PROGRESS! :)

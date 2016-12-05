@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>NLOptControl.jl &mdash; NLOptControl 0.0.1-rc1 documentation</title>
+  <title>hp-psuedospectral method &mdash; NLOptControl 0.0.1-rc1 documentation</title>
   
 
   
@@ -30,8 +30,8 @@
   
 
   
-    <link rel="top" title="NLOptControl 0.0.1-rc1 documentation" href="#"/>
-        <link rel="next" title="hp-psuedospectral method" href="hp_psuedospectral.html"/> 
+    <link rel="top" title="NLOptControl 0.0.1-rc1 documentation" href="index.html"/>
+        <link rel="prev" title="NLOptControl.jl" href="index.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -49,7 +49,7 @@
           
 
           
-            <a href="#" class="icon icon-home"> NLOptControl
+            <a href="index.html" class="icon icon-home"> NLOptControl
           
 
           
@@ -80,8 +80,11 @@
           
             
             
-                <ul>
-<li class="toctree-l1"><a class="reference internal" href="hp_psuedospectral.html">hp-psuedospectral method</a></li>
+                <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">hp-psuedospectral method</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#single-phase-optimal-control">Single Phase Optimal Control</a></li>
+</ul>
+</li>
 </ul>
 
             
@@ -95,7 +98,7 @@
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
         <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href="#">NLOptControl</a>
+        <a href="index.html">NLOptControl</a>
       </nav>
 
 
@@ -110,13 +113,13 @@
 
 <div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
-    <li><a href="#">Docs</a> &raquo;</li>
+    <li><a href="index.html">Docs</a> &raquo;</li>
       
-    <li>NLOptControl.jl</li>
+    <li>hp-psuedospectral method</li>
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="_sources/index.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/hp_psuedospectral.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -126,20 +129,14 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="nloptcontrol-jl">
-<h1>NLOptControl.jl<a class="headerlink" href="#nloptcontrol-jl" title="Permalink to this headline">¶</a></h1>
-<p>Contents:</p>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="hp_psuedospectral.html">hp-psuedospectral method</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="hp_psuedospectral.html#single-phase-optimal-control">Single Phase Optimal Control</a></li>
-<li class="toctree-l2"><a class="reference internal" href="hp_psuedospectral.html#change-of-interval">Change of Interval</a></li>
-<li class="toctree-l2"><a class="reference internal" href="hp_psuedospectral.html#divide-the-interval">Divide The Interval <span class="math">\(\tau \in [-1,+1]\)</span></a></li>
-<li class="toctree-l2"><a class="reference internal" href="hp_psuedospectral.html#rewrite-the-optimal-control-problem-using-the-mesh">Rewrite the Optimal Control Problem using the Mesh</a></li>
-<li class="toctree-l2"><a class="reference internal" href="hp_psuedospectral.html#optimal-control-problem-approximation">Optimal Control Problem Approximation</a></li>
-</ul>
-</li>
-</ul>
+  <div class="section" id="hp-psuedospectral-method">
+<h1>hp-psuedospectral method<a class="headerlink" href="#hp-psuedospectral-method" title="Permalink to this headline">¶</a></h1>
+<p>To solve the integral constraints within the optimal control problem we employs the hp-pseudospectral method.</p>
+<p>The hp-psuedospectral method is an form of Gaussian Quadrature, which uses multi-interval collocation points. While detailed information on this approach can be found <a class="reference external" href="http://etd.fcla.edu/UF/UFE0042778/darby_c.pdf">here</a>. For completeness, this page will cover the basics.</p>
+<div class="section" id="single-phase-optimal-control">
+<h2>Single Phase Optimal Control<a class="headerlink" href="#single-phase-optimal-control" title="Permalink to this headline">¶</a></h2>
+<p>Minimize:</p>
+<p>where,</p>
 </div>
 </div>
 
@@ -150,8 +147,8 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="hp_psuedospectral.html" class="btn btn-neutral float-right" title="hp-psuedospectral method" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
+        <a href="index.html" class="btn btn-neutral" title="NLOptControl.jl" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

@@ -3,7 +3,7 @@ module NLOptControl
 
 using Media, DifferentialEquations, Dierckx, Parameters, Interpolations
 
-# to copy a particular piece of code in some location
+# To copy a particular piece of code (or function) in some location
 macro def(name, definition)
   return quote
     macro $name()
@@ -23,6 +23,6 @@ export
   # MAKE SURE YOU REMOVE THE FINAL COMMA!!
 
 @with_kw immutable Params @deftype Float64
-  # define model parameters
+  # Define Parameters
 
 end
