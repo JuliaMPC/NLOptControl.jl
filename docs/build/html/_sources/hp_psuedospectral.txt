@@ -25,7 +25,7 @@ That Satisfy the Following Constraints:
  .. math:: \mathbf{c}_{min} <= \mathbf{c}(\mathbf{x}(t),\mathbf{u}(t),t) <= \mathbf{c}_{max}
 
  * Integral Constraints:
- .. math:: q_i = \int_{t_0}^{t_f} \Upsilon_i(\mathbf{x}(t),\mathbf{u}(t),t)\, \mathrm{d}t       (i=1,....,n_q)
+ .. math:: q_i = \int_{t_0}^{t_f} \Upsilon_i(\mathbf{x}(t),\mathbf{u}(t),t)\, \mathrm{d}t,\;\;(i=1,....,n_q)
 
  * Event Constraints:
  .. math:: \mathbf{b}_{min} <= \mathbf{b}(\mathbf{x}(t_0),\mathbf{x}(t_f),t_f,\mathbf{q}) <= \mathbf{b}_{max}
@@ -48,7 +48,7 @@ Find:
   * The final time: :math:`t_f`
 
 To Minimize:
- .. math:: J = \Phi(\mathbf{x}(-1)\mathbf{x}(+1),\mathbf{q},t_0,t_f)
+ .. math:: J = \Phi(\mathbf{x}(-1),\mathbf{x}(+1),\mathbf{q},t_0,t_f)
 
 That Satisfy the Following Constraints:
 
@@ -59,7 +59,7 @@ That Satisfy the Following Constraints:
  .. math:: \mathbf{c}_{min} <= \mathbf{c}(\mathbf{x}(\tau),\mathbf{u}(\tau),\tau,t_0,t_f) <= \mathbf{c}_{max}
 
  * Integral Constraints:
- .. math:: q_i = \frac{t_f-t_0}{2} \int_{-1}^{+1} \Upsilon_i(\mathbf{x}(\tau),\mathbf{u}(\tau),\tau,t_0,t_f)\, \mathrm{d}\tau     (i=1,....,n_q)
+ .. math:: q_i = \frac{t_f-t_0}{2} \int_{-1}^{+1} \Upsilon_i(\mathbf{x}(\tau),\mathbf{u}(\tau),\tau,t_0,t_f)\, \mathrm{d}\tau,\;\;(i=1,....,n_q)
 
  * Event Constraints:
  .. math:: \mathbf{b}_{min} <= \mathbf{b}(\mathbf{x}(-1),\mathbf{x}(+1),t_f,\mathbf{q}) <= \mathbf{b}_{max}
@@ -90,13 +90,13 @@ To Minimize:
 That Satisfy the Following Constraints:
 
 * Dynamic Constraints:
- .. math:: \frac{\mathrm{d}\mathbf{x}^{(k)}(\tau^{(k)})}{\mathrm{d}\tau^{(k)}} = \frac{t_f-t_0}{2} \mathbf{\psi}(\mathbf{x}^{(k)}(\tau^{(k)}),\mathbf{u}^{(k)}(\tau^{(k)}),\tau^{(k)},t_0,t_f)
+ .. math:: \frac{\mathrm{d}\mathbf{x}^{(k)}(\tau^{(k)})}{\mathrm{d}\tau^{(k)}} = \frac{t_f-t_0}{2} \mathbf{\psi}(\mathbf{x}^{(k)}(\tau^{(k)}),\mathbf{u}^{(k)}(\tau^{(k)}),\tau^{(k)},t_0,t_f),\;\;(k=1,...,K)
 
 * Inequality Path Constraints:
-.. math:: \mathbf{c}_{min} <= \mathbf{c}(\mathbf{x}^{(k)}(\tau^{(k)}),\mathbf{u}^{(k)}(\tau^{(k)}),\tau^{(k)},t_0,t_f) <= \mathbf{c}_{max}
+.. math:: \mathbf{c}_{min} <= \mathbf{c}(\mathbf{x}^{(k)}(\tau^{(k)}),\mathbf{u}^{(k)}(\tau^{(k)}),\tau^{(k)},t_0,t_f) <= \mathbf{c}_{max},\;\;(k=1,...,K)
 
 * Integral Constraints:
-.. math:: q_i = \frac{t_f-t_0}{2} \displaystyle\sum_{k=1}^{K} \int_{T_{k-1}}^{T_k} \Upsilon_i(\mathbf{x}^{(k)}(\tau^{(k)}),\mathbf{u}^{(k)}(\tau^{(k)}),\tau,t_0,t_f)\, \mathrm{d}\tau      (i=1,....,n_q, k=1,...,K)
+.. math:: q_i = \frac{t_f-t_0}{2} \displaystyle\sum_{k=1}^{K} \int_{T_{k-1}}^{T_k} \Upsilon_i(\mathbf{x}^{(k)}(\tau^{(k)}),\mathbf{u}^{(k)}(\tau^{(k)}),\tau,t_0,t_f)\, \mathrm{d}\tau,\;\;(i=1,....,n_q, k=1,...,K)
 
 * Event Constraints:
 .. math:: \mathbf{b}_{min} <= \mathbf{b}(\mathbf{x}^{(1)}(-1),\mathbf{x}^{(K)}(+1),t_f,\mathbf{q}) <= \mathbf{b}_{max}
@@ -104,11 +104,19 @@ That Satisfy the Following Constraints:
 * State Continuity
 
     * Also, we must **now** constrain the state to be continuous at each interior mesh point :math:`(T_1,...T_{k-1})` by enforcing:
-    
+
       .. math:: \mathbf{y}^{k}(T_k) = \mathbf{y}^{k+1}(T_k)
 
 Optimal Control Problem Approximation
 --------------------------------------
+The optimal control problem will now be approximated using the Radau Collocation Method. In collocation methods, the state and control are discretized at particular points within the selected time interval. Once this is done the problem can be transcribed into a nonlinear programming problem (NLP) and solved using standard solvers for these types of problems, such as IPOPT or KNITRO.
 
+For each mesh interval :math:`k\in[1,..,K]`:
+ .. math::
+     :nowrap:
 
-Still a WORK IN PROGRESS! :)
+     \begin{eqnarray}
+      \mathbf{x}^{(k)}(\tau)\approx\mathbf{X}^{(k)}(\tau)&=\displaystyle\sum_{j=1}^{N_k+1}\mathbf{X}_j^{(k)}\frac{\mathrm{d}\ell_j^{k}(\tau)}{\mathrm{d}\tau}\\
+      where,\\
+      \ell_j^{k}(\tau)%=\prod_{\substack{l=1 \\ l\neq j}^{N_k+1}\frac{\tau-\tau_l^{(k)}}{\tau_j^{(k)}-\tau_l^{(k)}}
+     \end{eqnarray}

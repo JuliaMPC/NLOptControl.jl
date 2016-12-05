@@ -172,7 +172,7 @@
 <li>Integral Constraints:</li>
 </ul>
 <div class="math">
-\[q_i = \int_{t_0}^{t_f} \Upsilon_i(\mathbf{x}(t),\mathbf{u}(t),t)\, \mathrm{d}t       (i=1,....,n_q)\]</div>
+\[q_i = \int_{t_0}^{t_f} \Upsilon_i(\mathbf{x}(t),\mathbf{u}(t),t)\, \mathrm{d}t,\;\;(i=1,....,n_q)\]</div>
 <ul class="simple">
 <li>Event Constraints:</li>
 </ul>
@@ -201,7 +201,7 @@
 <dl class="docutils">
 <dt>To Minimize:</dt>
 <dd><div class="first last math">
-\[J = \Phi(\mathbf{x}(-1)\mathbf{x}(+1),\mathbf{q},t_0,t_f)\]</div>
+\[J = \Phi(\mathbf{x}(-1),\mathbf{x}(+1),\mathbf{q},t_0,t_f)\]</div>
 </dd>
 </dl>
 <p>That Satisfy the Following Constraints:</p>
@@ -222,7 +222,7 @@
 <li>Integral Constraints:</li>
 </ul>
 <div class="math">
-\[q_i = \frac{t_f-t_0}{2} \int_{-1}^{+1} \Upsilon_i(\mathbf{x}(\tau),\mathbf{u}(\tau),\tau,t_0,t_f)\, \mathrm{d}\tau     (i=1,....,n_q)\]</div>
+\[q_i = \frac{t_f-t_0}{2} \int_{-1}^{+1} \Upsilon_i(\mathbf{x}(\tau),\mathbf{u}(\tau),\tau,t_0,t_f)\, \mathrm{d}\tau,\;\;(i=1,....,n_q)\]</div>
 <ul class="simple">
 <li>Event Constraints:</li>
 </ul>
@@ -267,18 +267,18 @@
 </ul>
 <blockquote>
 <div><div class="math">
-\[\frac{\mathrm{d}\mathbf{x}^{(k)}(\tau^{(k)})}{\mathrm{d}\tau^{(k)}} = \frac{t_f-t_0}{2} \mathbf{\psi}(\mathbf{x}^{(k)}(\tau^{(k)}),\mathbf{u}^{(k)}(\tau^{(k)}),\tau^{(k)},t_0,t_f)\]</div>
+\[\frac{\mathrm{d}\mathbf{x}^{(k)}(\tau^{(k)})}{\mathrm{d}\tau^{(k)}} = \frac{t_f-t_0}{2} \mathbf{\psi}(\mathbf{x}^{(k)}(\tau^{(k)}),\mathbf{u}^{(k)}(\tau^{(k)}),\tau^{(k)},t_0,t_f),\;\;(k=1,...,K)\]</div>
 </div></blockquote>
 <ul class="simple">
 <li>Inequality Path Constraints:</li>
 </ul>
 <div class="math">
-\[\mathbf{c}_{min} &lt;= \mathbf{c}(\mathbf{x}^{(k)}(\tau^{(k)}),\mathbf{u}^{(k)}(\tau^{(k)}),\tau^{(k)},t_0,t_f) &lt;= \mathbf{c}_{max}\]</div>
+\[\mathbf{c}_{min} &lt;= \mathbf{c}(\mathbf{x}^{(k)}(\tau^{(k)}),\mathbf{u}^{(k)}(\tau^{(k)}),\tau^{(k)},t_0,t_f) &lt;= \mathbf{c}_{max},\;\;(k=1,...,K)\]</div>
 <ul class="simple">
 <li>Integral Constraints:</li>
 </ul>
 <div class="math">
-\[q_i = \frac{t_f-t_0}{2} \displaystyle\sum_{k=1}^{K} \int_{T_{k-1}}^{T_k} \Upsilon_i(\mathbf{x}^{(k)}(\tau^{(k)}),\mathbf{u}^{(k)}(\tau^{(k)}),\tau,t_0,t_f)\, \mathrm{d}\tau      (i=1,....,n_q, k=1,...,K)\]</div>
+\[q_i = \frac{t_f-t_0}{2} \displaystyle\sum_{k=1}^{K} \int_{T_{k-1}}^{T_k} \Upsilon_i(\mathbf{x}^{(k)}(\tau^{(k)}),\mathbf{u}^{(k)}(\tau^{(k)}),\tau,t_0,t_f)\, \mathrm{d}\tau,\;\;(i=1,....,n_q, k=1,...,K)\]</div>
 <ul class="simple">
 <li>Event Constraints:</li>
 </ul>
@@ -299,7 +299,16 @@
 </div>
 <div class="section" id="optimal-control-problem-approximation">
 <h2>Optimal Control Problem Approximation<a class="headerlink" href="#optimal-control-problem-approximation" title="Permalink to this headline">¶</a></h2>
-<p>Still a WORK IN PROGRESS! :)</p>
+<p>The optimal control problem will now be approximated using the Radau Collocation Method. In collocation methods, the state and control are discretized at particular points within the selected time interval. Once this is done the problem can be transcribed into a nonlinear programming problem (NLP) and solved using standard solvers for these types of problems, such as IPOPT or KNITRO.</p>
+<dl class="docutils">
+<dt>For each mesh interval <span class="math">\(k\in[1,..,K]\)</span>:</dt>
+<dd><div class="first last math">
+\[\begin{eqnarray}
+ \mathbf{x}^{(k)}(\tau)\approx\mathbf{X}^{(k)}(\tau)&amp;=\displaystyle\sum_{j=1}^{N_k+1}\mathbf{X}_j^{(k)}\frac{\mathrm{d}\ell_j^{k}(\tau)}{\mathrm{d}\tau}\\
+ where,\\
+ \ell_j^{k}(\tau)%=\prod_{\substack{l=1 \\ l\neq j}^{N_k+1}\frac{\tau-\tau_l^{(k)}}{\tau_j^{(k)}-\tau_l^{(k)}}
+\end{eqnarray}\]</div></dd>
+</dl>
 </div>
 </div>
 
