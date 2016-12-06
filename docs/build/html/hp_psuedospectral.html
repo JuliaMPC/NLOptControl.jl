@@ -135,7 +135,7 @@
             
   <div class="section" id="hp-psuedospectral-method">
 <h1>hp-psuedospectral method<a class="headerlink" href="#hp-psuedospectral-method" title="Permalink to this headline">¶</a></h1>
-<p>To solve the integral constraints within the optimal control problem we employs the hp-pseudospectral method. The hp-psuedospectral method is an form of Gaussian Quadrature, which uses multi-interval collocation points. While detailed information on this approach can be found (and comes from) <a class="reference external" href="http://etd.fcla.edu/UF/UFE0042778/darby_c.pdf">here</a> this page will cover some basics.</p>
+<p>To solve the integral constraints within the optimal control problem we employs the hp-pseudospectral method. The hp-psuedospectral method is an form of Gaussian Quadrature, which uses multi-interval collocation points. While detailed information on this approach can be found (and comes from) <a class="reference external" href="http://etd.fcla.edu/UF/UFE0042778/darby_c.pdf">this Ph.D. dissertation</a>, <a class="reference external" href="http://vdol.mae.ufl.edu/JournalPublications/TOMS-GPOPS-II-August-2013.pdf">this related journal publication</a> and <a class="reference external" href="http://systemdesign.illinois.edu/publications/Her15a.pdf">this technical report</a>, this page will cover some basics.</p>
 <div class="section" id="single-phase-optimal-control">
 <h2>Single Phase Optimal Control<a class="headerlink" href="#single-phase-optimal-control" title="Permalink to this headline">¶</a></h2>
 <p>Find:</p>
@@ -304,10 +304,24 @@
 <dt>For each mesh interval <span class="math">\(k\in[1,..,K]\)</span>:</dt>
 <dd><div class="first last math">
 \[\begin{eqnarray}
- \mathbf{x}^{(k)}(\tau)\approx\mathbf{X}^{(k)}(\tau)&amp;=\displaystyle\sum_{j=1}^{N_k+1}\mathbf{X}_j^{(k)}\frac{\mathrm{d}\ell_j^{k}(\tau)}{\mathrm{d}\tau}\\
- where,\\
- \ell_j^{k}(\tau)%=\prod_{\substack{l=1 \\ l\neq j}^{N_k+1}\frac{\tau-\tau_l^{(k)}}{\tau_j^{(k)}-\tau_l^{(k)}}
+ \mathbf{x}^{(k)}(\tau)&amp;\approx\mathbf{X}^{(k)}(\tau)=\displaystyle\sum_{j=1}^{N_k+1}\mathbf{X}_j^{(k)}\frac{\mathrm{d}\ell_j^{k}(\tau)}{\mathrm{d}\tau}\\
+  where,\;\;&amp;\\
+ \ell_j^{k}(\tau)&amp;=\prod_{\substack{l=1 \\ l\neq j}}^{N_k+1}\frac{\tau-\tau_l^{(k)}}{\tau_j^{(k)}-\tau_l^{(k)}}
 \end{eqnarray}\]</div></dd>
+<dt>also,</dt>
+<dd><ul class="first last">
+<li><p class="first"><span class="math">\(\ell_j^{(k)}(\tau),\;\;(j=1,...,N_k+1)\)</span> is a basis of Lagrange polynomials</p>
+</li>
+<li><p class="first"><span class="math">\((\tau_1^{k},.....,\tau_{N_k}^{(k)})\)</span> are the Legendre-Gauss-Radau collocation points in mesh interval k</p>
+<blockquote>
+<div><ul class="simple">
+<li>defined on the subinterval <span class="math">\(\tau^{(k)}\in[T_{k-1},T_k]\)</span></li>
+<li><span class="math">\(\tau_{N_k+1}^{(k)}=T_k\)</span> is a noncollocated point</li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</dd>
 </dl>
 </div>
 </div>

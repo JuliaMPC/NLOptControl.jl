@@ -1,7 +1,7 @@
 hp-psuedospectral method
 ========================
 
-To solve the integral constraints within the optimal control problem we employs the hp-pseudospectral method. The hp-psuedospectral method is an form of Gaussian Quadrature, which uses multi-interval collocation points. While detailed information on this approach can be found (and comes from) `here <http://etd.fcla.edu/UF/UFE0042778/darby_c.pdf>`_ this page will cover some basics.
+To solve the integral constraints within the optimal control problem we employs the hp-pseudospectral method. The hp-psuedospectral method is an form of Gaussian Quadrature, which uses multi-interval collocation points. While detailed information on this approach can be found (and comes from) `this Ph.D. dissertation  <http://etd.fcla.edu/UF/UFE0042778/darby_c.pdf>`_, `this related journal publication <http://vdol.mae.ufl.edu/JournalPublications/TOMS-GPOPS-II-August-2013.pdf>`_ and `this technical report <http://systemdesign.illinois.edu/publications/Her15a.pdf>`_, this page will cover some basics.
 
 Single Phase Optimal Control
 ----------------------------
@@ -116,7 +116,14 @@ For each mesh interval :math:`k\in[1,..,K]`:
      :nowrap:
 
      \begin{eqnarray}
-      \mathbf{x}^{(k)}(\tau)\approx\mathbf{X}^{(k)}(\tau)&=\displaystyle\sum_{j=1}^{N_k+1}\mathbf{X}_j^{(k)}\frac{\mathrm{d}\ell_j^{k}(\tau)}{\mathrm{d}\tau}\\
-      where,\\
-      \ell_j^{k}(\tau)%=\prod_{\substack{l=1 \\ l\neq j}^{N_k+1}\frac{\tau-\tau_l^{(k)}}{\tau_j^{(k)}-\tau_l^{(k)}}
+      \mathbf{x}^{(k)}(\tau)&\approx\mathbf{X}^{(k)}(\tau)=\displaystyle\sum_{j=1}^{N_k+1}\mathbf{X}_j^{(k)}\frac{\mathrm{d}\ell_j^{k}(\tau)}{\mathrm{d}\tau}\\
+       where,\;\;&\\
+      \ell_j^{k}(\tau)&=\prod_{\substack{l=1 \\ l\neq j}}^{N_k+1}\frac{\tau-\tau_l^{(k)}}{\tau_j^{(k)}-\tau_l^{(k)}}
      \end{eqnarray}
+
+also,
+ * :math:`\ell_j^{(k)}(\tau),\;\;(j=1,...,N_k+1)` is a basis of Lagrange polynomials
+ * :math:`(\tau_1^{k},.....,\tau_{N_k}^{(k)})` are the Legendre-Gauss-Radau collocation points in mesh interval k
+
+    * defined on the subinterval :math:`\tau^{(k)}\in[T_{k-1},T_k]`
+    * :math:`\tau_{N_k+1}^{(k)}=T_k` is a noncollocated point
