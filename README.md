@@ -21,8 +21,10 @@ The full documentation can be found [here](http://nloptcontrol.readthedocs.io/en
 
 ## Installation
 
-In Julia, you can install the NLOptControl.jl package by typing: `Pkg.clone("https://github.com/huckl3b3rry87/NLOptControl.jl")`
-
+In Julia, you can install the NLOptControl.jl package by typing:
+```julia
+julia>Pkg.clone("https://github.com/huckl3b3rry87/NLOptControl.jl")
+``
 
 ## MathProgBase
 
