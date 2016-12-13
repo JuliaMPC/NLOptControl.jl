@@ -17,7 +17,7 @@ A current limitation of optimization modeling software, such as [JuMP](https://g
 
 ## Documentation
 
-The full documentation can be found [here](http://nloptcontrol.readthedocs.io/en/latest/).
+The full documentation can be found [here](http://nloptcontroljl.readthedocs.io/en/latest/).
 
 ## Installation
 
