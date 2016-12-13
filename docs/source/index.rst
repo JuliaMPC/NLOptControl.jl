@@ -11,4 +11,7 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+   optimal_control
+   time_marching
+   pseudospectral_methods
    hp_psuedospectral
