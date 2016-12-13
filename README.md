@@ -1,6 +1,6 @@
 # NLOptControl.jl
 
-[![Latest](https://img.shields.io/badge/docs-latest-blue.svg)](http://nloptcontrol.readthedocs.io/en/latest/)
+[![Latest](https://img.shields.io/badge/docs-latest-blue.svg)](http://nloptcontroljl.readthedocs.io/en/latest/)
 
 NOTE: This package is a work in progress!
 
