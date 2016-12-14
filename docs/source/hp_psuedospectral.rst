@@ -1,7 +1,7 @@
 hp-psuedospectral method
 ========================
 
-To solve the integral constraints within the optimal control problem we employs the hp-pseudospectral method. The hp-psuedospectral method is an form of Gaussian Quadrature, which uses multi-interval collocation points. While detailed information on this approach can be found (and comes from) `this Ph.D. dissertation  <http://etd.fcla.edu/UF/UFE0042778/darby_c.pdf>`_, `this related journal publication <http://vdol.mae.ufl.edu/JournalPublications/TOMS-GPOPS-II-August-2013.pdf>`_ and `this technical report <http://systemdesign.illinois.edu/publications/Her15a.pdf>`_, this page will cover some basics.
+To solve the integral constraints within the optimal control problem we employs the hp-pseudospectral method. The hp-psuedospectral method is an form of Gaussian Quadrature, which uses multi-interval collocation points.
 
 Single Phase Optimal Control
 ----------------------------
