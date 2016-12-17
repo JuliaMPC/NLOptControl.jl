@@ -12,17 +12,18 @@ macro def(name, definition)
   end
 end
 
-immutable NodeData
+include("utils.jl")
+
+immutable NodeData #TODO --> use this
   Nₜ :: Int  # where Nₜ + 1 is the total number of time steps
   τ :: Vector{Float64} # Node points ---> Nₜ increasing and distinct numbers ∈ [-1,1]
   # these might have to be design variables
-
 end
 
-export
   # Objects
 
   # Functions
+export LGL_nodes,LGL_weights,LGL_Dmatrix,scale_X
 
   # Macros and Support Functions
 

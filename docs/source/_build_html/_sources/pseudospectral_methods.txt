@@ -84,3 +84,5 @@ Define an N order Legendre polynomial as:
     \end{equation}
 
 * Differentiation Matrix
+
+* Interpolating Polynomial Function
