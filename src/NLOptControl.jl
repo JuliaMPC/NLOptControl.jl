@@ -23,7 +23,7 @@ end
   # Objects
 
   # Functions
-export LGL_nodes,LGL_weights,LGL_Dmatrix,scale_X
+export LGL_nodes,LGL_weights,LGL_Dmatrix,scale_tau,scale_w
 
   # Macros and Support Functions
 

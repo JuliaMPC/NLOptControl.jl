@@ -4,6 +4,7 @@ using Plots
 pyplot()
 default(guidefont = font(17), tickfont = font(15), legendfont = font(12), titlefont = font(20))
 
+# define the original function
 x₀= Float64(-1);
 xₙ= Float64(1);
 x = Array(linspace(x₀,xₙ,100));
@@ -22,9 +23,14 @@ C = Y - polyval(∫γ,x[end]); # find the constant of integration
 ∫y = polyval(∫γ,x) + C;
 plot!(x,∫y,label=@sprintf("integral = %0.3f",∫y[end]),w=4)
 
+# evaluate the derivative
+dγ = polyder(γ);
+dy = polyval(dγ,x)
+plot!(x,dy,label="derivative",w=5)
+
 # construct polynomial approximation
 N = 3;  # N = 2 can exactly represent a 3rd order polynomial
-if N < 2 error("Please increase N to at least 2!") end
+if N < 2 error("Please increase N to at least 2 to include the end points for LGL!") end
 τ = LGL_nodes(N);
 ω = LGL_weights(τ);
 D = LGL_Dmatrix(τ);
@@ -32,17 +38,16 @@ D = LGL_Dmatrix(τ);
 # scale the problem to the interval
 xₛ = scale_tau(τ,x₀,xₙ) # scale the interval
 ωₛ = scale_w(ω,x₀,xₙ)   # scale the weights
+
+# approximate the integral
 fτ = polyval(γ,xₛ)
 ζ =  cumsum(ω.*fτ,1)
 plot!(τ,ζ,label=@sprintf("approx. integral = %0.3f",ζ[end]),w=4,size=(800,800))
 scatter!(τ,fτ,label=string("tau with N = ",N),markershape = :hexagon, markersize=10)
 
 # approximate the derivative
-dγ = polyder(γ); # actual derivative
-dy = polyval(dγ,x)
-plot!(x,dy,label="derivative",w=5)
-D = LGL_Dmatrix(s);
-dζ = D*fτ;       # approximate derivative
+D = LGL_Dmatrix(xₛ);
+dζ = D*fτ;
 plot!(τ, dζ, label="approx. derivative",line=(4,:dash))
 savefig("test4c.png")
 pe = (∫y[end]-ζ[end])/∫y[end]*100;
