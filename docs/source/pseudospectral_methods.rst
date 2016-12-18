@@ -34,6 +34,7 @@ But, between the intervals, we must approximate :math:`f(\tau)` as:
 
 with :math:`\phi_k(•)` are basis polynomials that are built by interpolating :math:`f(\tau)` at the node points.
 
+.. _diff_matrix:
 
 Approximating Derivatives
 -------------------------
@@ -72,6 +73,7 @@ Define an N order Legendre polynomial as:
  .. math:: L_N(\tau) = \frac{1}{2^NN!}\frac{\mathrm{d}^n}{\mathrm{d}\tau^N}(\tau^2-1)^N
 
 * Nodes
+
 .. math::
     :nowrap:
 

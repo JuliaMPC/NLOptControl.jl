@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Single Interval &mdash; NLOptControl 0.0.1-rc1 documentation</title>
+  <title>Example 2 &mdash; NLOptControl 0.0.1-rc1 documentation</title>
   
 
   
@@ -34,9 +34,9 @@
               href="../../genindex.html"/>
         <link rel="search" title="Search" href="../../search.html"/>
     <link rel="top" title="NLOptControl 0.0.1-rc1 documentation" href="../../index.html"/>
-        <link rel="up" title="Completed Functionality" href="../../main_code.html"/>
-        <link rel="next" title="Example 1" href="ex1.html"/>
-        <link rel="prev" title="Completed Functionality" href="../../main_code.html"/> 
+        <link rel="up" title="Single Interval" href="LGL_SI.html"/>
+        <link rel="next" title="Developing Code" href="../../developing_code.html"/>
+        <link rel="prev" title="Example 1" href="ex1.html"/> 
 
   
   <script src="../../_static/js/modernizr.min.js"></script>
@@ -135,11 +135,13 @@
       
           <li><a href="../../main_code.html">Completed Functionality</a> &raquo;</li>
       
-    <li>Single Interval</li>
+          <li><a href="LGL_SI.html">Single Interval</a> &raquo;</li>
+      
+    <li>Example 2</li>
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../../_sources/examples/LGL_SI/LGL_SI.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/examples/LGL_SI/ex2.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -149,59 +151,34 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="single-interval">
-<h1>Single Interval<a class="headerlink" href="#single-interval" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="basic-problem-definition">
-<h2>Basic Problem Definition<a class="headerlink" href="#basic-problem-definition" title="Permalink to this headline">¶</a></h2>
-<p>The code developed in this package uses the Legendre-Pseudospectral Method with Lagrange-Gauss-Lobatto (LGL) nodes. A basic description of this implementation presented in this documentation at <a class="reference internal" href="../../pseudospectral_methods.html#pseudospectral"><span class="std std-ref">Pseudospectral Methods</span></a> and more much more detailed information can be found in both <a class="reference internal" href="../../bibliography.html#shen2011" id="id1">[2]</a> and <a class="reference internal" href="../../bibliography.html#herber2015basic" id="id2">[1]</a>.</p>
-</div>
-<div class="section" id="examples">
-<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+  <div class="section" id="example-2">
+<h1>Example 2<a class="headerlink" href="#example-2" title="Permalink to this headline">¶</a></h1>
+<p>In the second example, we increase the order of the polynomial from <code class="docutils literal"><span class="pre">3</span></code> to <code class="docutils literal"><span class="pre">7</span></code>. Then we increase <code class="docutils literal"><span class="pre">N</span></code> until we achieve accurate enough results.</p>
 <dl class="docutils">
-<dt>In these examples we use:</dt>
-<dd><ul class="first last simple">
-<li>Legendre-Gauss-Lobatto (LGL) nodes</li>
-<li>Single interval approximations</li>
-<li>Approximate integrals in the range of <code class="docutils literal"><span class="pre">[-1,1]</span></code></li>
-<li>Approximate derivatives in the range of <code class="docutils literal"><span class="pre">[-1,1]</span></code></li>
-</ul>
-</dd>
-<dt>These examples can be:</dt>
-<dd><ul class="first last">
-<li><p class="first">Viewed remotely on  using the <a class="reference external" href="http://nbviewer.jupyter.org/github/huckl3b3rry87/NLOptControl.jl/blob/master/examples/LGL_SI">jupyter nbviewer</a>.</p>
-</li>
-<li><p class="first">Viewed locally and interacted using IJulia</p>
-<blockquote>
-<div><p>To do this:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">julia</span><span class="o">&gt;</span><span class="n">using</span> <span class="n">IJulia</span>
-<span class="n">julia</span><span class="o">&gt;</span><span class="n">notebook</span><span class="p">(</span><span class="nb">dir</span><span class="o">=</span><span class="n">Pkg</span><span class="o">.</span><span class="n">dir</span><span class="p">(</span><span class="s2">&quot;NLOptControl/examples/LGL_SI/&quot;</span><span class="p">))</span>
-</pre></div>
-</div>
-</div></blockquote>
-</li>
-</ul>
+<dt>where:</dt>
+<dd><div class="first last math">
+\[y(x) = 7x^7-8x^6 - 3x^5 + 3x^4 + 7x^3-8x^2-3x+3\]</div>
 </dd>
 </dl>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="ex1.html">Example 1</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ex2.html">Example 2</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="ex2.html#test-2a">Test 2a</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ex2.html#test-2b">Test 2b</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ex2.html#test-2c">Test 2c</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ex2.html#conclusions">Conclusions</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="ex3.html">Example 3</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="ex3.html#test-3a">Test 3a</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ex3.html#test-3b">Test 3b</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ex3.html#test-3c">Test 3c</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ex3.html#test-3d">Test 3d</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ex3.html#test-3e">Test 3e</a></li>
-</ul>
-</li>
-</ul>
+<div class="section" id="test-2a">
+<h2>Test 2a<a class="headerlink" href="#test-2a" title="Permalink to this headline">¶</a></h2>
+<img alt="../../_images/test2a.png" src="../../_images/test2a.png" />
 </div>
+<div class="section" id="test-2b">
+<h2>Test 2b<a class="headerlink" href="#test-2b" title="Permalink to this headline">¶</a></h2>
+<img alt="../../_images/test2b.png" src="../../_images/test2b.png" />
+</div>
+<div class="section" id="test-2c">
+<h2>Test 2c<a class="headerlink" href="#test-2c" title="Permalink to this headline">¶</a></h2>
+<img alt="../../_images/test2c.png" src="../../_images/test2c.png" />
+</div>
+<div class="section" id="conclusions">
+<h2>Conclusions<a class="headerlink" href="#conclusions" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ul class="simple">
+<li>We are able to determine the integral very accurately when we increase N to 4</li>
+</ul>
+</div></blockquote>
 </div>
 </div>
 
@@ -212,10 +189,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="ex1.html" class="btn btn-neutral float-right" title="Example 1" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="../../developing_code.html" class="btn btn-neutral float-right" title="Developing Code" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="../../main_code.html" class="btn btn-neutral" title="Completed Functionality" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="ex1.html" class="btn btn-neutral" title="Example 1" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

@@ -3,11 +3,8 @@ Completed Functionality
 
 Legendre Gaussian Method
 ------------------------
-In these examples we are using:
-  * Legendre-Gauss-Lobatto (LGL) nodes
-  * Single interval approximations
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    examples/LGL_SI/LGL_SI

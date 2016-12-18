@@ -1,43 +1,32 @@
-Legendre Pseudospectral Method with a Single Interval
-=====================================================
+Single Interval
+===============
 
-The code developed in this package uses the Legendre-Pseudospectral Method with Lagrange-Gauss-Lobatto (LGL) nodes. A basic description of this implementation presented in this documentation and :ref:`psuedospectral` and more much more detailed information can be found in both :cite:`Shen2011` and :cite:`herber2015basic`.
+Basic Problem Definition
+-------------------------
+The code developed in this package uses the Legendre-Pseudospectral Method with Lagrange-Gauss-Lobatto (LGL) nodes. A basic description of this implementation presented in this documentation at :ref:`pseudospectral` and more much more detailed information can be found in both :cite:`Shen2011` and :cite:`herber2015basic`.
 
-We will now look at several examples of this basic functionality.
-
+Examples
+--------
+In these examples we use:
+  * Legendre-Gauss-Lobatto (LGL) nodes
+  * Single interval approximations
+  * Approximate integrals in the range of ``[-1,1]``
+  * Approximate derivatives in the range of ``[-1,1]``
 
 These examples can be:
   *  Viewed remotely on  using the `jupyter nbviewer <http://nbviewer.jupyter.org/github/huckl3b3rry87/NLOptControl.jl/blob/master/examples/LGL_SI>`_.
   *  Viewed locally and interacted using IJulia
 
-        To do this:
-        ::
+      To do this:
+      ::
 
-           julia>using IJulia
-           julia>notebook(dir=Pkg.dir("NLOptControl/examples/LGL_SI"))
-
-
-Example 1
----------
-In the first example, we borrow a problem from `Wikipedia <https://en.wikipedia.org/wiki/Gaussian_quadrature>`_.
+         julia>using IJulia
+         julia>notebook(dir=Pkg.dir("NLOptControl/examples/LGL_SI/"))
 
 
-where:
- .. math:: y(x) = 7x^3-8x^2-3x+3
+.. toctree::
+   :maxdepth: 2
 
-
-.. image:: test1.png
-
-
-.. sidebar:: Difference between the Wikipedia Example and this Example
-
-  The difference between Wikipedia example and this one is that the Wikipedia example uses Gauss-Legendre Quadrature while the code developed in this package uses Legendre-Pseudospectral Method with Lagrange-Gauss-Lobatto (LGL) nodes. Information on the difference between these methods and many more can be found in both :cite:`Shen2011` and :cite:`herber2015basic`.
-
-
-* Conclusions
-
-  * We are able to exactly determine the integral
-
-
-.. bibliography:: zrefs.bib
-   :cited:
+   ex1
+   ex2
+   ex3

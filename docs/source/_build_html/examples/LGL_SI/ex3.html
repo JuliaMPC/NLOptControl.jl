@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Single Interval &mdash; NLOptControl 0.0.1-rc1 documentation</title>
+  <title>Example 3 &mdash; NLOptControl 0.0.1-rc1 documentation</title>
   
 
   
@@ -34,9 +34,9 @@
               href="../../genindex.html"/>
         <link rel="search" title="Search" href="../../search.html"/>
     <link rel="top" title="NLOptControl 0.0.1-rc1 documentation" href="../../index.html"/>
-        <link rel="up" title="Completed Functionality" href="../../main_code.html"/>
-        <link rel="next" title="Example 1" href="ex1.html"/>
-        <link rel="prev" title="Completed Functionality" href="../../main_code.html"/> 
+        <link rel="up" title="Single Interval" href="LGL_SI.html"/>
+        <link rel="next" title="Developing Code" href="../../developing_code.html"/>
+        <link rel="prev" title="Example 2" href="ex2.html"/> 
 
   
   <script src="../../_static/js/modernizr.min.js"></script>
@@ -135,11 +135,13 @@
       
           <li><a href="../../main_code.html">Completed Functionality</a> &raquo;</li>
       
-    <li>Single Interval</li>
+          <li><a href="LGL_SI.html">Single Interval</a> &raquo;</li>
+      
+    <li>Example 3</li>
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../../_sources/examples/LGL_SI/LGL_SI.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/examples/LGL_SI/ex3.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -149,59 +151,66 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="single-interval">
-<h1>Single Interval<a class="headerlink" href="#single-interval" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="basic-problem-definition">
-<h2>Basic Problem Definition<a class="headerlink" href="#basic-problem-definition" title="Permalink to this headline">¶</a></h2>
-<p>The code developed in this package uses the Legendre-Pseudospectral Method with Lagrange-Gauss-Lobatto (LGL) nodes. A basic description of this implementation presented in this documentation at <a class="reference internal" href="../../pseudospectral_methods.html#pseudospectral"><span class="std std-ref">Pseudospectral Methods</span></a> and more much more detailed information can be found in both <a class="reference internal" href="../../bibliography.html#shen2011" id="id1">[2]</a> and <a class="reference internal" href="../../bibliography.html#herber2015basic" id="id2">[1]</a>.</p>
-</div>
-<div class="section" id="examples">
-<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
-<dl class="docutils">
-<dt>In these examples we use:</dt>
-<dd><ul class="first last simple">
-<li>Legendre-Gauss-Lobatto (LGL) nodes</li>
-<li>Single interval approximations</li>
-<li>Approximate integrals in the range of <code class="docutils literal"><span class="pre">[-1,1]</span></code></li>
-<li>Approximate derivatives in the range of <code class="docutils literal"><span class="pre">[-1,1]</span></code></li>
-</ul>
-</dd>
-<dt>These examples can be:</dt>
-<dd><ul class="first last">
-<li><p class="first">Viewed remotely on  using the <a class="reference external" href="http://nbviewer.jupyter.org/github/huckl3b3rry87/NLOptControl.jl/blob/master/examples/LGL_SI">jupyter nbviewer</a>.</p>
-</li>
-<li><p class="first">Viewed locally and interacted using IJulia</p>
-<blockquote>
-<div><p>To do this:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">julia</span><span class="o">&gt;</span><span class="n">using</span> <span class="n">IJulia</span>
-<span class="n">julia</span><span class="o">&gt;</span><span class="n">notebook</span><span class="p">(</span><span class="nb">dir</span><span class="o">=</span><span class="n">Pkg</span><span class="o">.</span><span class="n">dir</span><span class="p">(</span><span class="s2">&quot;NLOptControl/examples/LGL_SI/&quot;</span><span class="p">))</span>
-</pre></div>
-</div>
-</div></blockquote>
-</li>
-</ul>
-</dd>
-</dl>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="ex1.html">Example 1</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ex2.html">Example 2</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="ex2.html#test-2a">Test 2a</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ex2.html#test-2b">Test 2b</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ex2.html#test-2c">Test 2c</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ex2.html#conclusions">Conclusions</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="ex3.html">Example 3</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="ex3.html#test-3a">Test 3a</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ex3.html#test-3b">Test 3b</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ex3.html#test-3c">Test 3c</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ex3.html#test-3d">Test 3d</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ex3.html#test-3e">Test 3e</a></li>
-</ul>
-</li>
+  <div class="section" id="example-3">
+<h1>Example 3<a class="headerlink" href="#example-3" title="Permalink to this headline">¶</a></h1>
+<p>In the third example, we approximate the derivative of a function by <a class="reference internal" href="../../pseudospectral_methods.html#diff-matrix"><span class="std std-ref">Approximating Derivatives</span></a>.</p>
+<div class="section" id="test-3a">
+<h2>Test 3a<a class="headerlink" href="#test-3a" title="Permalink to this headline">¶</a></h2>
+<p>In this test:</p>
+<div class="math">
+\[y(x) = 3x^2-3x+3\]</div>
+<img alt="../../_images/test3a.png" src="../../_images/test3a.png" />
+<ul class="simple">
+<li>We are able to determine the derivative exactly when they are linear functions is <span class="math">\(N = 3\)</span></li>
 </ul>
 </div>
+<div class="section" id="test-3b">
+<h2>Test 3b<a class="headerlink" href="#test-3b" title="Permalink to this headline">¶</a></h2>
+<p>In this test we increase the order of <code class="docutils literal"><span class="pre">y(x)</span></code> to:</p>
+<div class="math">
+\[y(x) = 3x^3 + 3x^2-3x+3\]</div>
+<img alt="../../_images/test3b.png" src="../../_images/test3b.png" />
+<ul class="simple">
+<li>When the derivative function becomes nonlinear<ul>
+<li>We can no longer calculate it exactly everywhere</li>
+<li>There are only <span class="math">\(N_{t+1} = 4\)</span> node points</li>
+<li>To calculate the derivative exactly we would need an <span class="math">\(∞\)</span> amount of <span class="math">\(N_{t+1}\)</span></li>
+</ul>
+</li>
+<li>We are still calculating the integral exactly and should be able to with <span class="math">\(N = 3\)</span> until <span class="math">\(x^5\)</span></li>
+</ul>
+</div>
+<div class="section" id="test-3c">
+<h2>Test 3c<a class="headerlink" href="#test-3c" title="Permalink to this headline">¶</a></h2>
+<p>In this test we increase the order of <code class="docutils literal"><span class="pre">y(x)</span></code> to:</p>
+<div class="math">
+\[y(x) = 3x^4 + 3x^3 + 3x^2-3x+3\]</div>
+<img alt="../../_images/test3c.png" src="../../_images/test3c.png" />
+<ul class="simple">
+<li>We are still calculating the integral exactly and should be able to with <span class="math">\(N = 3\)</span> until <span class="math">\(x^5\)</span></li>
+</ul>
+</div>
+<div class="section" id="test-3d">
+<h2>Test 3d<a class="headerlink" href="#test-3d" title="Permalink to this headline">¶</a></h2>
+<p>In this test we increase the order of <code class="docutils literal"><span class="pre">y(x)</span></code> to:</p>
+<div class="math">
+\[y(x) =3x^5 + 3x^4 + 3x^3 + 3x^2-3x+3\]</div>
+<img alt="../../_images/test3d.png" src="../../_images/test3d.png" />
+<ul class="simple">
+<li>We are still calculating the integral exactly with <span class="math">\(N = 3\)</span>!!</li>
+<li>The percent error is = 0.000000000000000000 %</li>
+</ul>
+</div>
+<div class="section" id="test-3e">
+<h2>Test 3e<a class="headerlink" href="#test-3e" title="Permalink to this headline">¶</a></h2>
+<p>In this test we increase the order of <code class="docutils literal"><span class="pre">y(x)</span></code> to:</p>
+<div class="math">
+\[y(x) =3x^6 + 3x^5 + 3x^4 + 3x^3 + 3x^2-3x+3\]</div>
+<img alt="../../_images/test3e.png" src="../../_images/test3e.png" />
+<ul class="simple">
+<li>As expected, we are not still calculating the integral exactly with <span class="math">\(N = 3\)</span>!!</li>
+<li>The percent error is = -1.818181818181822340 %</li>
+</ul>
 </div>
 </div>
 
@@ -212,10 +221,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="ex1.html" class="btn btn-neutral float-right" title="Example 1" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="../../developing_code.html" class="btn btn-neutral float-right" title="Developing Code" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="../../main_code.html" class="btn btn-neutral" title="Completed Functionality" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="ex2.html" class="btn btn-neutral" title="Example 2" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

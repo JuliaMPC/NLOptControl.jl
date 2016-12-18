@@ -187,7 +187,7 @@
 <p>with <span class="math">\(\phi_k(•)\)</span> are basis polynomials that are built by interpolating <span class="math">\(f(\tau)\)</span> at the node points.</p>
 </div>
 <div class="section" id="approximating-derivatives">
-<h2>Approximating Derivatives<a class="headerlink" href="#approximating-derivatives" title="Permalink to this headline">¶</a></h2>
+<span id="diff-matrix"></span><h2>Approximating Derivatives<a class="headerlink" href="#approximating-derivatives" title="Permalink to this headline">¶</a></h2>
 <p>We can also approximate the derivative of a function <span class="math">\(f(\tau)\)</span> as:</p>
 <div class="math">
 \[\frac{\mathrm{d}f(\tau)}{\mathrm{d}\tau}=\dot{f}(\tau_k)\approx\dot{P}(\tau_k)=\sum_{i=0}^{N_t}D_{ki}f(\tau_i)\]</div>
@@ -229,9 +229,6 @@
 <ul class="simple">
 <li>Nodes</li>
 </ul>
-<div class="system-message">
-<p class="system-message-title">System Message: WARNING/2 (<tt class="docutils">/home/febbo/.julia/v0.5/NLOptControl/docs/source/pseudospectral_methods.rst</tt>, line 75)</p>
-Bullet list ends without a blank line; unexpected unindent.</div>
 <div class="math">
 \begin{equation}
   \tau_k = \left \{
