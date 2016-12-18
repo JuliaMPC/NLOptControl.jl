@@ -17,7 +17,3 @@ where:
 * Conclusions
 
   * We are able to exactly determine the integral
-
-
-.. bibliography:: zrefs.bib
-   :cited:

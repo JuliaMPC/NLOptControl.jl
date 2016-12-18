@@ -19,15 +19,19 @@ To Minimize:
 That Satisfy the Following Constraints:
 
  * Dynamic Constraints:
+
   .. math:: \frac{\mathrm{d}\mathbf{x}}{\mathrm{d}t} = \mathbf{\psi}(\mathbf{x}(t),\mathbf{u}(t),t)
 
  * Inequality Path Constraints:
+
  .. math:: \mathbf{c}_{min} <= \mathbf{c}(\mathbf{x}(t),\mathbf{u}(t),t) <= \mathbf{c}_{max}
 
  * Integral Constraints:
+
  .. math:: q_i = \int_{t_0}^{t_f} \Upsilon_i(\mathbf{x}(t),\mathbf{u}(t),t)\, \mathrm{d}t,\;\;(i=1,....,n_q)
 
  * Event Constraints:
+
  .. math:: \mathbf{b}_{min} <= \mathbf{b}(\mathbf{x}(t_0),\mathbf{x}(t_f),t_f,\mathbf{q}) <= \mathbf{b}_{max}
 
 Change of Interval
@@ -53,15 +57,19 @@ To Minimize:
 That Satisfy the Following Constraints:
 
  * Dynamic Constraints:
+
   .. math::  \frac{\mathrm{d}\mathbf{x}}{\mathrm{d}\tau} = \frac{t_f-t_0}{2} \mathbf{\psi}(\mathbf{x}(\tau),\mathbf{u}(\tau),\tau,t_0,t_f)
 
  * Inequality Path Constraints:
+
  .. math:: \mathbf{c}_{min} <= \mathbf{c}(\mathbf{x}(\tau),\mathbf{u}(\tau),\tau,t_0,t_f) <= \mathbf{c}_{max}
 
  * Integral Constraints:
+
  .. math:: q_i = \frac{t_f-t_0}{2} \int_{-1}^{+1} \Upsilon_i(\mathbf{x}(\tau),\mathbf{u}(\tau),\tau,t_0,t_f)\, \mathrm{d}\tau,\;\;(i=1,....,n_q)
 
  * Event Constraints:
+
  .. math:: \mathbf{b}_{min} <= \mathbf{b}(\mathbf{x}(-1),\mathbf{x}(+1),t_f,\mathbf{q}) <= \mathbf{b}_{max}
 
 
@@ -90,15 +98,19 @@ To Minimize:
 That Satisfy the Following Constraints:
 
 * Dynamic Constraints:
+
  .. math:: \frac{\mathrm{d}\mathbf{x}^{(k)}(\tau^{(k)})}{\mathrm{d}\tau^{(k)}} = \frac{t_f-t_0}{2} \mathbf{\psi}(\mathbf{x}^{(k)}(\tau^{(k)}),\mathbf{u}^{(k)}(\tau^{(k)}),\tau^{(k)},t_0,t_f),\;\;(k=1,...,K)
 
 * Inequality Path Constraints:
+
 .. math:: \mathbf{c}_{min} <= \mathbf{c}(\mathbf{x}^{(k)}(\tau^{(k)}),\mathbf{u}^{(k)}(\tau^{(k)}),\tau^{(k)},t_0,t_f) <= \mathbf{c}_{max},\;\;(k=1,...,K)
 
 * Integral Constraints:
+
 .. math:: q_i = \frac{t_f-t_0}{2} \displaystyle\sum_{k=1}^{K} \int_{T_{k-1}}^{T_k} \Upsilon_i(\mathbf{x}^{(k)}(\tau^{(k)}),\mathbf{u}^{(k)}(\tau^{(k)}),\tau,t_0,t_f)\, \mathrm{d}\tau,\;\;(i=1,....,n_q, k=1,...,K)
 
 * Event Constraints:
+
 .. math:: \mathbf{b}_{min} <= \mathbf{b}(\mathbf{x}^{(1)}(-1),\mathbf{x}^{(K)}(+1),t_f,\mathbf{q}) <= \mathbf{b}_{max}
 
 * State Continuity
