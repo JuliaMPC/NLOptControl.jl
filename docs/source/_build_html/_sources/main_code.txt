@@ -10,5 +10,4 @@ In these examples we are using:
 .. toctree::
    :maxdepth: 2
 
-   obstacles
-   costfunction
+   examples/LGL_SI/LGL_SI

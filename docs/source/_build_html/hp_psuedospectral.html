@@ -30,7 +30,12 @@
   
 
   
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
     <link rel="top" title="NLOptControl 0.0.1-rc1 documentation" href="index.html"/>
+        <link rel="up" title="Background Information" href="background_info.html"/>
+        <link rel="next" title="Package Functionality" href="functionality.html"/>
         <link rel="prev" title="Pseudospectral Methods" href="pseudospectral_methods.html"/> 
 
   
@@ -81,17 +86,22 @@
             
             
                 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="optimal_control.html">Direct Transcription of Optimal Control Problems</a></li>
-<li class="toctree-l1"><a class="reference internal" href="time_marching.html">Time Marching Methods</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pseudospectral_methods.html">Pseudospectral Methods</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">hp-psuedospectral method</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#single-phase-optimal-control">Single Phase Optimal Control</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#change-of-interval">Change of Interval</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#divide-the-interval">Divide The Interval <span class="math">\(\tau \in [-1,+1]\)</span></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#rewrite-the-optimal-control-problem-using-the-mesh">Rewrite the Optimal Control Problem using the Mesh</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#optimal-control-problem-approximation">Optimal Control Problem Approximation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="background_info.html">Background Information</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="optimal_control.html">Direct Transcription of Optimal Control Problems</a></li>
+<li class="toctree-l2"><a class="reference internal" href="time_marching.html">Time Marching Methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pseudospectral_methods.html">Pseudospectral Methods</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">hp-psuedospectral method</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#single-phase-optimal-control">Single Phase Optimal Control</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#change-of-interval">Change of Interval</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#divide-the-interval">Divide The Interval <span class="math">\(\tau \in [-1,+1]\)</span></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rewrite-the-optimal-control-problem-using-the-mesh">Rewrite the Optimal Control Problem using the Mesh</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#optimal-control-problem-approximation">Optimal Control Problem Approximation</a></li>
 </ul>
 </li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="functionality.html">Package Functionality</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bibliography.html">Bibliography</a></li>
 </ul>
 
             
@@ -122,11 +132,13 @@
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
+          <li><a href="background_info.html">Background Information</a> &raquo;</li>
+      
     <li>hp-psuedospectral method</li>
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="_sources/hp_psuedospectral.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/hp_psuedospectral.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -162,6 +174,9 @@
 <div><ul class="simple">
 <li>Dynamic Constraints:</li>
 </ul>
+<div class="system-message">
+<p class="system-message-title">System Message: WARNING/2 (<tt class="docutils">/home/febbo/.julia/v0.5/NLOptControl/docs/source/hp_psuedospectral.rst</tt>, line 22)</p>
+Bullet list ends without a blank line; unexpected unindent.</div>
 <blockquote>
 <div><div class="math">
 \[\frac{\mathrm{d}\mathbf{x}}{\mathrm{d}t} = \mathbf{\psi}(\mathbf{x}(t),\mathbf{u}(t),t)\]</div>
@@ -169,16 +184,25 @@
 <ul class="simple">
 <li>Inequality Path Constraints:</li>
 </ul>
+<div class="system-message">
+<p class="system-message-title">System Message: WARNING/2 (<tt class="docutils">/home/febbo/.julia/v0.5/NLOptControl/docs/source/hp_psuedospectral.rst</tt>, line 25)</p>
+Bullet list ends without a blank line; unexpected unindent.</div>
 <div class="math">
 \[\mathbf{c}_{min} &lt;= \mathbf{c}(\mathbf{x}(t),\mathbf{u}(t),t) &lt;= \mathbf{c}_{max}\]</div>
 <ul class="simple">
 <li>Integral Constraints:</li>
 </ul>
+<div class="system-message">
+<p class="system-message-title">System Message: WARNING/2 (<tt class="docutils">/home/febbo/.julia/v0.5/NLOptControl/docs/source/hp_psuedospectral.rst</tt>, line 28)</p>
+Bullet list ends without a blank line; unexpected unindent.</div>
 <div class="math">
 \[q_i = \int_{t_0}^{t_f} \Upsilon_i(\mathbf{x}(t),\mathbf{u}(t),t)\, \mathrm{d}t,\;\;(i=1,....,n_q)\]</div>
 <ul class="simple">
 <li>Event Constraints:</li>
 </ul>
+<div class="system-message">
+<p class="system-message-title">System Message: WARNING/2 (<tt class="docutils">/home/febbo/.julia/v0.5/NLOptControl/docs/source/hp_psuedospectral.rst</tt>, line 31)</p>
+Bullet list ends without a blank line; unexpected unindent.</div>
 <div class="math">
 \[\mathbf{b}_{min} &lt;= \mathbf{b}(\mathbf{x}(t_0),\mathbf{x}(t_f),t_f,\mathbf{q}) &lt;= \mathbf{b}_{max}\]</div>
 </div></blockquote>
@@ -212,6 +236,9 @@
 <div><ul class="simple">
 <li>Dynamic Constraints:</li>
 </ul>
+<div class="system-message">
+<p class="system-message-title">System Message: WARNING/2 (<tt class="docutils">/home/febbo/.julia/v0.5/NLOptControl/docs/source/hp_psuedospectral.rst</tt>, line 56)</p>
+Bullet list ends without a blank line; unexpected unindent.</div>
 <blockquote>
 <div><div class="math">
 \[\frac{\mathrm{d}\mathbf{x}}{\mathrm{d}\tau} = \frac{t_f-t_0}{2} \mathbf{\psi}(\mathbf{x}(\tau),\mathbf{u}(\tau),\tau,t_0,t_f)\]</div>
@@ -219,16 +246,25 @@
 <ul class="simple">
 <li>Inequality Path Constraints:</li>
 </ul>
+<div class="system-message">
+<p class="system-message-title">System Message: WARNING/2 (<tt class="docutils">/home/febbo/.julia/v0.5/NLOptControl/docs/source/hp_psuedospectral.rst</tt>, line 59)</p>
+Bullet list ends without a blank line; unexpected unindent.</div>
 <div class="math">
 \[\mathbf{c}_{min} &lt;= \mathbf{c}(\mathbf{x}(\tau),\mathbf{u}(\tau),\tau,t_0,t_f) &lt;= \mathbf{c}_{max}\]</div>
 <ul class="simple">
 <li>Integral Constraints:</li>
 </ul>
+<div class="system-message">
+<p class="system-message-title">System Message: WARNING/2 (<tt class="docutils">/home/febbo/.julia/v0.5/NLOptControl/docs/source/hp_psuedospectral.rst</tt>, line 62)</p>
+Bullet list ends without a blank line; unexpected unindent.</div>
 <div class="math">
 \[q_i = \frac{t_f-t_0}{2} \int_{-1}^{+1} \Upsilon_i(\mathbf{x}(\tau),\mathbf{u}(\tau),\tau,t_0,t_f)\, \mathrm{d}\tau,\;\;(i=1,....,n_q)\]</div>
 <ul class="simple">
 <li>Event Constraints:</li>
 </ul>
+<div class="system-message">
+<p class="system-message-title">System Message: WARNING/2 (<tt class="docutils">/home/febbo/.julia/v0.5/NLOptControl/docs/source/hp_psuedospectral.rst</tt>, line 65)</p>
+Bullet list ends without a blank line; unexpected unindent.</div>
 <div class="math">
 \[\mathbf{b}_{min} &lt;= \mathbf{b}(\mathbf{x}(-1),\mathbf{x}(+1),t_f,\mathbf{q}) &lt;= \mathbf{b}_{max}\]</div>
 </div></blockquote>
@@ -268,6 +304,9 @@
 <ul class="simple">
 <li>Dynamic Constraints:</li>
 </ul>
+<div class="system-message">
+<p class="system-message-title">System Message: WARNING/2 (<tt class="docutils">/home/febbo/.julia/v0.5/NLOptControl/docs/source/hp_psuedospectral.rst</tt>, line 93)</p>
+Bullet list ends without a blank line; unexpected unindent.</div>
 <blockquote>
 <div><div class="math">
 \[\frac{\mathrm{d}\mathbf{x}^{(k)}(\tau^{(k)})}{\mathrm{d}\tau^{(k)}} = \frac{t_f-t_0}{2} \mathbf{\psi}(\mathbf{x}^{(k)}(\tau^{(k)}),\mathbf{u}^{(k)}(\tau^{(k)}),\tau^{(k)},t_0,t_f),\;\;(k=1,...,K)\]</div>
@@ -275,16 +314,25 @@
 <ul class="simple">
 <li>Inequality Path Constraints:</li>
 </ul>
+<div class="system-message">
+<p class="system-message-title">System Message: WARNING/2 (<tt class="docutils">/home/febbo/.julia/v0.5/NLOptControl/docs/source/hp_psuedospectral.rst</tt>, line 96)</p>
+Bullet list ends without a blank line; unexpected unindent.</div>
 <div class="math">
 \[\mathbf{c}_{min} &lt;= \mathbf{c}(\mathbf{x}^{(k)}(\tau^{(k)}),\mathbf{u}^{(k)}(\tau^{(k)}),\tau^{(k)},t_0,t_f) &lt;= \mathbf{c}_{max},\;\;(k=1,...,K)\]</div>
 <ul class="simple">
 <li>Integral Constraints:</li>
 </ul>
+<div class="system-message">
+<p class="system-message-title">System Message: WARNING/2 (<tt class="docutils">/home/febbo/.julia/v0.5/NLOptControl/docs/source/hp_psuedospectral.rst</tt>, line 99)</p>
+Bullet list ends without a blank line; unexpected unindent.</div>
 <div class="math">
 \[q_i = \frac{t_f-t_0}{2} \displaystyle\sum_{k=1}^{K} \int_{T_{k-1}}^{T_k} \Upsilon_i(\mathbf{x}^{(k)}(\tau^{(k)}),\mathbf{u}^{(k)}(\tau^{(k)}),\tau,t_0,t_f)\, \mathrm{d}\tau,\;\;(i=1,....,n_q, k=1,...,K)\]</div>
 <ul class="simple">
 <li>Event Constraints:</li>
 </ul>
+<div class="system-message">
+<p class="system-message-title">System Message: WARNING/2 (<tt class="docutils">/home/febbo/.julia/v0.5/NLOptControl/docs/source/hp_psuedospectral.rst</tt>, line 102)</p>
+Bullet list ends without a blank line; unexpected unindent.</div>
 <div class="math">
 \[\mathbf{b}_{min} &lt;= \mathbf{b}(\mathbf{x}^{(1)}(-1),\mathbf{x}^{(K)}(+1),t_f,\mathbf{q}) &lt;= \mathbf{b}_{max}\]</div>
 <ul>
@@ -306,11 +354,11 @@
 <dl class="docutils">
 <dt>For each mesh interval <span class="math">\(k\in[1,..,K]\)</span>:</dt>
 <dd><div class="first last math">
-\[\begin{eqnarray}
+\begin{eqnarray}
  \mathbf{x}^{(k)}(\tau)&amp;\approx\mathbf{X}^{(k)}(\tau)=\displaystyle\sum_{j=1}^{N_k+1}\mathbf{X}_j^{(k)}\frac{\mathrm{d}\ell_j^{k}(\tau)}{\mathrm{d}\tau}\\
   where,\;\;&amp;\\
  \ell_j^{k}(\tau)&amp;=\prod_{\substack{l=1 \\ l\neq j}}^{N_k+1}\frac{\tau-\tau_l^{(k)}}{\tau_j^{(k)}-\tau_l^{(k)}}
-\end{eqnarray}\]</div></dd>
+\end{eqnarray}</div></dd>
 <dt>also,</dt>
 <dd><ul class="first last">
 <li><p class="first"><span class="math">\(\ell_j^{(k)}(\tau),\;\;(j=1,...,N_k+1)\)</span> is a basis of Lagrange polynomials</p>
@@ -335,6 +383,8 @@
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="functionality.html" class="btn btn-neutral float-right" title="Package Functionality" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="pseudospectral_methods.html" class="btn btn-neutral" title="Pseudospectral Methods" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>

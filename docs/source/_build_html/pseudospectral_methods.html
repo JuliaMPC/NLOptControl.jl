@@ -30,7 +30,11 @@
   
 
   
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
     <link rel="top" title="NLOptControl 0.0.1-rc1 documentation" href="index.html"/>
+        <link rel="up" title="Background Information" href="background_info.html"/>
         <link rel="next" title="hp-psuedospectral method" href="hp_psuedospectral.html"/>
         <link rel="prev" title="Time Marching Methods" href="time_marching.html"/> 
 
@@ -82,17 +86,22 @@
             
             
                 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="optimal_control.html">Direct Transcription of Optimal Control Problems</a></li>
-<li class="toctree-l1"><a class="reference internal" href="time_marching.html">Time Marching Methods</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Pseudospectral Methods</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#change-of-interval">Change of Interval</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#polynomial-interpolation">Polynomial Interpolation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#approximating-derivatives">Approximating Derivatives</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#approximating-integrals">Approximating Integrals</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#legendre-pseudospectral-method">Legendre Pseudospectral Method</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="background_info.html">Background Information</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="optimal_control.html">Direct Transcription of Optimal Control Problems</a></li>
+<li class="toctree-l2"><a class="reference internal" href="time_marching.html">Time Marching Methods</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Pseudospectral Methods</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#change-of-interval">Change of Interval</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#polynomial-interpolation">Polynomial Interpolation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#approximating-derivatives">Approximating Derivatives</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#approximating-integrals">Approximating Integrals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#legendre-pseudospectral-method">Legendre Pseudospectral Method</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="hp_psuedospectral.html">hp-psuedospectral method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hp_psuedospectral.html">hp-psuedospectral method</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="functionality.html">Package Functionality</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bibliography.html">Bibliography</a></li>
 </ul>
 
             
@@ -123,11 +132,13 @@
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
+          <li><a href="background_info.html">Background Information</a> &raquo;</li>
+      
     <li>Pseudospectral Methods</li>
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="_sources/pseudospectral_methods.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/pseudospectral_methods.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -138,7 +149,7 @@
            <div itemprop="articleBody">
             
   <div class="section" id="pseudospectral-methods">
-<h1>Pseudospectral Methods<a class="headerlink" href="#pseudospectral-methods" title="Permalink to this headline">¶</a></h1>
+<span id="pseudospectral"></span><h1>Pseudospectral Methods<a class="headerlink" href="#pseudospectral-methods" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="change-of-interval">
 <h2>Change of Interval<a class="headerlink" href="#change-of-interval" title="Permalink to this headline">¶</a></h2>
 <p>To can change the limits of the integration (in order to apply Quadrature), we introduce <span class="math">\(\tau \in [-1,+1]\)</span> as a new independent variable and perform a change of variable for <span class="math">\(t\)</span> in terms of <span class="math">\(\tau\)</span>, by defining:</p>
@@ -218,15 +229,18 @@
 <ul class="simple">
 <li>Nodes</li>
 </ul>
+<div class="system-message">
+<p class="system-message-title">System Message: WARNING/2 (<tt class="docutils">/home/febbo/.julia/v0.5/NLOptControl/docs/source/pseudospectral_methods.rst</tt>, line 75)</p>
+Bullet list ends without a blank line; unexpected unindent.</div>
 <div class="math">
-\[\begin{equation}
+\begin{equation}
   \tau_k = \left \{
   \begin{aligned}
     &amp;-1, &amp;&amp; \text{if}\ k=0 \\
     &amp;\text{kth}\;\text{root}\;of \dot{L}_{N_t}(\tau), &amp;&amp; \text{if}\ k = {1, 2, 3, .. N_t-1}\\
     &amp;+1\, &amp;&amp; \text{if}\ k = N_t
   \end{aligned} \right.
-\end{equation}\]</div><ul class="simple">
+\end{equation}</div><ul class="simple">
 <li>Differentiation Matrix</li>
 <li>Interpolating Polynomial Function</li>
 </ul>

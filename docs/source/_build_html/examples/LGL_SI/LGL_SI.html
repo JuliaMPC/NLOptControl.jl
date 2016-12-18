@@ -30,7 +30,13 @@
   
 
   
-    <link rel="top" title="NLOptControl 0.0.1-rc1 documentation" href="../../index.html"/> 
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="NLOptControl 0.0.1-rc1 documentation" href="../../index.html"/>
+        <link rel="up" title="Completed Functionality" href="../../main_code.html"/>
+        <link rel="next" title="Developing Code" href="../../developing_code.html"/>
+        <link rel="prev" title="Completed Functionality" href="../../main_code.html"/> 
 
   
   <script src="../../_static/js/modernizr.min.js"></script>
@@ -79,9 +85,20 @@
           
             
             
-                <ul>
+                <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../background_info.html">Background Information</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../functionality.html">Package Functionality</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../functionality.html">Package Functionality</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../code.html">Code Development</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../../code.html#approximation-of-optimal-control-problem">Approximation of Optimal Control Problem</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="../../main_code.html">Completed Functionality</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../developing_code.html">Developing Code</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../bibliography.html">Bibliography</a></li>
 </ul>
 
             
@@ -112,11 +129,17 @@
   <ul class="wy-breadcrumbs">
     <li><a href="../../index.html">Docs</a> &raquo;</li>
       
+          <li><a href="../../functionality.html">Package Functionality</a> &raquo;</li>
+      
+          <li><a href="../../code.html">Code Development</a> &raquo;</li>
+      
+          <li><a href="../../main_code.html">Completed Functionality</a> &raquo;</li>
+      
     <li>Legendre Pseudospectral Method with a Single Interval</li>
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../../_sources/examples/LGL_SI/LGL_SI.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/examples/LGL_SI/LGL_SI.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -128,19 +151,62 @@
             
   <div class="section" id="legendre-pseudospectral-method-with-a-single-interval">
 <h1>Legendre Pseudospectral Method with a Single Interval<a class="headerlink" href="#legendre-pseudospectral-method-with-a-single-interval" title="Permalink to this headline">¶</a></h1>
-<p>In the first example, we borrow this problem from <a class="reference external" href="https://en.wikipedia.org/wiki/Gaussian_quadrature">Wikipedia</a>.</p>
-<p>where:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>α₁ =  3;α₂ = -3;α₃ = -8;α₄ =  7;
-γ = Poly([α₁,α₂,α₃,α₄]);
+<p>The code developed in this package uses the Legendre-Pseudospectral Method with Lagrange-Gauss-Lobatto (LGL) nodes. A basic description of this implementation presented in this documentation and <span class="xref std std-ref">psuedospectral</span> and more much more detailed information can be found in both <a class="reference internal" href="../../bibliography.html#shen2011" id="id1">[2]</a> and <a class="reference internal" href="../../bibliography.html#herber2015basic" id="id2">[1]</a>.</p>
+<p>We will now look at several examples of this basic functionality.</p>
+<dl class="docutils">
+<dt>These examples can be:</dt>
+<dd><ul class="first last">
+<li><p class="first">Viewed remotely on  using the <a class="reference external" href="http://nbviewer.jupyter.org/github/huckl3b3rry87/NLOptControl.jl/blob/master/examples/LGL_SI">jupyter nbviewer</a>.</p>
+</li>
+<li><p class="first">Viewed locally and interacted using IJulia</p>
+<blockquote>
+<div><p>To do this:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">julia</span><span class="o">&gt;</span><span class="n">using</span> <span class="n">IJulia</span>
+<span class="n">julia</span><span class="o">&gt;</span><span class="n">notebook</span><span class="p">(</span><span class="nb">dir</span><span class="o">=</span><span class="n">Pkg</span><span class="o">.</span><span class="n">dir</span><span class="p">(</span><span class="s2">&quot;NLOptControl/examples/LGL_SI&quot;</span><span class="p">))</span>
 </pre></div>
 </div>
-<p>All of the details can be played with</p>
+</div></blockquote>
+</li>
+</ul>
+</dd>
+</dl>
+<div class="section" id="example-1">
+<h2>Example 1<a class="headerlink" href="#example-1" title="Permalink to this headline">¶</a></h2>
+<p>In the first example, we borrow a problem from <a class="reference external" href="https://en.wikipedia.org/wiki/Gaussian_quadrature">Wikipedia</a>.</p>
+<dl class="docutils">
+<dt>where:</dt>
+<dd><div class="first last math">
+\[y(x) = 7x^3-8x^2-3x+3\]</div>
+</dd>
+</dl>
+<img alt="../../_images/test1.png" src="../../_images/test1.png" />
+<div class="sidebar">
+<p class="first sidebar-title">Difference between the Wikipedia Example and this Example</p>
+<p class="last">The difference between Wikipedia example and this one is that the Wikipedia example uses Gauss-Legendre Quadrature while the code developed in this package uses Legendre-Pseudospectral Method with Lagrange-Gauss-Lobatto (LGL) nodes. Information on the difference between these methods and many more can be found in both <a class="reference internal" href="../../bibliography.html#shen2011" id="id3">[2]</a> and <a class="reference internal" href="../../bibliography.html#herber2015basic" id="id4">[1]</a>.</p>
+</div>
+<ul class="simple">
+<li>Conclusions<ul>
+<li>We are able to exactly determine the integral</li>
+</ul>
+</li>
+</ul>
+<p id="bibtex-bibliography-examples/LGL_SI/LGL_SI-0"></p>
+</div>
 </div>
 
 
            </div>
           </div>
           <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../../developing_code.html" class="btn btn-neutral float-right" title="Developing Code" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../../main_code.html" class="btn btn-neutral" title="Completed Functionality" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
   
 
   <hr/>
