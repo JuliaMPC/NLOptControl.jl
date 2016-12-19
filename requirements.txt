@@ -1,2 +1,1 @@
-pip install -U pip
 pip install https://pypi.python.org/pypi/sphinxcontrib-bibtex
