@@ -1,1 +1,2 @@
+upgrade pip
 sphinxcontrib-bibtex
