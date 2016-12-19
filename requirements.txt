@@ -1,2 +1,1 @@
-pip install --upgrade pip
 pip install sphinxcontrib-bibtex
