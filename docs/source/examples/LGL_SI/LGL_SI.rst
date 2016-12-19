@@ -3,7 +3,7 @@ Single Interval
 
 Basic Problem Definition
 -------------------------
-The code developed in this package uses the Legendre-Pseudospectral Method with Lagrange-Gauss-Lobatto (LGL) nodes. A basic description of this implementation presented in this documentation at :ref:`pseudospectral` and more much more detailed information can be found in both :cite:`Shen2011` and :cite:`herber2015basic`.
+The code developed in this package uses the Legendre-Pseudospectral Method with Lagrange-Gauss-Lobatto (LGL) nodes. A basic description of this implementation presented in this documentation at :ref:`pseudospectral` and more much more detailed information can be found in both :cite:`a-Shen2011` and :cite:`a-herber2015basic`.
 
 Examples
 --------
@@ -30,3 +30,8 @@ These examples can be:
    ex1
    ex2
    ex3
+
+.. bibliography:: zref.bib
+    :style: plain
+    :labelprefix: A
+    :keyprefix: a-

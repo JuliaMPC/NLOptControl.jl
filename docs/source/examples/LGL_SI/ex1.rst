@@ -11,9 +11,15 @@ where:
 
 .. sidebar:: Difference between the Wikipedia Example and this Example
 
-  The difference between Wikipedia example and this one is that the Wikipedia example uses Gauss-Legendre Quadrature while the code developed in this package uses Legendre-Pseudospectral Method with Lagrange-Gauss-Lobatto (LGL) nodes. Information on the difference between these methods and many more can be found in both :cite:`Shen2011` and :cite:`herber2015basic`.
+  The difference between Wikipedia example and this one is that the Wikipedia example uses Gauss-Legendre Quadrature while the code developed in this package uses Legendre-Pseudospectral Method with Lagrange-Gauss-Lobatto (LGL) nodes. Information on the difference between these methods and many more can be found in both :cite:`b-Shen2011` and :cite:`b-herber2015basic`.
 
 
 * Conclusions
 
   * We are able to exactly determine the integral
+
+
+.. bibliography:: zref.bib
+    :style: plain
+    :labelprefix: B
+    :keyprefix: b-

@@ -1,6 +1,2 @@
 Bibliography
 ============
-
-
-.. bibliography:: zref.bib
-   :cited:

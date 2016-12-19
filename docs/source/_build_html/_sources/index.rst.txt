@@ -15,3 +15,6 @@ Table of Contents
    background_info
    functionality
    bibliography
+
+
+.. include zref.bib
