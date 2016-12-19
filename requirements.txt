@@ -1,2 +1,1 @@
--U pip
-https://pypi.python.org/pypi/sphinxcontrib-bibtex
+sphinxcontrib-bibtex
