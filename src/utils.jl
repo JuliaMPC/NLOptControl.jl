@@ -1,9 +1,91 @@
+function scale_tau(τ::Array{Float64,1},x₀::Float64,xₙ::Float64)
+  (xₙ - x₀)/2*τ + (xₙ + x₀)/2
+end
+
+function scale_w(ω::Array{Float64,1},x₀::Float64,xₙ::Float64)
+  (xₙ - x₀)/2*ω
+end
+
+"""
+D = poldif(x, malpha, B...);
+--------------------------------------------------------------------------\n
+Last modifed for julia on December 23, 2016 by Huckleberry Febbo\n
+Original Author: JJ.A.C. Weideman, S.C. Reddy 1998\n
+Original Function Name: poldif.m  |  Source: [matlabcentral](https://www.mathworks.com/matlabcentral/fileexchange/29-dmsuite)\n
+--------------------------------------------------------------------------\n
+# Input Arguments
+* `x::Vector`: Vector of N distinct nodes.
+* `malpha::Int65`: M, the number of derivatives required
+    * Note:     0 < M < N-1
+*  `B`: Currently this functionality is not tested with this input (only works for constant weights)
+
+# Output Arguments
+* `D::Array{Float64,2}`: Differention Matrix
+    * DM(1:N,1:N,ell) contains ell-th derivative matrix, ell=1..M
+
+The function DM =  poldif(x, maplha, B) computes the differentiation matrices D1, D2, ..., DM on arbitrary nodes. The function is called with either two or three input arguments. If two input arguments are supplied, the weight function is assumed to be constant.   If three arguments are supplied, the weights should be defined as the second and third arguments. (CURRENTLY NOT TESTED IN julia)
+
+"""
+
+function poldif(x, malpha, B...)
+  B_given = Bool(length(B));
+         N = length(x);
+         x = x[:];                     # Make sure x is a column vector
+
+  if !B_given                       # Check if constant weight function
+         M = malpha;                   # is to be assumed.
+     alpha = ones(N,1);
+         B = zeros(M,N);
+  elseif B_given
+     alpha = malpha(:);                # Make sure alpha is a column vector
+         M = length(B[:,1]);           # First dimension of B is the number
+  end                                  # of derivative matrices to be computed
+
+        #  I = eye(N);                  # Identity matrix.
+          #L = logical(I);              # Logical identity matrix.
+          L=eye(Bool, N, N)
+      # XX = x(:,ones(1,N));
+         XX = repmat(x,1,N);
+         DX = XX-XX';                  # DX contains entries x(k)-x(j).
+
+      DX[L] = ones(N,1);               # Put 1's one the main diagonal.
+
+          c = alpha.*prod(DX,2);       # Quantities c(j).
+
+          #C = c[:,ones(1,N)];
+          C = repmat(c,1,N);
+          C = C./C';                   # Matrix with entries c(k)/c(j).
+
+          Z = 1./DX;                   # Z contains entries 1/(x(k)-x(j))
+       Z[L] = zeros(N,1);              # with zeros on the diagonal.
+
+          X = Z';                      # X is same as Z', but with
+       #X[L] = [];                      # diagonal entries removed.
+       flag = trues(size(X));
+    flag[L] = false;
+          X = X[flag];
+          X = reshape(X,N-1,N);
+
+          Y = ones(N-1,N);             # Initialize Y and D matrices.
+          D = eye(N);                  # Y is matrix of cumulative sums,
+
+  DM = zeros(Float64,N,N,M);                                   # D differentiation matrices.
+  for ell = 1:M
+          temp = reshape(B[ell,:],1,N)
+          Y   = cumsum([temp; ell*Y[1:N-1,:].*X]); # Diagonals
+          D   = ell*Z.*(C.*repmat(diag(D),1,N) - D);   # Off-diagonals
+       D[L]   = Y[N,:];                                # Correct the diagonal
+  DM[:,:,ell] = D;                                     # Store the current D
+
+  end
+
+  return squeeze(DM,3)
+end
 
 # the following code uses the function lepoly() located at:
 # https://www.mathworks.com/matlabcentral/fileexchange/51104-basic-implementation-of-multiple-interval-pseudospectral-methods-to-solve-optimal-control-problems
 # Last modifed on December 15, 2016 by Huckleberry Febbo
-function lepoly(n::Int64,x::Vector{Float64},derivative_option::Bool)
-
+function lepoly(n::Int64,x,derivative_option::Bool)
 # lepoly  Legendre polynomial of degree n
     # y=lepoly(n,x) is the Legendre polynomial
     # The degree should be a nonnegative integer
@@ -12,7 +94,6 @@ function lepoly(n::Int64,x::Vector{Float64},derivative_option::Bool)
     #  derivative of the Legendre polynomial stored in dy
 # Last modified on August 30, 2011
 # Verified with the chart in http://keisan.casio.com/has10/SpecExec.cgi
-
   if !derivative_option
        if n==0 y=ones(size(x));  return y end
        if n==1 y=x; return y end
@@ -27,6 +108,7 @@ function lepoly(n::Int64,x::Vector{Float64},derivative_option::Bool)
      if n==0 y=ones(size(x)); dy=zeros(size(x)); return dy,y end
      if n==1 y=x; dy=ones(size(x)); return dy, y end
 
+     # TODO MAKE SURE THIS IS CALCULATING SIZE correctly!! i.e. N=4 and size(N+1,N+1) = 1
       polylst=ones(size(x)); pderlst=zeros(size(x));poly=x; pder=ones(size(x));
        # L_0=1, L_0'=0, L_1=x, L_1'=1
       polyn=0;
@@ -42,183 +124,3 @@ function lepoly(n::Int64,x::Vector{Float64},derivative_option::Bool)
   end
 
 end
-
-
-# the following code uses the function LGL_nodes() located at:
-# https://www.mathworks.com/matlabcentral/fileexchange/51104-basic-implementation-of-multiple-interval-pseudospectral-methods-to-solve-optimal-control-problems
-# Last modifed on December 15, 2016 by Huckleberry Febbo
-#--------------------------------------------------------------------------
-# LGL_nodes.m
-# determines Lagrange-Gauss-Lobatto (LGL) nodes
-#--------------------------------------------------------------------------
-# tau = LGL_nodes(N)
-#   N: number of nodes minus 1, should be an integer greater than 0
-# tau: LGL nodes
-#--------------------------------------------------------------------------
-# Examples:
-# tau = LGL_nodes(1)
-# -1     1
-# tau = LGL_nodes(2)
-# -1     0     1
-# tau = LGL_nodes(3)
-# -1  -0.44721   0.44721   1
-#--------------------------------------------------------------------------
-# Author: Daniel R. Herber, Graduate Student, University of Illinois at
-# Urbana-Champaign
-# Date: 06/04/2015
-#--------------------------------------------------------------------------
-function LGL_nodes(N::Int)
-    # See Page 99 of the book: J. Shen, T. Tang and L. Wang, Spectral Methods:
-    # Algorithms, Analysis and Applications, Springer Series in Compuational
-    # Mathematics, 41, Springer, 2011.
-    # Uses the function: lepoly()
-    # Original function: [varargout] = legslb(n) located at
-    # http://www1.spms.ntu.edu.sg/~lilian/bookcodes/legen/legslb.m
-
-    # Compute the initial guess of the interior LGL points
-    thetak = [(4*(idx)-1)*pi/(4*N+2) for idx in 1:N];
-    sigmak = [-(1-(N-1)/(8*N^3)-(39-28/sin(thetak[idx])^2)/(384*N^4))*cos(thetak[idx]) for idx in 1:N];
-    ze = (sigmak[1:N-1]+sigmak[2:N])/2;
-    ep = eps()*10;                           # error tolerance for stopping iteration
-    ze1 = ze+ep+1;
-
-    if size(ze)[1]!=0
-      while maximum(abs(ze1-ze))>=ep            # Newton's iteration procedure
-        ze1 = ze;
-        dy,y = lepoly(N,ze,true);
-        ze = ze-(1-ze.*ze).*dy./(2*ze.*dy-N*(N+1)*y);  # see Page 99 of the book
-      end                                   # around 6 iterations are required for n=100
-    end
-
-    left=Float64[-1]; right=Float64[1];
-    tau=append!(left,ze); tau=append!(tau,right);
-
-    return tau
-end
-
-# the following code uses the function LGL_weights() located at:
-# https://www.mathworks.com/matlabcentral/fileexchange/51104-basic-implementation-of-multiple-interval-pseudospectral-methods-to-solve-optimal-control-problems
-# Last modifed on December 15, 2016 by Huckleberry Febbo
-#--------------------------------------------------------------------------
-# LGL_weights.m
-# determines Gaussian quadrature weights using Lagrange-Gauss-Lobatto (LGL)
-# nodes
-#--------------------------------------------------------------------------
-# w = LGL_weights(tau)
-# tau: LGL nodes
-#   w: Gaussian quadrature weights
-#--------------------------------------------------------------------------
-# Author: Daniel R. Herber, Graduate Student, University of Illinois at
-# Urbana-Champaign
-# Date: 06/04/2015
-#--------------------------------------------------------------------------
-function LGL_weights(tau::Vector{Float64})
-    # number of nodes
-    N = length(tau)-1;
-
-    # turn tau into a Vector
-    tau_V = Vector{Float64}(1);
-    tau_V=tau;
-    # See Page 99 of the book: J. Shen, T. Tang and L. Wang, Spectral Methods:
-    # Algorithms, Analysis and Applications, Springer Series in Compuational
-    # Mathematics, 41, Springer, 2011.
-    # Uses the function: lepoly()
-    # Original function: [varargout] = legslb(n) located at
-    # http://www1.spms.ntu.edu.sg/~lilian/bookcodes/legen/legslb.m
-    y = lepoly(N,tau_V[2:end-1],false);
-    # Use the weight expression (3.188) to compute the weights
-    w = [2/(N*(N+1));2./(N*(N+1)*y.^2);2/(N*(N+1))];
-
-    return w
-end
-
-# the following code uses the function LGL_Dmatrix() located at:
-# https://www.mathworks.com/matlabcentral/fileexchange/51104-basic-implementation-of-multiple-interval-pseudospectral-methods-to-solve-optimal-control-problems
-# Last modifed on December 15, 2016 by Huckleberry Febbo
-#--------------------------------------------------------------------------
-# LGL_Dmatrix.m
-# determines approximate differentiation matrix for Legendre-based method
-# with LGL nodes
-#--------------------------------------------------------------------------
-# D = LGL_Dmatrix(tau)
-# tau: LGL nodes
-#   D: differentiation matrix
-#--------------------------------------------------------------------------
-# Author: Daniel R. Herber, Graduate Student, University of Illinois at
-# Urbana-Champaign
-# Date: 06/04/2015
-#--------------------------------------------------------------------------
-function LGL_Dmatrix(tau::Vector{Float64})
-    # number of nodes
-    N = length(tau)-1;
-
-    # See Page 110 of the book: J. Shen, T. Tang and L. Wang, Spectral Methods:
-    # Algorithms, Analysis and Applications, Springer Series in Compuational
-    # Mathematics, 41, Springer, 2011.
-    # Uses the function: lepoly()
-    # Original function: D = legslbdiff(n,x) located at
-    # http://www1.spms.ntu.edu.sg/~lilian/bookcodes/legen/legslbdiff.m
-    n = N + 1;
-    if n==0 D = []; return D end   # null differentiation matrix
-    xx = tau; y = lepoly(n-1,xx,false);
-    D = (xx./y)*y'-(1./y)*(xx.*y)'; # compute L_{n-1}(x_j) (x_k-x_j)/L_{n-1}(x_k);
-                                    # 1/d_{kj} for k not= j (see (3.203))
-    D = D + eye(n);                 # add the identity matrix so that 1./D can be operated
-    D = 1./D;
-    D = D - eye(n);
-    D[1,1] = -n*(n-1)/4;
-    D[n,n] = -D[1,1];  # update the diagonal entries
-
-    return D
-end
-
-# the following code uses the function LGL_Dmatrix() located at:
-# https://www.mathworks.com/matlabcentral/fileexchange/51104-basic-implementation-of-multiple-interval-pseudospectral-methods-to-solve-optimal-control-problems
-# Last modifed on December 15, 2016 by Huckleberry Febbo
-#--------------------------------------------------------------------------
-# Fmatrix.m
-# determines differential matrix for multiple-interval psuedospectral
-# method
-#--------------------------------------------------------------------------
-# F = Fmatrix(tau,X,U,t0,tf,p)
-# tau: nodes
-#   X: states
-#   U: control
-#  t0: initial time
-#  tf: final time
-#   p: parameter structure
-#   F: differential matrix
-#--------------------------------------------------------------------------
-# Author: Daniel R. Herber, Graduate Student, University of Illinois at
-# Urbana-Champaign
-# Date: 06/04/2015
-#--------------------------------------------------------------------------
-#=
-function Fmatrix(tau,X,U,t0,tf,p)
-    # number of nodes
-    N = length(tau)-1;
-    # initialize differential matrix
-    f = zeros(N+1,size(X,2));
-    # determine differential matrix
-    for i = 1:N+1
-        f[i,:] = eval([p.deriv,'(tau(i),X(i,:),U(i,:),t0,tf,p)']);
-    end
-    F = (tf-t0)/2*f; # scale
-end
-=#
-
-function scale_tau(τ::Array{Float64,1},x₀::Float64,xₙ::Float64)
-  (xₙ - x₀)/2*τ + (xₙ + x₀)/2
-end
-
-function scale_w(ω::Array{Float64,1},x₀::Float64,xₙ::Float64)
-  (xₙ - x₀)/2*ω
-end
-
-#=
-if mode == :quad_scale       # scale to range of; [-1,1]
-  (x - x₀)./(xₙ - x₀)
-elseif mode == :prob_scale # scale to range of problem; [xₙ,x₀]
-   x₀ + x./(xₙ - x₀)
-end
-=#

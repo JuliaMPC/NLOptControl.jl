@@ -17,11 +17,11 @@ These examples can be:
   *  Viewed remotely on  using the `jupyter nbviewer <http://nbviewer.jupyter.org/github/huckl3b3rry87/NLOptControl.jl/blob/master/examples/LGL_SI>`_.
   *  Viewed locally and interacted using IJulia
 
-      To do this:
+      To do this in julia type:
       ::
 
-         julia>using IJulia
-         julia>notebook(dir=Pkg.dir("NLOptControl/examples/LGL_SI/"))
+        using IJulia
+        notebook(dir=Pkg.dir("NLOptControl/examples/LGL_SI/"))
 
 
 .. toctree::
@@ -30,6 +30,8 @@ These examples can be:
    ex1
    ex2
    ex3
+
+.. rubric:: References
 
 .. bibliography:: zref.bib
     :style: plain

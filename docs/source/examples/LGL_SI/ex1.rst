@@ -18,6 +18,7 @@ where:
 
   * We are able to exactly determine the integral
 
+.. rubric:: References
 
 .. bibliography:: zref.bib
     :style: plain
