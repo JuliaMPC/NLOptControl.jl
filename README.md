@@ -23,8 +23,8 @@ The full documentation can be found [here](http://nloptcontroljl.readthedocs.io/
 
 In Julia, you can install the NLOptControl.jl package by typing:
 ```julia
-julia>Pkg.clone("https://github.com/huckl3b3rry87/NLOptControl.jl")
-``
+Pkg.clone("https://github.com/huckl3b3rry87/NLOptControl.jl")
+```
 
 ## MathProgBase
 
@@ -33,4 +33,13 @@ NLOptControl uses the [MathProgBase interface](http://mathprogbasejl.readthedocs
 
 ## Tutorial
 
-TODO: Make an IJulia notebook for this
+All Examples can be:
+
+  *  Viewed remotely on  using the `jupyter nbviewer <http://nbviewer.jupyter.org/github/huckl3b3rry87/NLOptControl.jl/blob/master/examples/>`_.
+  *  Viewed locally and interacted using IJulia
+
+To do this in julia type:
+```julia
+using IJulia
+notebook(dir=Pkg.dir("NLOptControl/examples/"))
+```
