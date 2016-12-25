@@ -33,23 +33,6 @@ dy = polyval(dγ,t);
 τ, ω = gaussradau(Nc); # number of collocation points per interval
 
 # break the problem up into multiple intervals
-function create_intervals(t0::Float64,tf::Float64,Ni::Int64,Nc::Int64,τ::Vector{Float64},ω::Vector{Float64})
-  di = (tf - t0)/Ni # interval size
-  # create mesh points
-  tm = zeros(Float64,Ni+1); tm[1] = t0;
-  for idx in 1:Ni
-    tm[idx+1] = tm[idx] + di;
-  end
-  # go through each mesh interval creating time intervals; [t(i-1),t(i)] --> [-1,1]
-  ts = zeros(Float64,Nc,Ni);  ωₛ = zeros(Float64,Nc,Ni);
-  for idx in 1:Ni
-    # scale the problem to the interval
-    ts[:,idx] = scale_tau(τ,tm[idx],tm[idx+1]); # scale the interval
-    ωₛ[:,idx] = scale_w(ω,tm[idx],tm[idx+1]);   # scale the weights
-  end
-  return di, tm, ts, ωₛ
-end
-
 di, tm, ts, ωₛ = create_intervals(t0,tf,Ni,Nc,τ,ω)
 
 #TODO check integral matrix

@@ -1,0 +1,38 @@
+LGR Single Interval
+===================
+
+Basic Problem Definition
+-------------------------
+The code developed here uses the Legendre-Pseudospectral Method with Legendre-Gauss-Radau (LGR) nodes. This example demonstrates using the LGR points to calculate the integral and the derivative of a known polynomial function. It can be seen, that it behaves as expected. One, major difference between LGR and LGL is that the LGR method does **NOT** use both endpoints, in fact the LGR method omits the final end point. Researchers at the University of Florida describe this method in many papers including :cite:`a-darby2011hp,a-garg2011advances,a-garg2010unified,a-garg2009overview`.
+
+Examples
+--------
+In these examples we use:
+  * Legendre-Gauss-Lobatto (LGR) nodes
+  * Single interval approximations
+  * Approximate integrals in the range of ``[x0,xf]``
+  * Approximate derivatives in the range of ``[x0,xf]``
+
+These examples can be:
+  *  Viewed remotely on  using the `jupyter nbviewer <http://nbviewer.jupyter.org/github/huckl3b3rry87/NLOptControl.jl/blob/master/examples/LGR_SI>`_.
+  *  Viewed locally and interacted using IJulia
+
+      To do this in julia type:
+      ::
+
+        using IJulia
+        notebook(dir=Pkg.dir("NLOptControl/examples/LGR_SI/"))
+
+
+.. toctree::
+   :maxdepth: 2
+
+   ex1
+
+
+.. rubric:: References
+
+.. bibliography:: zref.bib
+    :style: plain
+    :labelprefix: A
+    :keyprefix: a-

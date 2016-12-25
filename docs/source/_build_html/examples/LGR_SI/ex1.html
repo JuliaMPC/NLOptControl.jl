@@ -34,9 +34,9 @@
               href="../../genindex.html"/>
         <link rel="search" title="Search" href="../../search.html"/>
     <link rel="top" title="NLOptControl 0.0.1-rc1 documentation" href="../../index.html"/>
-        <link rel="up" title="LGL Single Interval" href="LGL_SI.html"/>
-        <link rel="next" title="Example 2" href="ex2.html"/>
-        <link rel="prev" title="LGL Single Interval" href="LGL_SI.html"/> 
+        <link rel="up" title="LGR Single Interval" href="LGR_SI.html"/>
+        <link rel="next" title="Developing Code" href="../../developing_code.html"/>
+        <link rel="prev" title="LGR Single Interval" href="LGR_SI.html"/> 
 
   
   <script src="../../_static/js/modernizr.min.js"></script>
@@ -135,13 +135,13 @@
       
           <li><a href="../../main_code.html">Completed Functionality</a> &raquo;</li>
       
-          <li><a href="LGL_SI.html">LGL Single Interval</a> &raquo;</li>
+          <li><a href="LGR_SI.html">LGR Single Interval</a> &raquo;</li>
       
     <li>Example 1</li>
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../../_sources/examples/LGL_SI/ex1.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/examples/LGR_SI/ex1.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -153,38 +153,43 @@
             
   <div class="section" id="example-1">
 <h1>Example 1<a class="headerlink" href="#example-1" title="Permalink to this headline">¶</a></h1>
-<p>In the first example, we borrow a problem from <a class="reference external" href="https://en.wikipedia.org/wiki/Gaussian_quadrature">Wikipedia</a>.</p>
+<p>In the first example, we demonstrate the functionality using LGR nodes using <code class="docutils literal"><span class="pre">N=2</span></code>.</p>
 <dl class="docutils">
 <dt>where:</dt>
 <dd><div class="first last math">
-\[y(x) = 7x^3-8x^2-3x+3\]</div>
+\[y(x) = 3x^4+7x^3-8x^2-3x+3\]</div>
 </dd>
 </dl>
-<img alt="../../_images/test1.png" src="../../_images/test1.png" />
+<div class="section" id="test-1a">
+<h2>Test 1a<a class="headerlink" href="#test-1a" title="Permalink to this headline">¶</a></h2>
+<img alt="../../_images/test1a.png" src="../../_images/test1a.png" />
 <div class="sidebar">
-<p class="first sidebar-title">Difference between the Wikipedia Example and this Example</p>
-<p class="last">The difference between Wikipedia example and this one is that the Wikipedia example uses Gauss-Legendre Quadrature while the code developed in this package uses Legendre-Pseudospectral Method with Lagrange-Gauss-Lobatto (LGL) nodes. Information on the difference between these methods and many more can be found in both <a class="reference internal" href="#b-shen2011" id="id1">[BSTW11]</a> and <a class="reference internal" href="#b-herber2015basic" id="id2">[BHer15]</a>.</p>
+<p class="first sidebar-title">Notice for all cases, that the end points are NOT included.</p>
+<p class="last">This is one of the differences between the LGL and LGR methods.</p>
 </div>
+</div>
+<div class="section" id="test-1b">
+<h2>Test 1b<a class="headerlink" href="#test-1b" title="Permalink to this headline">¶</a></h2>
+<img alt="../../_images/test1b.png" src="../../_images/test1b.png" />
+<div class="sidebar">
+<p class="first sidebar-title">In Test 1b <code class="docutils literal"><span class="pre">N=4</span></code></p>
+<p class="last">So we can calculate the integral of a 4th order polynomial exactly. Because <code class="docutils literal"><span class="pre">2*N-2</span> <span class="pre">=</span> <span class="pre">4</span></code>.</p>
+</div>
+</div>
+<div class="section" id="test-1c">
+<h2>Test 1c<a class="headerlink" href="#test-1c" title="Permalink to this headline">¶</a></h2>
+<img alt="../../_images/test1c.png" src="../../_images/test1c.png" />
+</div>
+<div class="section" id="test-1d">
+<h2>Test 1d<a class="headerlink" href="#test-1d" title="Permalink to this headline">¶</a></h2>
+<img alt="../../_images/test1d.png" src="../../_images/test1d.png" />
 <ul class="simple">
 <li>Conclusions<ul>
-<li>We are able to exactly determine the integral</li>
+<li>Working as expected.</li>
 </ul>
 </li>
 </ul>
-<p class="rubric">References</p>
-<p id="bibtex-bibliography-examples/LGL_SI/ex1-0"><table class="docutils citation" frame="void" id="b-herber2015basic" rules="none">
-<colgroup><col class="label" /><col /></colgroup>
-<tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id2">[BHer15]</a></td><td>Daniel&nbsp;Ronald Herber. Basic implementation of multiple-interval pseudospectral methods to solve optimal control problems. <em>UIUC-ESDL-2015-01</em>, 2015.</td></tr>
-</tbody>
-</table>
-<table class="docutils citation" frame="void" id="b-shen2011" rules="none">
-<colgroup><col class="label" /><col /></colgroup>
-<tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id1">[BSTW11]</a></td><td>Jie Shen, Tao Tang, and Li-Lian Wang. <em>Spectral methods: algorithms, analysis and applications</em>. volume 41. Springer Science &amp; Business Media, 2011.</td></tr>
-</tbody>
-</table>
-</p>
+</div>
 </div>
 
 
@@ -194,10 +199,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="ex2.html" class="btn btn-neutral float-right" title="Example 2" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="../../developing_code.html" class="btn btn-neutral float-right" title="Developing Code" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="LGL_SI.html" class="btn btn-neutral" title="LGL Single Interval" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="LGR_SI.html" class="btn btn-neutral" title="LGR Single Interval" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

@@ -1,5 +1,5 @@
-Single Interval
-===============
+LGL Single Interval
+====================
 
 Basic Problem Definition
 -------------------------
@@ -34,6 +34,5 @@ These examples can be:
 .. rubric:: References
 
 .. bibliography:: zref.bib
-    :style: plain
     :labelprefix: A
     :keyprefix: a-

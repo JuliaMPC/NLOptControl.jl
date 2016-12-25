@@ -6,6 +6,23 @@ function scale_w(ω::Array{Float64,1},x₀::Float64,xₙ::Float64)
   (xₙ - x₀)/2*ω
 end
 
+function create_intervals(t0::Float64,tf::Float64,Ni::Int64,Nc::Int64,τ::Vector{Float64},ω::Vector{Float64})
+  di = (tf - t0)/Ni # interval size
+  # create mesh points
+  tm = zeros(Float64,Ni+1); tm[1] = t0;
+  for idx in 1:Ni
+    tm[idx+1] = tm[idx] + di;
+  end
+  # go through each mesh interval creating time intervals; [t(i-1),t(i)] --> [-1,1]
+  ts = zeros(Float64,Nc,Ni);  ωₛ = zeros(Float64,Nc,Ni);
+  for idx in 1:Ni
+    # scale the problem to the interval
+    ts[:,idx] = scale_tau(τ,tm[idx],tm[idx+1]); # scale the interval
+    ωₛ[:,idx] = scale_w(ω,tm[idx],tm[idx+1]);   # scale the weights
+  end
+  return di, tm, ts, ωₛ
+end
+
 """
 D = poldif(x, malpha, B...);
 --------------------------------------------------------------------------\n

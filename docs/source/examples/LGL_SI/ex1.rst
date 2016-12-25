@@ -21,6 +21,5 @@ where:
 .. rubric:: References
 
 .. bibliography:: zref.bib
-    :style: plain
     :labelprefix: B
     :keyprefix: b-
