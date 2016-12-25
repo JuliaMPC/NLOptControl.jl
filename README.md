@@ -35,11 +35,11 @@ NLOptControl uses the [MathProgBase interface](http://mathprogbasejl.readthedocs
 
 All Examples can be:
 
-  *  Viewed remotely on  using the `jupyter nbviewer <http://nbviewer.jupyter.org/github/huckl3b3rry87/NLOptControl.jl/blob/master/examples/>`_.
+  *  Viewed remotely on  using the [jupyter nbviewer](http://nbviewer.jupyter.org/github/huckl3b3rry87/NLOptControl.jl/blob/master/examples/).
   *  Viewed locally and interacted using IJulia
 
-To do this in julia type:
-```julia
-using IJulia
-notebook(dir=Pkg.dir("NLOptControl/examples/"))
-```
+      To do this in julia type:
+      ```julia
+      using IJulia
+      notebook(dir=Pkg.dir("NLOptControl/examples/"))
+      ```
