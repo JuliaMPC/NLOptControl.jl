@@ -1,0 +1,270 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Functionality &mdash; NLOptControl 0.0.1-rc1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="NLOptControl 0.0.1-rc1 documentation" href="../../index.html"/>
+        <link rel="up" title="Completed Functionality" href="../../main_code.html"/>
+        <link rel="next" title="Simple Interpolation" href="ex1.html"/>
+        <link rel="prev" title="Completed Functionality" href="../../main_code.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> NLOptControl
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../background_info.html">Background Information</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../functionality.html">Package Functionality</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../code.html">Code Development</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../../code.html#approximation-of-optimal-control-problem">Approximation of Optimal Control Problem</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="../../main_code.html">Completed Functionality</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../developing_code.html">Developing Code</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../bibliography.html">Bibliography</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">NLOptControl</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../functionality.html">Package Functionality</a> &raquo;</li>
+      
+          <li><a href="../../code.html">Code Development</a> &raquo;</li>
+      
+          <li><a href="../../main_code.html">Completed Functionality</a> &raquo;</li>
+      
+    <li>Functionality</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../_sources/examples/LIP/LIP.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="functionality">
+<span id="lagrange-poly-fun"></span><h1>Functionality<a class="headerlink" href="#functionality" title="Permalink to this headline">¶</a></h1>
+<p>The basic description of this functionality is detailed here <a class="reference internal" href="../../lagrange_poly.html#lagrange-poly"><span class="std std-ref">Lagrange Interpolating Polynomials</span></a></p>
+<div class="section" id="lagrange-basis-poly">
+<h2><cite>lagrange_basis_poly()</cite><a class="headerlink" href="#lagrange-basis-poly" title="Permalink to this headline">¶</a></h2>
+<p>The Lagrange basis polynomial equations where turned into a function.</p>
+</div>
+<div class="section" id="interpolate-lagrange">
+<h2><cite>interpolate_lagrange()</cite><a class="headerlink" href="#interpolate-lagrange" title="Permalink to this headline">¶</a></h2>
+<p>The interpolation functionality was pushed to a lower level. This allows the user to easily use code to interpolate a polynomial.</p>
+<p>The <strong>development</strong> of these function can be:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Viewed remotely on  using the <a class="reference external" href="http://nbviewer.jupyter.org/github/huckl3b3rry87/NLOptControl.jl/blob/master/examples/LIP/lagrange_basis_poly_dev.ipynb">jupyter nbviewer</a>.</li>
+<li>Viewed locally and interacted using IJulia</li>
+</ul>
+<blockquote>
+<div><p>To do this in julia type:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">using</span> <span class="n">IJulia</span>
+<span class="n">notebook</span><span class="p">(</span><span class="nb">dir</span><span class="o">=</span><span class="n">Pkg</span><span class="o">.</span><span class="n">dir</span><span class="p">(</span><span class="s2">&quot;NLOptControl/examples/LIP/lagrange_basis_poly_dev&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+</div></blockquote>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="examples">
+<h1>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="ex1.html">Simple Interpolation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ex2.html">Scaled Lagrange Polynomials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ex3.html">Runge&#8217;s Phenomena</a></li>
+</ul>
+</div>
+<p>These examples can be:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Viewed remotely on  using <a class="reference external" href="http://nbviewer.jupyter.org/github/huckl3b3rry87/NLOptControl.jl/blob/master/examples/LIP">the jupyter nbviewer</a>.</li>
+<li>Viewed locally and interacted using IJulia</li>
+</ul>
+<p>To do this in julia type:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">using</span> <span class="n">IJulia</span>
+<span class="n">notebook</span><span class="p">(</span><span class="nb">dir</span><span class="o">=</span><span class="n">Pkg</span><span class="o">.</span><span class="n">dir</span><span class="p">(</span><span class="s2">&quot;NLOptControl/examples/LIP/&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="ex1.html" class="btn btn-neutral float-right" title="Simple Interpolation" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../../main_code.html" class="btn btn-neutral" title="Completed Functionality" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Huckleberry Febbo.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.0.1-rc1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

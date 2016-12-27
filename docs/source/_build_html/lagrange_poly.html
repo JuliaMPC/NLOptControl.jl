@@ -88,7 +88,8 @@
                 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="background_info.html">Background Information</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Lagrange Interpolating Polynomials</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#lagrange-polynomial-basis-polynomials">Lagrange Polynomial Basis Polynomials</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#definition">Definition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#lagrange-basis-polynomials">Lagrange Basis Polynomials</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="optimal_control.html">Direct Transcription of Optimal Control Problems</a></li>
@@ -147,7 +148,8 @@
             
   <div class="section" id="lagrange-interpolating-polynomials">
 <span id="lagrange-poly"></span><h1>Lagrange Interpolating Polynomials<a class="headerlink" href="#lagrange-interpolating-polynomials" title="Permalink to this headline">¶</a></h1>
-<p>Lagrange Polynomial Basics:</p>
+<div class="section" id="definition">
+<h2>Definition<a class="headerlink" href="#definition" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li>given <span class="math">\((N+1)\)</span> unique data points<ul>
@@ -173,8 +175,10 @@
  \end{eqnarray}</div></dd>
 </dl>
 <p>So, we are just multiplying by the given <span class="math">\(y_i\)</span> values.</p>
-<div class="section" id="lagrange-polynomial-basis-polynomials">
-<h2>Lagrange Polynomial Basis Polynomials<a class="headerlink" href="#lagrange-polynomial-basis-polynomials" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="lagrange-basis-polynomials">
+<h2>Lagrange Basis Polynomials<a class="headerlink" href="#lagrange-basis-polynomials" title="Permalink to this headline">¶</a></h2>
+<p>More information on Lagrange Basis Polynomials is <a class="reference external" href="https://en.wikipedia.org/wiki/Vandermonde_matrix">here</a></p>
 <div class="math">
 \[\begin{split}\mathcal{L}_i(x)=\prod_{\substack{j=0 \\ j\neq i}}^{N}\frac{x-x_j}{x_i-x_j}\end{split}\]</div>
 <dl class="docutils">
@@ -188,34 +192,7 @@
 \end{eqnarray}</div></dd>
 </dl>
 <p>Notice that we do not include the term where <span class="math">\(i==j\)</span>!</p>
-<p>These equations where turned into a function:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">L = lagrange_basis_poly{T&lt;:Number}(x::Float64,x_data::AbstractArray{T},idx::Int64,N::Int64)</span>
-<span class="sd">--------------------------------------------------------------------\n</span>
-<span class="sd">Author: Huckleberry Febbo, Graduate Student, University of Michigan</span>
-<span class="sd">Date Create: 12/26/2016, Last Modified: 12/26/2016</span>
-<span class="sd">--------------------------------------------------------------------\n</span>
-<span class="sd"># Input Arguments</span>
-<span class="sd">* `x::Float64`: point to approximate function value at</span>
-<span class="sd">* `x_data::Array{Float64}`: x data to used calculate basis polynomials</span>
-<span class="sd">* `N::Int64`: order of Lagrange interpolating polynomial</span>
-
-<span class="sd"># Output Arguments</span>
-<span class="sd">* `L::Array{Float64}`: Lagrange basis polynomials</span>
-
-<span class="sd">A basic description of Lagrange interpolating polynomials is provided [here](http://127.0.0.1:8000/lagrange_poly.html#lagrange-poly)</span>
-
-<span class="sd">&quot;&quot;&quot;</span>
-</pre></div>
-</div>
-<p>The development of this function can be seen here:</p>
-<div class="system-message">
-<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">/home/febbo/.julia/v0.5/NLOptControl/docs/source/lagrange_poly.rst</tt>, line 72)</p>
-Unexpected indentation.</div>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">notebook</span><span class="p">(</span><span class="nb">dir</span><span class="o">=</span><span class="n">Pkg</span><span class="o">.</span><span class="n">dir</span><span class="p">(</span><span class="s2">&quot;NLOptControl/examples/LIP/lagrange_basis_ploy_dev&quot;</span><span class="p">))</span>
-</pre></div>
-</div>
-<p>More information <a class="reference external" href="https://en.wikipedia.org/wiki/Vandermonde_matrix">here</a></p>
+<p>Please see <span class="xref std std-ref">lagrange_poly_fun</span> for details on implementation.</p>
 </div>
 </div>
 

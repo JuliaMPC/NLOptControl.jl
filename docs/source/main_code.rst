@@ -1,6 +1,14 @@
 Completed Functionality
 =======================
 
+Lagrange Basis Polynomials
+--------------------------
+.. toctree::
+   :maxdepth: 1
+
+   examples/LIP/LIP
+
+
 Legendre Gaussian Method
 ------------------------
 

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Example 1 &mdash; NLOptControl 0.0.1-rc1 documentation</title>
+  <title>Neglecting Non-Collocated Point \(Y^{(k)}(τ)\) &mdash; NLOptControl 0.0.1-rc1 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="search" title="Search" href="../../search.html"/>
     <link rel="top" title="NLOptControl 0.0.1-rc1 documentation" href="../../index.html"/>
         <link rel="up" title="LGR Multiple Interval" href="LGR_MI.html"/>
-        <link rel="next" title="Developing Code" href="../../developing_code.html"/>
+        <link rel="next" title="Approximation of \(Y^{(k)}(τ)\)" href="ex2.html"/>
         <link rel="prev" title="LGR Multiple Interval" href="LGR_MI.html"/> 
 
   
@@ -137,7 +137,7 @@
       
           <li><a href="LGR_MI.html">LGR Multiple Interval</a> &raquo;</li>
       
-    <li>Example 1</li>
+    <li>Neglecting Non-Collocated Point <span class="math">\(Y^{(k)}(τ)\)</span></li>
       <li class="wy-breadcrumbs-aside">
         
           
@@ -151,27 +151,67 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="example-1">
-<h1>Example 1<a class="headerlink" href="#example-1" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="neglecting-non-collocated-point">
+<h1>Neglecting Non-Collocated Point <span class="math">\(Y^{(k)}(τ)\)</span><a class="headerlink" href="#neglecting-non-collocated-point" title="Permalink to this headline">¶</a></h1>
 <p>In this first example, we demonstrate the functionality using LGR nodes</p>
 <dl class="docutils">
 <dt>where:</dt>
 <dd><div class="first last math">
 \[y(x) = -3x^5+3x^4+7x^3-8x^2-3x+3\]</div>
 </dd>
+</dl>
+<div class="section" id="test-1a">
+<h2>Test 1a<a class="headerlink" href="#test-1a" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
 <dt>with:</dt>
 <dd><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">Nc</span> <span class="o">=</span> <span class="n">Int64</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span> <span class="c1"># number of collocation points in each interval</span>
-<span class="n">Ni</span> <span class="o">=</span> <span class="n">Int64</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span> <span class="c1"># number of intervals</span>
+<span class="n">Ni</span> <span class="o">=</span> <span class="n">Int64</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span>  <span class="c1"># number of intervals</span>
 </pre></div>
 </div>
 </dd>
 </dl>
-<div class="section" id="test-1a">
-<h2>Test 1a<a class="headerlink" href="#test-1a" title="Permalink to this headline">¶</a></h2>
 <img alt="../../_images/test1a1.png" src="../../_images/test1a1.png" />
-<ul class="simple">
-<li>Conclusions<ul>
-<li>Working as expected.</li>
+</div>
+<div class="section" id="test-1b">
+<h2>Test 1b<a class="headerlink" href="#test-1b" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt>with:</dt>
+<dd><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">Nc</span> <span class="o">=</span> <span class="n">Int64</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span> <span class="c1"># number of collocation points in each interval</span>
+<span class="n">Ni</span> <span class="o">=</span> <span class="n">Int64</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>  <span class="c1"># number of intervals</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<img alt="../../_images/test1b1.png" src="../../_images/test1b1.png" />
+</div>
+<div class="section" id="test-1c">
+<h2>Test 1c<a class="headerlink" href="#test-1c" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt>with:</dt>
+<dd><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">Nc</span> <span class="o">=</span> <span class="n">Int64</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span> <span class="c1"># number of collocation points in each interval</span>
+<span class="n">Ni</span> <span class="o">=</span> <span class="n">Int64</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>  <span class="c1"># number of intervals</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<img alt="../../_images/test1c1.png" src="../../_images/test1c1.png" />
+<ul>
+<li><p class="first">Conclusions</p>
+<ul>
+<li><p class="first">It seems, that using the multiple interval formulation sacrifices the property where</p>
+<blockquote>
+<div><ul class="simple">
+<li>We can calculate a <code class="docutils literal"><span class="pre">Pth</span></code> order polynomial exactly with <span class="math">\(2*N-2\)</span> collocation points</li>
+<li>We do not approximate a <code class="docutils literal"><span class="pre">5th</span></code> order polynomial with <code class="docutils literal"><span class="pre">6</span></code> total collocation points</li>
+<li>Looking at Test 1c, we can see that when we use <code class="docutils literal"><span class="pre">N=4</span></code> we calculate the intergral exactly<ul>
+<li>So the property applies only to each interval</li>
+</ul>
+</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first">Test 1b and Test 1c both show that we are not calculating the end point</p>
+</li>
 </ul>
 </li>
 </ul>
@@ -185,7 +225,7 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../../developing_code.html" class="btn btn-neutral float-right" title="Developing Code" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="ex2.html" class="btn btn-neutral float-right" title="Approximation of \(Y^{(k)}(τ)\)" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="LGR_MI.html" class="btn btn-neutral" title="LGR Multiple Interval" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
