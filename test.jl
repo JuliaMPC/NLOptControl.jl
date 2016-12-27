@@ -9,8 +9,8 @@ pyplot()
 t0 = Float64(0); tf = Float64(10);  # TODO change and y to x
 t = Array(linspace(t0,tf,100));
 α₁ =  3; α₂ = -3; α₃ = -8; α₄ =  7;
-Nc = Int64(10); # number of collocation points in each interval
-Ni = Int64(4); # number of intervals
+Nc = Int64(5); # number of collocation points in each interval
+Ni = Int64(1); # number of intervals
 ####################################
 # perform analytical calcualtions
 ####################################
@@ -31,6 +31,43 @@ dy = polyval(dγ,t);
 # construct polynomial approximation
 ####################################
 τ, ω = gaussradau(Nc); # number of collocation points per interval
+
+
+"""
+Compute the Lagrange polynomial
+This function computes the Lagrange polynomial at point `x` corresponding to
+the `i`-th node of the set `z`
+There is also a modifying version `lagrange!` used to computing the polynomials
+at several points of an array `x`
+"""
+function lagrange(i, x, z)
+    nz = length(z)
+
+    l = one(z[1])
+
+    for k = 1:(i-1)
+        l = l * (x-z[k]) / (z[i]-z[k])
+    end
+    # k=!i
+    for k = (i+1):nz
+        l = l * (x-z[k]) / (z[i]-z[k])
+    end
+
+    return l
+end
+
+function lagrange!{T<:Number}(i, x::AbstractArray{T}, z, y::AbstractArray{T})
+    for k = 1:length(x)
+        y[k] = lagrange(i, x[k], z)
+    end
+    return y
+end
+
+lagrange{T<:Number}(i, x::AbstractArray{T}, z) = lagrange!(i, x, z, zeros(x))
+
+
+# add noncolocated point at τ = +1 ---> gives state approximation at end point
+#τ = append!(τ,1.0);
 
 # break the problem up into multiple intervals
 di, tm, ts, ωₛ = create_intervals(t0,tf,Ni,Nc,τ,ω)

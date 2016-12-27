@@ -139,3 +139,5 @@ also,
 
     * defined on the subinterval :math:`\tau^{(k)}\in[T_{k-1},T_k]`
     * :math:`\tau_{N_k+1}^{(k)}=T_k` is a noncollocated point
+
+A basic description of Lagrange Polynomials is presented in :ref:`lagrange_poly`

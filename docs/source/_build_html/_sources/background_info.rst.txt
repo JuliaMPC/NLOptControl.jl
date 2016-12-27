@@ -5,6 +5,7 @@ While detailed information on these approaches to discretizing infinite dimensio
 .. toctree::
    :maxdepth: 2
 
+   lagrange_poly
    optimal_control
    time_marching
    pseudospectral_methods

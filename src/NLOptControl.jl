@@ -27,7 +27,7 @@ end
   # Functions
 export LGL_nodes,LGL_weights,LGL_Dmatrix,
        LGR,
-       scale_tau,scale_w,
+       scale_tau,scale_w,create_intervals,
        lepoly, poldif
 
   # Macros and Support Functions
