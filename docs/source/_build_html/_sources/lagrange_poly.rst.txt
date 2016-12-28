@@ -50,4 +50,4 @@ so expanding this,
 
 Notice that we do not include the term where :math:`i==j`!
 
-Please see :ref:`lagrange_poly_fun` for details on implementation.
+Please see :ref:`lpf` for details on implementation.

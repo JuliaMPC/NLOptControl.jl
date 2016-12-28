@@ -24,17 +24,17 @@ function create_intervals(t0::Float64,tf::Float64,Ni::Int64,Nc::Int64,τ::Vector
 end
 
 """
-L = lagrange_basis_poly{T<:Number}(x::Float64,x_data::AbstractArray{T},idx::Int64,N::Int64)
+L = lagrange_basis_poly(x,x_data,Nc,j)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 12/26/2016, Last Modified: 12/26/2016
+Date Create: 12/26/2016, Last Modified: 12/28/2016
 Citations: This function was influenced by the lagrange() function [located here](https://github.com/pjabardo/Jacobi.jl/blob/master/src/gauss_quad.jl)
 --------------------------------------------------------------------------------------\n
 # Input Arguments
 * `x`: point to approximate function value at
 * `x_data`: x data to used calculate basis polynomials
-* `N`: order of Lagrange interpolating polynomial
-* `idx`: index of interest
+* `Nc`: order of Lagrange interpolating polynomial
+* `j`: index of interest
 
 # Output Arguments
 * `L`: Lagrange basis polynomials
@@ -42,41 +42,41 @@ Citations: This function was influenced by the lagrange() function [located here
 A basic description of Lagrange interpolating polynomials is provided [here](http://127.0.0.1:8000/lagrange_poly.html#lagrange-poly)
 
 """
-function lagrange_basis_poly(x,x_data,N,idx)
+function lagrange_basis_poly(x,x_data,Nc,j)
     L = 1;
-    for j in 1:N+1 # use all of the data
-      if j!=idx
-        L = L*(x - x_data[j])/(x_data[idx]-x_data[j]);
+    for idx in 1:Nc+1 # use all of the data
+      if idx!=j
+        L = L*(x - x_data[idx])/(x_data[j]-x_data[idx]);
       end
     end
   return L
 end
 
-function lagrange_basis_poly!{T<:Number}(x::AbstractArray{T},x_data,N,L::AbstractArray{T})
-   if N > length(x_data) -1
+function lagrange_basis_poly!{T<:Number}(x::AbstractArray{T},x_data,Nc,L::AbstractArray{T})
+   if Nc > length(x_data) -1
       error("Maximum N value = length(x_data)-1")
     end
     ns = length(x);
-    L = zeros(Float64,N+1,ns);
-    for idx in 1:N+1
+    L = zeros(Float64,Nc+1,ns);
+    for idx in 1:Nc+1
       for j in 1:ns
-        L[idx,j] = lagrange_basis_poly(x[j],x_data,N,idx)
+        L[idx,j] = lagrange_basis_poly(x[j],x_data,Nc,idx)
       end
     end
     return L
 end
-lagrange_basis_poly{T<:Number}(x::AbstractArray{T},x_data,N) = lagrange_basis_poly!(x::AbstractArray{T},x_data,N,zeros(x))
+lagrange_basis_poly{T<:Number}(x::AbstractArray{T},x_data,Nc) = lagrange_basis_poly!(x::AbstractArray{T},x_data,Nc,zeros(x))
 
-function interpolate_lagrange{T<:Number}(x::AbstractArray{T},x_data,y_data,N)
-    if N > length(x_data) -1
+function interpolate_lagrange{T<:Number}(x::AbstractArray{T},x_data,y_data,Nc)
+    if Nc > length(x_data) -1
       error("Maximum N value = length(x_data)-1")
     end
     ns = length(x);
-    L = zeros(Float64,N+1,ns);
+    L = zeros(Float64,Nc+1,ns);
     x = x[:]; x_data = x_data[:]; y_data = y_data[:]; # make sure data is in a column
-    for idx in 1:N+1
+    for idx in 1:Nc+1
       for j in 1:ns
-        L[idx,j] = lagrange_basis_poly(x[j],x_data,N,idx)
+        L[idx,j] = lagrange_basis_poly(x[j],x_data,Nc,idx)
       end
     end
     y = y_data'*L;

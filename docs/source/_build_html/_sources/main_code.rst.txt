@@ -1,6 +1,7 @@
 Completed Functionality
 =======================
 
+
 Lagrange Basis Polynomials
 --------------------------
 .. toctree::

@@ -1,7 +1,8 @@
-.. _lagrange_poly_fun:
+.. _lpf:
 
+**************
 Functionality
-*************
+**************
 The basic description of this functionality is detailed here :ref:`lagrange_poly`
 
 `lagrange_basis_poly()`
