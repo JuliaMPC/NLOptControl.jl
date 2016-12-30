@@ -1,3 +1,5 @@
+.. _hp_description:
+
 hp-psuedospectral method
 ========================
 

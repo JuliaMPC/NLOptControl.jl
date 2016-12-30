@@ -7,7 +7,7 @@ Now, using Legendre-Gauss-Radau (LGR) points with multiple intervals to calculat
 
 .. sidebar::  Researchers at the University of Florida
 
-  describe this method in many papers including :cite:`b-darby2011hp,b-garg2011advances,b-garg2010unified,b-garg2009overview`.
+  describe this method in many papers including :cite:`c-darby2011hp,c-garg2011advances,c-garg2010unified,c-garg2009overview`.
 
 Functionality
 #############
@@ -18,7 +18,7 @@ Functionality
 Examples
 #########
 In these examples we use:
-  * Legendre-Gauss-Lobatto (LGR) nodes
+  * Legendre-Gauss-Radau (LGR) nodes
   * Multiple interval approximations
   * Approximate integrals in the range of ``[x0,xf]``
   * Approximate derivatives in the range of ``[x0,xf]``
@@ -28,6 +28,8 @@ In these examples we use:
 
    ex1
    ex2
+   ex3
+   ex4
 
 These examples can be:
   *  Viewed remotely on  using the `jupyter nbviewer <http://nbviewer.jupyter.org/github/huckl3b3rry87/NLOptControl.jl/blob/master/examples/LGR_MI>`_.
@@ -42,5 +44,5 @@ These examples can be:
 .. rubric:: References
 
 .. bibliography:: zref.bib
-    :labelprefix: B
-    :keyprefix: b-
+    :labelprefix: C
+    :keyprefix: c-

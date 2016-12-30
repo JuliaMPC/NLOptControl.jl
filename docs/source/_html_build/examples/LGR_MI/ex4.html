@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Functionality &mdash; NLOptControl 0.0.1-rc1 documentation</title>
+  <title>Higher Level Functionality -&gt; ex#4 &mdash; NLOptControl 0.0.1-rc1 documentation</title>
   
 
   
@@ -34,9 +34,9 @@
               href="../../genindex.html"/>
         <link rel="search" title="Search" href="../../search.html"/>
     <link rel="top" title="NLOptControl 0.0.1-rc1 documentation" href="../../index.html"/>
-        <link rel="up" title="Completed Functionality" href="../../main_code.html"/>
-        <link rel="next" title="Simple Interpolation -&gt; ex#1" href="ex1.html"/>
-        <link rel="prev" title="Completed Functionality" href="../../main_code.html"/> 
+        <link rel="up" title="LGR Multiple Interval" href="LGR_MI.html"/>
+        <link rel="next" title="Developing Code" href="../../developing_code.html"/>
+        <link rel="prev" title="Approximation of State Derivative at of Mesh Grids -&gt; ex#3" href="ex3.html"/> 
 
   
   <script src="../../_static/js/modernizr.min.js"></script>
@@ -135,11 +135,13 @@
       
           <li><a href="../../main_code.html">Completed Functionality</a> &raquo;</li>
       
-    <li>Functionality</li>
+          <li><a href="LGR_MI.html">LGR Multiple Interval</a> &raquo;</li>
+      
+    <li>Higher Level Functionality -&gt; ex#4</li>
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../../_sources/examples/LIP/LIP.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/examples/LGR_MI/ex4.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -149,53 +151,22 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="functionality">
-<span id="lpf"></span><h1>Functionality<a class="headerlink" href="#functionality" title="Permalink to this headline">¶</a></h1>
-<p>The basic description of this functionality is detailed here <a class="reference internal" href="../../lagrange_poly.html#lagrange-poly"><span class="std std-ref">Lagrange Interpolating Polynomials</span></a></p>
-<div class="section" id="lagrange-basis-poly">
-<h2><cite>lagrange_basis_poly()</cite><a class="headerlink" href="#lagrange-basis-poly" title="Permalink to this headline">¶</a></h2>
-<p>The Lagrange basis polynomial equations where turned into a function.</p>
-</div>
-<div class="section" id="interpolate-lagrange">
-<h2><cite>interpolate_lagrange()</cite><a class="headerlink" href="#interpolate-lagrange" title="Permalink to this headline">¶</a></h2>
-<p>The interpolation functionality was pushed to a lower level. This allows the user to easily use code to interpolate a polynomial.</p>
-<p>The <strong>development</strong> of these function can be:</p>
-<blockquote>
-<div><ul class="simple">
-<li>Viewed remotely on  using the <a class="reference external" href="http://nbviewer.jupyter.org/github/huckl3b3rry87/NLOptControl.jl/blob/master/examples/LIP/lagrange_basis_poly_dev.ipynb">jupyter nbviewer</a>.</li>
-<li>Viewed locally and interacted using IJulia</li>
-</ul>
-<blockquote>
-<div><p>To do this in julia type:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">using</span> <span class="n">IJulia</span>
-<span class="n">notebook</span><span class="p">(</span><span class="nb">dir</span><span class="o">=</span><span class="n">Pkg</span><span class="o">.</span><span class="n">dir</span><span class="p">(</span><span class="s2">&quot;NLOptControl/examples/LIP/lagrange_basis_poly_dev&quot;</span><span class="p">))</span>
+  <div class="section" id="higher-level-functionality-ex-4">
+<h1>Higher Level Functionality -&gt; ex#4<a class="headerlink" href="#higher-level-functionality-ex-4" title="Permalink to this headline">¶</a></h1>
+<p>In this example, we are working on preparing the code for use with optimization by creating higher level functionality. Examine the IJulia notebook to see differences in code.</p>
+<dl class="docutils">
+<dt>where:</dt>
+<dd><div class="first last math">
+\[y(x) = -0.3x^2+3x-0.3\]</div>
+</dd>
+<dt>with:</dt>
+<dd><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">Nc</span> <span class="o">=</span> <span class="n">Int64</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span> <span class="c1"># number of collocation points in each interval</span>
+<span class="n">Ni</span> <span class="o">=</span> <span class="n">Int64</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>  <span class="c1"># number of intervals</span>
 </pre></div>
 </div>
-</div></blockquote>
-</div></blockquote>
-<div class="section" id="examples">
-<h3>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h3>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="ex1.html">Simple Interpolation -&gt; ex#1</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ex2.html">Scaled Lagrange Polynomials-&gt; ex#2</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ex3.html">Runge&#8217;s Phenomena-&gt; ex#3</a></li>
-</ul>
-</div>
-<p>These examples can be:</p>
-<blockquote>
-<div><ul class="simple">
-<li>Viewed remotely on  using <a class="reference external" href="http://nbviewer.jupyter.org/github/huckl3b3rry87/NLOptControl.jl/blob/master/examples/LIP">the jupyter nbviewer</a>.</li>
-<li>Viewed locally and interacted using IJulia</li>
-</ul>
-<p>To do this in julia type:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">using</span> <span class="n">IJulia</span>
-<span class="n">notebook</span><span class="p">(</span><span class="nb">dir</span><span class="o">=</span><span class="n">Pkg</span><span class="o">.</span><span class="n">dir</span><span class="p">(</span><span class="s2">&quot;NLOptControl/examples/LIP/&quot;</span><span class="p">))</span>
-</pre></div>
-</div>
-</div></blockquote>
-</div>
-</div>
+</dd>
+</dl>
+<img alt="../../_images/test4a.png" src="../../_images/test4a.png" />
 </div>
 
 
@@ -205,10 +176,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="ex1.html" class="btn btn-neutral float-right" title="Simple Interpolation -&gt; ex#1" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="../../developing_code.html" class="btn btn-neutral float-right" title="Developing Code" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="../../main_code.html" class="btn btn-neutral" title="Completed Functionality" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="ex3.html" class="btn btn-neutral" title="Approximation of State Derivative at of Mesh Grids -&gt; ex#3" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

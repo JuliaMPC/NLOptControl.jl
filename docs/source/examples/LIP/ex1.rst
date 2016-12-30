@@ -1,5 +1,5 @@
-Simple Interpolation
-=====================
+Simple Interpolation -> ex#1
+=============================
 
 In this first example, we demonstrate the functionality using the interpolating functionality.
 

@@ -1,10 +1,5 @@
 using ForwardDiff
 using NLOptControl
-using Polynomials
-using Plots
-using FastGaussQuadrature
-pyplot()
-
 
 # Derivative of Each Element
 Nc = 2; x_data = [1,2,3]; j=1; x = 1;

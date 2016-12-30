@@ -35,7 +35,7 @@
         <link rel="search" title="Search" href="../../search.html"/>
     <link rel="top" title="NLOptControl 0.0.1-rc1 documentation" href="../../index.html"/>
         <link rel="up" title="Completed Functionality" href="../../main_code.html"/>
-        <link rel="next" title="Neglecting Non-Collocated Point \(Y^{(k)}(τ)\)" href="ex1.html"/>
+        <link rel="next" title="Neglecting Non-Collocated Point \(Y^{(k)}(τ)\) -&gt; ex#1" href="ex1.html"/>
         <link rel="prev" title="Example 1" href="../LGR_SI/ex1.html"/> 
 
   
@@ -154,7 +154,7 @@
 <p>Now, using Legendre-Gauss-Radau (LGR) points with multiple intervals to calculate the integral and the derivative of a known polynomial function. This example demonstrates using the Legendre-Gauss-Radau (LGR) points to calculate the integral and the derivative of a known polynomial function using a <strong>multiple interval approach</strong>.</p>
 <div class="sidebar">
 <p class="first sidebar-title">Researchers at the University of Florida</p>
-<p class="last">describe this method in many papers including <a class="reference internal" href="#b-darby2011hp" id="id1">[BDar11]</a><a class="reference internal" href="../../hp_psuedospectral.html#b-garg2011advances" id="id2">[BGar11]</a><a class="reference internal" href="#b-garg2010unified" id="id3">[BGPH+10]</a><a class="reference internal" href="#b-garg2009overview" id="id4">[BGPH+09]</a>.</p>
+<p class="last">describe this method in many papers including <a class="reference internal" href="#c-darby2011hp" id="id1">[CDar11]</a><a class="reference internal" href="#c-garg2011advances" id="id2">[CGar11]</a><a class="reference internal" href="#c-garg2010unified" id="id3">[CGPH+10]</a><a class="reference internal" href="#c-garg2009overview" id="id4">[CGPH+09]</a>.</p>
 </div>
 <div class="section" id="functionality">
 <h2>Functionality<a class="headerlink" href="#functionality" title="Permalink to this headline">¶</a></h2>
@@ -167,7 +167,7 @@
 <dl class="docutils">
 <dt>In these examples we use:</dt>
 <dd><ul class="first last simple">
-<li>Legendre-Gauss-Lobatto (LGR) nodes</li>
+<li>Legendre-Gauss-Radau (LGR) nodes</li>
 <li>Multiple interval approximations</li>
 <li>Approximate integrals in the range of <code class="docutils literal"><span class="pre">[x0,xf]</span></code></li>
 <li>Approximate derivatives in the range of <code class="docutils literal"><span class="pre">[x0,xf]</span></code></li>
@@ -176,13 +176,18 @@
 </dl>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="ex1.html">Neglecting Non-Collocated Point <span class="math">\(Y^{(k)}(τ)\)</span></a><ul>
+<li class="toctree-l1"><a class="reference internal" href="ex1.html">Neglecting Non-Collocated Point <span class="math">\(Y^{(k)}(τ)\)</span> -&gt; ex#1</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="ex1.html#test-1a">Test 1a</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ex1.html#test-1b">Test 1b</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ex1.html#test-1c">Test 1c</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="ex2.html">Approximation of <span class="math">\(Y^{(k)}(τ)\)</span></a></li>
+<li class="toctree-l1"><a class="reference internal" href="ex2.html">Approximation of <span class="math">\(Y^{(k)}(τ)\)</span> -&gt; ex#2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ex3.html">Approximation of State Derivative at of Mesh Grids -&gt; ex#3</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ex3.html#neglecting-derivative-at-end-of-mesh">Neglecting Derivative At End Of Mesh</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ex4.html">Higher Level Functionality -&gt; ex#4</a></li>
 </ul>
 </div>
 <dl class="docutils">
@@ -203,28 +208,28 @@
 </dd>
 </dl>
 <p class="rubric">References</p>
-<p id="bibtex-bibliography-examples/LGR_MI/LGR_MI-0"><table class="docutils citation" frame="void" id="b-darby2011hp" rules="none">
+<p id="bibtex-bibliography-examples/LGR_MI/LGR_MI-0"><table class="docutils citation" frame="void" id="c-darby2011hp" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id1">[BDar11]</a></td><td>Christopher&nbsp;L Darby. <em>hp–Pseudospectral Method for Solving Continuous-Time Nonlinear Optimal Control Problems</em>. PhD thesis, University of Florida, 2011.</td></tr>
+<tr><td class="label"><a class="fn-backref" href="#id1">[CDar11]</a></td><td>Christopher&nbsp;L Darby. <em>hp–Pseudospectral Method for Solving Continuous-Time Nonlinear Optimal Control Problems</em>. PhD thesis, University of Florida, 2011.</td></tr>
 </tbody>
 </table>
-<table class="docutils citation" frame="void" id="b-garg2011advances" rules="none">
+<table class="docutils citation" frame="void" id="c-garg2011advances" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id2">[BGar11]</a></td><td>Divya Garg. <em>Advances in global pseudospectral methods for optimal control</em>. PhD thesis, University of Florida, 2011.</td></tr>
+<tr><td class="label"><a class="fn-backref" href="#id2">[CGar11]</a></td><td>Divya Garg. <em>Advances in global pseudospectral methods for optimal control</em>. PhD thesis, University of Florida, 2011.</td></tr>
 </tbody>
 </table>
-<table class="docutils citation" frame="void" id="b-garg2010unified" rules="none">
+<table class="docutils citation" frame="void" id="c-garg2010unified" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id3">[BGPH+10]</a></td><td>Divya Garg, Michael Patterson, William&nbsp;W Hager, Anil&nbsp;V Rao, David&nbsp;A Benson, and Geoffrey&nbsp;T Huntington. A unified framework for the numerical solution of optimal control problems using pseudospectral methods. <em>Automatica</em>, 46(11):1843–1851, 2010.</td></tr>
+<tr><td class="label"><a class="fn-backref" href="#id3">[CGPH+10]</a></td><td>Divya Garg, Michael Patterson, William&nbsp;W Hager, Anil&nbsp;V Rao, David&nbsp;A Benson, and Geoffrey&nbsp;T Huntington. A unified framework for the numerical solution of optimal control problems using pseudospectral methods. <em>Automatica</em>, 46(11):1843–1851, 2010.</td></tr>
 </tbody>
 </table>
-<table class="docutils citation" frame="void" id="b-garg2009overview" rules="none">
+<table class="docutils citation" frame="void" id="c-garg2009overview" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id4">[BGPH+09]</a></td><td>Divya Garg, Michael&nbsp;A Patterson, William&nbsp;W Hager, Anil&nbsp;V Rao, David&nbsp;A Benson, and Geoffrey&nbsp;T Huntington. An overview of three pseudospectral methods for the numerical solution of optimal control problems. <em>Advances in the Astronautical Sciences</em>, 135(1):475–487, 2009.</td></tr>
+<tr><td class="label"><a class="fn-backref" href="#id4">[CGPH+09]</a></td><td>Divya Garg, Michael&nbsp;A Patterson, William&nbsp;W Hager, Anil&nbsp;V Rao, David&nbsp;A Benson, and Geoffrey&nbsp;T Huntington. An overview of three pseudospectral methods for the numerical solution of optimal control problems. <em>Advances in the Astronautical Sciences</em>, 135(1):475–487, 2009.</td></tr>
 </tbody>
 </table>
 </p>
@@ -238,7 +243,7 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="ex1.html" class="btn btn-neutral float-right" title="Neglecting Non-Collocated Point \(Y^{(k)}(τ)\)" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="ex1.html" class="btn btn-neutral float-right" title="Neglecting Non-Collocated Point \(Y^{(k)}(τ)\) -&gt; ex#1" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="../LGR_SI/ex1.html" class="btn btn-neutral" title="Example 1" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>

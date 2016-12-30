@@ -1,5 +1,5 @@
-Runge's Phenomena
-=================
+Runge's Phenomena-> ex#3
+==========================
 
 This example investigates `Runge's phenomena <https://en.wikipedia.org/wiki/Runge%27s_phenomenon>`_.
 

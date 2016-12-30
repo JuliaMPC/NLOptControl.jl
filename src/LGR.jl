@@ -1,4 +1,44 @@
 """
+xd=lgr_diff(Nc,Ni,x,t_data)
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 12/30/2016, Last Modified: 12/30/2016
+--------------------------------------------------------------------------\n
+# Input Arguments
+* `Nc::Integer`: number of collocation points
+* `Ni::Integer`: number of intervals
+* `x`: variable data with size = [Nc+1]x[Ni]
+* `t_data`: time data with size = [Nc+1]x[Ni]
+# Output Arguments
+* `xd`: variable derivative
+
+LGR points:
+
+ * roots of: ``P{Nc-1}(τ)+P_{Nc}(τ)``
+ * exact for polynomials with: ``degree <= 2Nc-2``
+"""
+function lgr_diff(Nc::Integer,Ni::Integer,x,t_data)
+  row, column = size(x);
+  if row != Nc+1  || column != Ni
+      error("Make sure that `x`: variable data has size of [Nc+1]x[Ni]")
+  end
+
+  D = zeros(Float64,Nc+1,Nc+1,Ni);
+  for int in 1:Ni #TODO see if I can get ride of this, cashe result and only calculate once (if number of nodes are same in each interval)
+    D[:,:,int] = poldif(t_data[:,int], 1);
+  end
+  D=D[1:end-1,:,:];
+
+  # approximate derivative
+  xd = zeros(Float64,Nc,Ni);
+  for int in 1:Ni
+      xd[:,int] = D[:,:,int]*x[:,int]
+  end
+
+  return xd
+end
+
+"""
 τ,ω,I,D = LGR(10);
 --------------------------------------------------------------------------\n
 Last modifed on December 23, 2016 by Huckleberry Febbo\n

@@ -17,8 +17,8 @@ include("LGL.jl")
 include("LGR.jl")
 
 immutable NodeData #TODO --> use this
-  Nₜ :: Int  # where Nₜ + 1 is the total number of time steps
-  τ :: Vector{Float64} # Node points ---> Nₜ increasing and distinct numbers ∈ [-1,1]
+  #Nₜ :: Int  # where Nₜ + 1 is the total number of time steps
+  #τ :: Vector{Float64} # Node points ---> Nₜ increasing and distinct numbers ∈ [-1,1]
   # these might have to be design variables
 end
 
@@ -26,7 +26,7 @@ end
 
   # Functions
 export LGL_nodes,LGL_weights,LGL_Dmatrix,
-       LGR,
+       LGR, lgr_diff,
        scale_tau,scale_w,create_intervals,
        lagrange_basis_poly,interpolate_lagrange,
        lepoly, poldif

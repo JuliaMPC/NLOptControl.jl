@@ -1,5 +1,5 @@
-Scaled Lagrange Polynomials
-============================
+Scaled Lagrange Polynomials-> ex#2
+===================================
 
 
 

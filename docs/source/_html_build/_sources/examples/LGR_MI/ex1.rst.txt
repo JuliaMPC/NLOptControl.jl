@@ -1,5 +1,5 @@
-Neglecting Non-Collocated Point :math:`Y^{(k)}(τ)`
-==================================================
+Neglecting Non-Collocated Point :math:`Y^{(k)}(τ)` -> ex#1
+===========================================================
 In this first example, we demonstrate the functionality using LGR nodes
 
 where:
@@ -14,6 +14,7 @@ with:
     Ni = Int64(4);  # number of intervals
 
 .. image:: test1a.png
+
 
 Test 1b
 -------
