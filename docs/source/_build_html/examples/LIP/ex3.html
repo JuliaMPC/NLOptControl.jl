@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Runge’s Phenomena &mdash; NLOptControl 0.0.1-rc1 documentation</title>
+  <title>Runge’s Phenomena-&gt; ex#3 &mdash; NLOptControl 0.0.1-rc1 documentation</title>
   
 
   
@@ -34,9 +34,9 @@
               href="../../genindex.html"/>
         <link rel="search" title="Search" href="../../search.html"/>
     <link rel="top" title="NLOptControl 0.0.1-rc1 documentation" href="../../index.html"/>
-        <link rel="up" title="Lagrange Interpolating Polynomials" href="../../lagrange_poly.html"/>
-        <link rel="next" title="Direct Transcription of Optimal Control Problems" href="../../optimal_control.html"/>
-        <link rel="prev" title="Example 2" href="ex2.html"/> 
+        <link rel="up" title="Functionality" href="LIP.html"/>
+        <link rel="next" title="LGL Single Interval" href="../LGL_SI/LGL_SI.html"/>
+        <link rel="prev" title="Scaled Lagrange Polynomials-&gt; ex#2" href="ex2.html"/> 
 
   
   <script src="../../_static/js/modernizr.min.js"></script>
@@ -86,23 +86,18 @@
             
             
                 <ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="../../background_info.html">Background Information</a><ul class="current">
-<li class="toctree-l2 current"><a class="reference internal" href="../../lagrange_poly.html">Lagrange Interpolating Polynomials</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="../../lagrange_poly.html#definition">Definition</a></li>
-<li class="toctree-l3 current"><a class="reference internal" href="../../lagrange_poly.html#lagrange-basis-polynomials">Lagrange Basis Polynomials</a><ul class="current">
-<li class="toctree-l4"><a class="reference internal" href="../../lagrange_poly.html#functionality">Functionality</a></li>
-<li class="toctree-l4 current"><a class="reference internal" href="../../lagrange_poly.html#examples">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../background_info.html">Background Information</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../functionality.html">Package Functionality</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../code.html">Code Development</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../../code.html#approximation-of-optimal-control-problem">Approximation of Optimal Control Problem</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="../../main_code.html">Completed Functionality</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../developing_code.html">Developing Code</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../../optimal_control.html">Direct Transcription of Optimal Control Problems</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../time_marching.html">Time Marching Methods</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../pseudospectral_methods.html">Pseudospectral Methods</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../hp_psuedospectral.html">hp-psuedospectral method</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../../functionality.html">Package Functionality</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../bibliography.html">Bibliography</a></li>
 </ul>
 
@@ -134,11 +129,15 @@
   <ul class="wy-breadcrumbs">
     <li><a href="../../index.html">Docs</a> &raquo;</li>
       
-          <li><a href="../../background_info.html">Background Information</a> &raquo;</li>
+          <li><a href="../../functionality.html">Package Functionality</a> &raquo;</li>
       
-          <li><a href="../../lagrange_poly.html">Lagrange Interpolating Polynomials</a> &raquo;</li>
+          <li><a href="../../code.html">Code Development</a> &raquo;</li>
       
-    <li>Runge&#8217;s Phenomena</li>
+          <li><a href="../../main_code.html">Completed Functionality</a> &raquo;</li>
+      
+          <li><a href="LIP.html">Functionality</a> &raquo;</li>
+      
+    <li>Runge&#8217;s Phenomena-&gt; ex#3</li>
       <li class="wy-breadcrumbs-aside">
         
           
@@ -152,8 +151,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="runge-s-phenomena">
-<h1>Runge&#8217;s Phenomena<a class="headerlink" href="#runge-s-phenomena" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="runge-s-phenomena-ex-3">
+<h1>Runge&#8217;s Phenomena-&gt; ex#3<a class="headerlink" href="#runge-s-phenomena-ex-3" title="Permalink to this headline">¶</a></h1>
 <p>This example investigates <a class="reference external" href="https://en.wikipedia.org/wiki/Runge%27s_phenomenon">Runge&#8217;s phenomena</a>.</p>
 <dl class="docutils">
 <dt>where:</dt>
@@ -193,10 +192,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../../optimal_control.html" class="btn btn-neutral float-right" title="Direct Transcription of Optimal Control Problems" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="../LGL_SI/LGL_SI.html" class="btn btn-neutral float-right" title="LGL Single Interval" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="ex2.html" class="btn btn-neutral" title="Example 2" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="ex2.html" class="btn btn-neutral" title="Scaled Lagrange Polynomials-&gt; ex#2" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

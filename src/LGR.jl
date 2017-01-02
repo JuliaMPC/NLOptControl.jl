@@ -18,9 +18,17 @@ LGR points:
  * exact for polynomials with: ``degree <= 2Nc-2``
 """
 function lgr_diff(Nc::Integer,Ni::Integer,x,t_data)
-  row, column = size(x);
-  if row != Nc+1  || column != Ni
-      error("Make sure that `x`: variable data has size of [Nc+1]x[Ni]")
+  if ndims(x)==1
+    x=x[:]; # make sure that x is in a column vector
+    row = length(x);
+    if row != Nc+1
+        error("Make sure that `x`: variable data has size of [Nc+1]x[Ni==1]")
+    end
+  else
+    row, column = size(x);
+    if row != Nc+1  || column != Ni
+        error("Make sure that `x`: variable data has size of [Nc+1]x[Ni]")
+    end
   end
 
   D = zeros(Float64,Nc+1,Nc+1,Ni);
@@ -102,8 +110,6 @@ function LGR(N::Int64)
   YDIFF           = Y - Y' + eye(M);
   BW              = repmat(1./prod(YDIFF,1),M,1);
   # TODO check above with this http://jiao.ams.sunysb.edu/teaching/ams527_spring15/lectures/BarycentricLagrange.pdf
-
-
 
   # The LGR differentiation matrix N x (N + 1)
   DMAT           	= BW./(BW'.*YDIFF');

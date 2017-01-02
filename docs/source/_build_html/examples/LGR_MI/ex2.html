@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Approximation of \(Y^{(k)}(τ)\) &mdash; NLOptControl 0.0.1-rc1 documentation</title>
+  <title>Approximation of \(Y^{(k)}(τ)\) -&gt; ex#2 &mdash; NLOptControl 0.0.1-rc1 documentation</title>
   
 
   
@@ -35,8 +35,8 @@
         <link rel="search" title="Search" href="../../search.html"/>
     <link rel="top" title="NLOptControl 0.0.1-rc1 documentation" href="../../index.html"/>
         <link rel="up" title="LGR Multiple Interval" href="LGR_MI.html"/>
-        <link rel="next" title="Developing Code" href="../../developing_code.html"/>
-        <link rel="prev" title="Neglecting Non-Collocated Point \(Y^{(k)}(τ)\)" href="ex1.html"/> 
+        <link rel="next" title="Approximation of State Derivative at of Mesh Grids -&gt; ex#3" href="ex3.html"/>
+        <link rel="prev" title="Neglecting Non-Collocated Point \(Y^{(k)}(τ)\) -&gt; ex#1" href="ex1.html"/> 
 
   
   <script src="../../_static/js/modernizr.min.js"></script>
@@ -137,7 +137,7 @@
       
           <li><a href="LGR_MI.html">LGR Multiple Interval</a> &raquo;</li>
       
-    <li>Approximation of <span class="math">\(Y^{(k)}(τ)\)</span></li>
+    <li>Approximation of <span class="math">\(Y^{(k)}(τ)\)</span> -&gt; ex#2</li>
       <li class="wy-breadcrumbs-aside">
         
           
@@ -151,26 +151,27 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="approximation-of">
-<h1>Approximation of <span class="math">\(Y^{(k)}(τ)\)</span><a class="headerlink" href="#approximation-of" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="approximation-of-ex-2">
+<h1>Approximation of <span class="math">\(Y^{(k)}(τ)\)</span> -&gt; ex#2<a class="headerlink" href="#approximation-of-ex-2" title="Permalink to this headline">¶</a></h1>
 <p>In the previous example, we neglected the approximation of the final state in each interval <span class="math">\(Y^(k)(τ)\)</span>.</p>
-<p>In this example, we will</p>
+<p>In this example, we will demonstrate calculation of this state.</p>
 <dl class="docutils">
 <dt>where:</dt>
 <dd><div class="first last math">
-\[y(x) = -3x^5+3x^4+7x^3-8x^2-3x+3\]</div>
+\[y(x) = 3x^2-3x+3\]</div>
 </dd>
 <dt>with:</dt>
-<dd><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">Nc</span> <span class="o">=</span> <span class="n">Int64</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span> <span class="c1"># number of collocation points in each interval</span>
-<span class="n">Ni</span> <span class="o">=</span> <span class="n">Int64</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span> <span class="c1"># number of intervals</span>
+<dd><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">Nc</span> <span class="o">=</span> <span class="n">Int64</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span> <span class="c1"># number of collocation points in each interval</span>
+<span class="n">Ni</span> <span class="o">=</span> <span class="n">Int64</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>  <span class="c1"># number of intervals</span>
 </pre></div>
 </div>
 </dd>
 </dl>
-<img alt="examples/LGR_MI/test.png" src="examples/LGR_MI/test.png" />
-<ul class="simple">
-<li>Conclusions</li>
-</ul>
+<img alt="../../_images/test2a2.png" src="../../_images/test2a2.png" />
+<div class="sidebar">
+<p class="first sidebar-title">Why Do We Need This State?</p>
+<p class="last">It is needed to make the constraint that the states at the end of each mesh grid are equal.</p>
+</div>
 </div>
 
 
@@ -180,10 +181,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../../developing_code.html" class="btn btn-neutral float-right" title="Developing Code" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="ex3.html" class="btn btn-neutral float-right" title="Approximation of State Derivative at of Mesh Grids -&gt; ex#3" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="ex1.html" class="btn btn-neutral" title="Neglecting Non-Collocated Point \(Y^{(k)}(τ)\)" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="ex1.html" class="btn btn-neutral" title="Neglecting Non-Collocated Point \(Y^{(k)}(τ)\) -&gt; ex#1" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
