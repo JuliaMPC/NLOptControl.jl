@@ -1,147 +1,85 @@
 using NLOptControl
-using Polynomials
 using Plots
+using Polynomials
 using FastGaussQuadrature
 using Parameters
-pyplot()
 
-"""
-ps, nlp = initialize_NLP(Nc,Ni,numStates,numControls);
-ps, nlp = initialize_NLP(Nc,Ni,numStates,numControls,stateVector,controlVector,decisionVector, t0, tf);
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/1/2017, Last Modified: 1/1/2017 \n
-Citations: \n
-----------\n
-Original Author: S. Hughes.  steven.p.hughes@nasa.gov
-Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/264a12acad195e6a2467cfdc68abdcee801f73fc/tree/prototype/OptimalControl/LowThrust/@DecisionVector/)
---------------------------------------------------------------------------\n
-"""
+# initialize basic problem definition
+ps, nlp = initialize_NLP(numStates=1,numControls=2,Ni=2,Nck=[3, 5]);
 
-# should only call this once
-function initialize_NLP(Nc::Int64,Ni::Int64,numStates::Int64,numControls::Int64, args...)
+####################################
+# perform analytical calcualtions -> for plots
+####################################
+@unpack t0, tf = ps
+t0 = Float64(0); tf = Float64(10);
+@pack ps = t0, tf
+t = Array(linspace(t0,tf,100));
+α₁ =  -0.3; α₂ = 3; α₃ = -8; α₄ =  7;
 
-    # validate input
-    if  Nc <= 0
-        error("Nc must be > 0");
-    end
-    if  Ni <= 0
-        error("Ni must be > 0");
-    end
-    if  numStates <= 0
-        error("numStates must be > 0");
-    end
-    if  numControls <= 0
-        error("eventually numControls must be > 0");
-    end
+γ = Poly([α₁,α₂,α₁]); #TODO check on that imported binding warning
+y = polyval(γ,t);
 
-    # initialize node data TODO -> eventually make different PS methods available
-    τ, ω = gaussradau(Nc);
+# evaluate the integral
+∫γ = polyint(γ);
+Y = polyval(∫γ,t[end]) - polyval(∫γ,t[1]);
+C = Y - polyval(∫γ,t[end]); # constant of integration
+∫y = polyval(∫γ,t) + C;
 
-    # calculate general properties
-    numStatePoints = Nc*Ni;
-    numControlPoints = Nc*Ni;
+# evaluate the derivative
+dγ = polyder(γ);
+dy = polyval(dγ,t);
 
-    # calculate length of vectors
-    lengthStateVector = numStatePoints*numStates;
-    lengthControlVector = numControlPoints*numControls;
-    lengthDecVector = lengthStateVector + lengthControlVector + 2; # + 2 is for t0 and tf
+##TEMP## -->to get fake optimization data
+@unpack Nck, Ni, t0, tf = ps
+taus_and_weights = [gaussradau(Nck[int]) for int in 1:Ni];
+τ = [taus_and_weights[int][1] for int in 1:Ni];
+ω = [taus_and_weights[int][2] for int in 1:Ni];
+di, tm, t_data, ωₛ=create_intervals(t0,tf,Ni,Nck,τ,ω);
+@pack ps = τ, ω
 
-    if length(args) == 0
-        stateVector = zeros(lengthStateVector,);
-        controlVector = zeros(lengthControlVector,);
-        decisionVector = zeros(lengthDecVector,);
-        t0 = 0.0;
-        tf = 0.0;
-    else
-        # validate optional input
-        if  length(args[1]) != lengthStateVector
-            error(string("length of stateVector must be = ",lengthStateVector));
-        end
-        if  length(args[2]) != lengthControlVector
-            error(string("length of controlVector must be = ",lengthControlVector));
-        end
-        if  length(args[3]) != lengthDecVector
-            error(string("length of decisionVector must be = ",lengthDecVector));
-        end
-        if  length(args[4]) != 1
-            error(string("length of t0 must be = 1"));
-        end
-        if  length(args[5]) != 1
-            error(string("length of tf must be = 1"));
-        end
-        stateVector = args[1];
-        controlVector = args[2];
-        decisionVector = args[3];
-        t0 = args[4];
-        tf = args[5];
-    end
 
-    # determine indecies within overall decision vector of all variables (i.e. decisionVector)
-    stateStartIdx = 1;
-    stateStopIdx = stateStartIdx + lengthStateVector -1; # -1 because we start on 1
-    controlStartIdx = stateStopIdx + 1;
-    controlStopIdx = controlStartIdx + lengthControlVector -1; # -1 because we start on 1
-    timeStartIdx = controlStopIdx + 1;
-    timeStopIdx = timeStartIdx + 1;
+@unpack decisionVector, lengthControlVector = nlp
+fake_control_data = zeros(lengthControlVector,);
+ts = [t_data[1]; t_data[2]]
+if Ni > 2
+    error("fix ts")
+end
+fake_state_data = polyval(γ,ts);
+decisionVector=[fake_state_data[:];fake_control_data;t0;tf]; # for now looking at no controls
+@pack  nlp = decisionVector
 
-    if 1==1 #TODO eventually make print_level an option
-      print(string("lengthStateVector = ", lengthStateVector),"\n")
-      print(string("lengthControlVector = ", lengthControlVector),"\n")
+##TEMP## -->to get fake optimization data
 
-      print(string("stateStartIdx = ", stateStartIdx),"\n")
-      print(string("stateStopIdx = ", stateStopIdx),"\n")
-      print(string("controlStartIdx = ", controlStartIdx),"\n")
-      print(string("controlStopIdx = ", controlStopIdx),"\n")
-      print(string("timeStartIdx = ", timeStartIdx),"\n")
-      print(string("timeStopIdx = ", timeStopIdx),"\n")
-    end
+function nlp2ocp(decisionVector::Array{Float64,1},nlp::NLP_data,ps::PS_data)
+    @unpack t0, tf, stateMatrix, controlMatrix, Ni = ps
+    @unpack stateIdx = nlp
+    @unpack controlIdx = nlp
+    @unpack timeStartIdx,timeStopIdx = nlp
 
-    # check indecies
-    if timeStopIdx != lengthDecVector
-      error(string("\n",
-                    "-------------------------------------", "\n",
-                    "There is an error with the indecies!!", "\n",
-                    "-------------------------------------", "\n",
-                    "The following variables should be equal:", "\n",
-                    "timeStopIdx = ",timeStopIdx,"\n",
-                    "lengthDecVector = ",lengthDecVector,"\n"
-                    )
-            )
-    end
+    # update parameters
+    t0 = decisionVector[timeStartIdx];
+    tf = decisionVector[timeStopIdx];
 
-    # initialize problem data
-    ps = PS_data(Nc=Nc,
-                      Ni=Ni,
-                       τ=τ,
-                       ω=ω,
-                      t0=t0,
-                      tf=tf);
+    stateMatrix  = [decisionVector[stateIdx[int][1]:stateIdx[int][2]] for int in 1:Ni];
+    controlMatrix = [decisionVector[controlIdx[int][1]:controlIdx[int][2]] for int in 1:Ni];
 
-    nlp = NLP_data(numStates=numStates,
-                        numStatePoints=numStatePoints,
-                        numControls=numControls,
-                        numControlPoints=numControlPoints,
-                        lengthControlVector=lengthControlVector,
-                        lengthStateVector=lengthStateVector,
-                        lengthDecVector=lengthDecVector,
-                        stateStartIdx=stateStartIdx,
-                        stateStopIdx=stateStopIdx,
-                        controlStartIdx=controlStartIdx,
-                        controlStopIdx=controlStopIdx,
-                        timeStartIdx=timeStartIdx,
-                        timeStopIdx=timeStopIdx,
-                        stateVector=stateVector,
-                        controlVector=controlVector,
-                        decisionVector=decisionVector
-                        );
-
-    return ps, nlp
+    @pack ps = t0, tf, stateMatrix, controlMatrix
 end
 
-Nc = 3;
-Ni = 1;
-numStates = 1;
-numControls = 1;
+nlp2ocp(decisionVector,nlp,ps);
 
-ps, nlp = initialize_NLP(Nc,Ni,numStates,numControls);
+@unpack_PS_data ps
+@unpack_NLP_data nlp
+print(nlp,"\n","\n")
+print(ps)
+
+#=
+using NLOptControl
+ps, nlp = initialize_NLP(numStates=1,numControls=3,Ni=2,Nck=[2, 4]);
+@unpack_NLP_data nlp
+print(nlp)
+
+
+
+
+=#

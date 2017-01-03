@@ -19,17 +19,19 @@ include("LGR.jl");
 PS_data = PS_data(Nc=Nc,Ni=Ni,τ=τ,ω=ω,t0=t0,tf=tf);
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/1/2017, Last Modified: 1/1/2017 \n
+Date Create: 1/1/2017, Last Modified: 1/2/2017 \n
 --------------------------------------------------------------------------\n
 """
-@with_kw immutable PS_data
-  Nc::Int64 # number of collocation points
+@with_kw type PS_data
+  Nck::Array{Int64,1} # number of collocation points per interval
   Ni::Int64 # number of intervals
   #TODO --> for now default is gaussradau, eventually add other PS methods
-  τ::Vector{Float64}  # Node points ---> Nc increasing and distinct numbers ∈ [-1,1] #TODO might be able to calculate here during problem initialization
-  ω::Vector{Float64} # weights
+  τ::Array{Array{Float64,1},1}  # Node points ---> Nc increasing and distinct numbers ∈ [-1,1] #TODO might be able to calculate here during problem initialization
+  ω::Array{Array{Float64,1},1} # weights
   t0::Float64 # initial time
   tf::Float64 # final time
+  stateMatrix::Array{Array{Float64,1},1}
+  controlMatrix::Array{Array{Float64,1},1}
 end
 
 
@@ -37,7 +39,7 @@ end
 NLP_data = NLP_data(numStates=numStates, numControls=numControls);
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/1/2017, Last Modified: 1/1/2017 \n
+Date Create: 1/1/2017, Last Modified: 1/2/2017 \n
 Citations: \n
 ----------\n
 Original Author: S. Hughes.  steven.p.hughes@nasa.gov
@@ -48,22 +50,24 @@ Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/26
 
   # general properties
   numStates::Int64      # number of states
-  numStatePoints::Int64 # number of state discretization within each interval
+  numStatePoints::Array{Int64,1} # number of state discretization within each interval
   lengthStateVector::Int64  # total number of state variables
   numControls::Int64 # number of controls
-  numControlPoints::Int64 # number of control discretization within each interval
+  numControlPoints::Array{Int64,1} # number of control discretization within each interval
   lengthControlVector::Int64 # total number of control parameters
 
   # properties for entire decision vector
   lengthDecVector::Int64
 
   # vector indeces
-  stateStartIdx::Int64
+  stateStartIdx::Int64  #TODO can eventually get ride of the stop and start index variables
   stateStopIdx::Int64
   controlStartIdx::Int64
   controlStopIdx::Int64
   timeStartIdx::Int64
   timeStopIdx::Int64
+  stateIdx::Array{Tuple{Int64,Int64},1}
+  controlIdx::Array{Tuple{Int64,Int64},1}
 
   # problem data
   stateVector::Vector{Float64}
@@ -73,7 +77,8 @@ end
   # Objects
 
   # Functions
-export LGL_nodes,LGL_weights,LGL_Dmatrix,
+export initialize_NLP,
+       LGL_nodes,LGL_weights,LGL_Dmatrix,
        LGR, lgr_diff,
        scale_tau,scale_w,create_intervals,
        lagrange_basis_poly,interpolate_lagrange,

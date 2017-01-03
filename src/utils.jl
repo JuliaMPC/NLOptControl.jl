@@ -1,87 +1,108 @@
 """
-ps, nlp = initialize_NLP(Nc,Ni,numStates,numControls);
-ps, nlp = initialize_NLP(Nc,Ni,numStates,numControls,stateVector,controlVector,decisionVector, t0, tf);
+ps, nlp = initialize_NLP(numStates=1,numControls=3);
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/1/2017, Last Modified: 1/1/2017 \n
+Date Create: 1/1/2017, Last Modified: 1/2/2017 \n
 Citations: \n
 ----------\n
-Original Author: S. Hughes.  steven.p.hughes@nasa.gov
+Influenced by: S. Hughes.  steven.p.hughes@nasa.gov
 Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/264a12acad195e6a2467cfdc68abdcee801f73fc/tree/prototype/OptimalControl/LowThrust/@DecisionVector/)
 --------------------------------------------------------------------------\n
 """
 
 # should only call this once
-function initialize_NLP(Nc::Int64,Ni::Int64,numStates::Int64,numControls::Int64, args...)
-
+function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int64=10,Nck::Array{Int64,1}=4*ones(Int64,Ni,), kwargs...)
     # validate input
-    if  Nc <= 0
-        error("Nc must be > 0");
+    if length(Nck) != Ni
+        error("length(Nck) != Ni");
+    end
+    for int in 1:Ni
+        if (Nck[int]<0)
+            error("Nck must be > 0");
+        end
     end
     if  Ni <= 0
         error("Ni must be > 0");
     end
     if  numStates <= 0
-        error("numStates must be > 0");
+        error("numStates must be > 0","\n",
+                "default value = 0","\n",
+              );
     end
     if  numControls <= 0
-        error("eventually numControls must be > 0");
+        error("eventually numControls must be > 0","\n",
+              "default value = 0","\n",
+              );
     end
 
     # initialize node data TODO -> eventually make different PS methods available
-    τ, ω = gaussradau(Nc);
+
+    taus_and_weights = [gaussradau(Nck[int]) for int in 1:Ni];
+    τ = [taus_and_weights[int][1] for int in 1:Ni];
+    ω = [taus_and_weights[int][2] for int in 1:Ni];
 
     # calculate general properties
-    numStatePoints = Nc*Ni;
-    numControlPoints = Nc*Ni;
+    numStatePoints = [(Nck[int]+1) for int in 1:Ni]; # number of states dvs (decisionVector) for each interval and each state
+    numControlPoints = [Nck[int] for int in 1:Ni];   # number of control dvs for each interval and each control
 
     # calculate length of vectors
-    lengthStateVector = numStatePoints*numStates;
-    lengthControlVector = numControlPoints*numControls;
+    lengthStateVector = sum([numStatePoints[int]*numStates for int in 1:Ni]);
+    lengthControlVector = sum([numControlPoints[int]*numControls for int in 1:Ni]);
     lengthDecVector = lengthStateVector + lengthControlVector + 2; # + 2 is for t0 and tf
 
     if length(args) == 0
-        stateVector = zeros(lengthStateVector,);
-        controlVector = zeros(lengthControlVector,);
+        #stateVector = zeros(lengthStateVector,);
+        #controlVector = zeros(lengthControlVector,);
         decisionVector = zeros(lengthDecVector,);
         t0 = 0.0;
         tf = 0.0;
     else
         # validate optional input
+        #=
         if  length(args[1]) != lengthStateVector
             error(string("length of stateVector must be = ",lengthStateVector));
         end
         if  length(args[2]) != lengthControlVector
             error(string("length of controlVector must be = ",lengthControlVector));
         end
-        if  length(args[3]) != lengthDecVector
+        =#
+        if  length(args[1]) != lengthDecVector
             error(string("length of decisionVector must be = ",lengthDecVector));
         end
-        if  length(args[4]) != 1
+        if  length(args[2]) != 1
             error(string("length of t0 must be = 1"));
         end
-        if  length(args[5]) != 1
+        if  length(args[3]) != 1
             error(string("length of tf must be = 1"));
         end
-        stateVector = args[1];
-        controlVector = args[2];
-        decisionVector = args[3];
-        t0 = args[4];
-        tf = args[5];
+        # stateVector = args[1];
+        # controlVector = args[2];
+        decisionVector = args[1];
+        t0 = args[2];
+        tf = args[3];
     end
 
     # determine indecies within overall decision vector of all variables (i.e. decisionVector)
     stateStartIdx = 1;
-    stateStopIdx = stateStartIdx + lengthStateVector -1; # -1 because we start on 1
+    stateStopIdx = stateStartIdx + lengthStateVector -1;      # -1 because we start on 1
+    st_sum = [0; cumsum(numStatePoints)];
+    stateIdx = [((st_sum[int])*numStates + stateStartIdx,
+    (st_sum[int] + numStatePoints[int])*numStates + stateStartIdx -1)
+    for int in 1:Ni]
+
     controlStartIdx = stateStopIdx + 1;
     controlStopIdx = controlStartIdx + lengthControlVector -1; # -1 because we start on 1
+    ctr_sum = [0; cumsum(numControlPoints)];
+    controlIdx = [((ctr_sum[int])*numControls + controlStartIdx,
+     (ctr_sum[int] + numControlPoints[int])*numControls + controlStartIdx -1)
+    for int in 1:Ni]
+
     timeStartIdx = controlStopIdx + 1;
     timeStopIdx = timeStartIdx + 1;
 
-    if 1==1 #TODO eventually make print_level an option
+    if false #TODO eventually make print_level an option
       print(string("lengthStateVector = ", lengthStateVector),"\n")
       print(string("lengthControlVector = ", lengthControlVector),"\n")
-
       print(string("stateStartIdx = ", stateStartIdx),"\n")
       print(string("stateStopIdx = ", stateStopIdx),"\n")
       print(string("controlStartIdx = ", controlStartIdx),"\n")
@@ -103,34 +124,51 @@ function initialize_NLP(Nc::Int64,Ni::Int64,numStates::Int64,numControls::Int64,
             )
     end
 
-    # initialize problem data
-    ps = PS_data(Nc=Nc,
-                      Ni=Ni,
-                       τ=τ,
-                       ω=ω,
-                      t0=t0,
-                      tf=tf);
+    # each row contains Xi in the stateMatrix where the size = Nck[int]XnumStates
+    stateMatrix=[zeros((Nck[int]+1)*numStates,) for int in 1:Ni];
+    controlMatrix=[zeros(Nck[int]*numControls,) for int in 1:Ni];
+    if false
+      print(string("typeof(Nck) = ",typeof(Nck),"\n"))
+      print(string("typeof(Ni) = ",typeof(Ni),"\n"))
+      print(string("typeof(τ) = ",typeof(τ),"\n"))
+      print(string("typeof(ω) = ",typeof(ω),"\n"))
+      print(string("typeof(t0) = ",typeof(t0),"\n"))
+      print(string("typeof(tf) = ",typeof(tf),"\n"))
+      print(string("typeof(stateMatrix) = ",typeof(stateMatrix),"\n"))
+      print(string("typeof(controlMatrix) = ",typeof(controlMatrix),"\n"))
+    end
 
-    nlp = NLP_data(numStates=numStates,
-                        numStatePoints=numStatePoints,
+    # initialize problem data
+    ps = PS_data(Nck=Nck,
+                 Ni=Ni,
+                  τ=τ,
+                  ω=ω,
+                 t0=t0,
+                 tf=tf,
+        stateMatrix=stateMatrix,
+      controlMatrix=controlMatrix
+                );
+    nlp = NLP_data(     numStates=numStates,
                         numControls=numControls,
+                        numStatePoints=numStatePoints,
                         numControlPoints=numControlPoints,
-                        lengthControlVector=lengthControlVector,
-                        lengthStateVector=lengthStateVector,
-                        lengthDecVector=lengthDecVector,
-                        stateStartIdx=stateStartIdx,
-                        stateStopIdx=stateStopIdx,
-                        controlStartIdx=controlStartIdx,
-                        controlStopIdx=controlStopIdx,
+                        #lengthControlVector=lengthControlVector,
+                        #lengthStateVector=lengthStateVector,
+                        #lengthDecVector=lengthDecVector,
+                        #stateStartIdx=stateStartIdx,
+                        stateIdx=stateIdx,
+                        controlIdx=controlIdx,
+                        #stateStopIdx=stateStopIdx,
+                        #controlStartIdx=controlStartIdx,
+                        #controlStopIdx=controlStopIdx,
                         timeStartIdx=timeStartIdx,
                         timeStopIdx=timeStopIdx,
-                        stateVector=stateVector,
-                        controlVector=controlVector,
                         decisionVector=decisionVector
-                        );
-
+                   );
     return ps, nlp
 end
+#                        controlVector=controlVector,
+#                        stateVector=stateVector,
 
 
 function scale_tau(τ::Array{Float64,1},x₀::Float64,xₙ::Float64)
@@ -141,21 +179,24 @@ function scale_w(ω::Array{Float64,1},x₀::Float64,xₙ::Float64)
   (xₙ - x₀)/2*ω;
 end
 
-function create_intervals(t0::Float64,tf::Float64,Ni::Int64,Nc::Int64,τ::Vector{Float64},ω::Vector{Float64})
+"""
+di, tm, ts, ωₛ=create_intervals(t0,tf,Ni,Nck,τ,ω);
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 12/23/2017, Last Modified: 1/2/2017 \n
+--------------------------------------------------------------------------\n
+"""
+function create_intervals(t0::Float64,tf::Float64,Ni::Int64,Nck::Array{Int64,1},τ::Array{Vector{Float64},1},ω::Array{Vector{Float64},1})
   di = (tf - t0)/Ni; # interval size
   # create mesh points
   tm = zeros(Float64,Ni+1); tm[1] = t0;
   for idx in 1:Ni
     tm[idx+1] = tm[idx] + di;
   end
-  # go through each mesh interval creating time intervals; [t(i-1),t(i)] --> [-1,1]
-  ts = zeros(Float64,Nc,Ni);  ωₛ = zeros(Float64,Nc,Ni);
-  for idx in 1:Ni
-    # scale the problem to the interval
-    ts[:,idx] = scale_tau(τ,tm[idx],tm[idx+1]); # scale the interval
-    ωₛ[:,idx] = scale_w(ω,tm[idx],tm[idx+1]);   # scale the weights
-  end
-  return di, tm, ts, ωₛ
+    # go through each mesh interval creating time intervals; [t(i-1),t(i)] --> [-1,1]
+    ts=[[scale_tau(τ[int],tm[int],tm[int+1]);di*int] for int in 1:Ni];
+    ωₛ=[scale_w(ω[int],tm[int],tm[int+1]) for int in 1:Ni];
+    return di, tm, ts, ωₛ
 end
 
 """
