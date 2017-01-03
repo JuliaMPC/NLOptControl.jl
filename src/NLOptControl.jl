@@ -30,6 +30,8 @@ Date Create: 1/1/2017, Last Modified: 1/2/2017 \n
   ω::Array{Array{Float64,1},1} # weights
   t0::Float64 # initial time
   tf::Float64 # final time
+  DMatrix::Array{Array{Float64,2},1}  # differention matrix
+  IMatrix::Array{Array{Float64,2},1}  # integration matrix
   stateMatrix::Array{Array{Float64,1},1}
   controlMatrix::Array{Array{Float64,1},1}
 end
@@ -50,28 +52,27 @@ Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/26
 
   # general properties
   numStates::Int64      # number of states
+  numControls::Int64    # number of controls
+
   numStatePoints::Array{Int64,1} # number of state discretization within each interval
-  lengthStateVector::Int64  # total number of state variables
-  numControls::Int64 # number of controls
   numControlPoints::Array{Int64,1} # number of control discretization within each interval
+
+  lengthStateVector::Int64  # total number of state variables
   lengthControlVector::Int64 # total number of control parameters
 
   # properties for entire decision vector
   lengthDecVector::Int64
 
   # vector indeces
-  stateStartIdx::Int64  #TODO can eventually get ride of the stop and start index variables
-  stateStopIdx::Int64
-  controlStartIdx::Int64
-  controlStopIdx::Int64
   timeStartIdx::Int64
   timeStopIdx::Int64
   stateIdx::Array{Tuple{Int64,Int64},1}
   controlIdx::Array{Tuple{Int64,Int64},1}
-
+  stateIdx_all::Array{Tuple{Int64,Int64},1}
+  controlIdx_all::Array{Tuple{Int64,Int64},1}
+  stateIdx_st::Array{Tuple{Int64,Int64},1}
+  controlIdx_ctr::Array{Tuple{Int64,Int64},1}
   # problem data
-  stateVector::Vector{Float64}
-  controlVector::Vector{Float64}
   decisionVector::Vector{Float64}
 end
   # Objects

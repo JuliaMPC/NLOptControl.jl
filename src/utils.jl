@@ -51,21 +51,11 @@ function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int6
     lengthDecVector = lengthStateVector + lengthControlVector + 2; # + 2 is for t0 and tf
 
     if length(args) == 0
-        #stateVector = zeros(lengthStateVector,);
-        #controlVector = zeros(lengthControlVector,);
         decisionVector = zeros(lengthDecVector,);
         t0 = 0.0;
         tf = 0.0;
     else
         # validate optional input
-        #=
-        if  length(args[1]) != lengthStateVector
-            error(string("length of stateVector must be = ",lengthStateVector));
-        end
-        if  length(args[2]) != lengthControlVector
-            error(string("length of controlVector must be = ",lengthControlVector));
-        end
-        =#
         if  length(args[1]) != lengthDecVector
             error(string("length of decisionVector must be = ",lengthDecVector));
         end
@@ -75,43 +65,80 @@ function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int6
         if  length(args[3]) != 1
             error(string("length of tf must be = 1"));
         end
-        # stateVector = args[1];
-        # controlVector = args[2];
         decisionVector = args[1];
         t0 = args[2];
         tf = args[3];
     end
+    ####################################################################################
+    ############################## Indices #############################################
+    ####################################################################################
 
-    # determine indecies within overall decision vector of all variables (i.e. decisionVector)
+    # ==================================================================================
+    #__________________________ State Indices ___________________________________________
+    # ===================================================================================
+    # General Properties
     stateStartIdx = 1;
-    stateStopIdx = stateStartIdx + lengthStateVector -1;      # -1 because we start on 1
+    stateStopIdx = stateStartIdx + lengthStateVector -1; # -1 because we start on 1
     st_sum = [0; cumsum(numStatePoints)];
+
+    # Organize Tuples Each Entire Mesh Grid Of All Consecutive State Vectors
     stateIdx = [((st_sum[int])*numStates + stateStartIdx,
     (st_sum[int] + numStatePoints[int])*numStates + stateStartIdx -1)
-    for int in 1:Ni]
+    for int in 1:Ni];
 
+    # Break Tuples For Each State Variable within Entire Mesh Grid
+    stateIdx_all = [(stateIdx[int][1] - numStatePoints[int]*(st-numStates),
+                     stateIdx[int][2] - numStatePoints[int]*(st-numStates +1))
+    for int in 1:Ni for st in numStates:-1:1]  # does the outer loop first
+
+    # Organize Tuples by Individual States
+    organize_state_array = zeros(Int64,Ni*numStates,); idx=1;
+    for int in 1:Ni
+      for st in 1:numStates
+        organize_state_array[idx] = int + (st-1)*numStates;
+        idx=idx+1;
+      end
+    end
+    stateIdx_st = [( stateIdx_all[jj][1], # all states are near each other
+                     stateIdx_all[jj][2])
+    for jj in organize_state_array]
+    # ==================================================================================
+    #_________________________ Control Indices _________________________________________
+    # ==================================================================================
+    # General Properties
     controlStartIdx = stateStopIdx + 1;
     controlStopIdx = controlStartIdx + lengthControlVector -1; # -1 because we start on 1
     ctr_sum = [0; cumsum(numControlPoints)];
+
+    # Organize Tuples Each Entire Mesh Grid Of All Consecutive Control Vectors
     controlIdx = [((ctr_sum[int])*numControls + controlStartIdx,
      (ctr_sum[int] + numControlPoints[int])*numControls + controlStartIdx -1)
     for int in 1:Ni]
 
+    # Break Tuples For Each Control Variable within Entire Mesh Grid
+    controlIdx_all = [(controlIdx[int][1] - numControlPoints[int]*(ctr-numControls),
+                     controlIdx[int][2] - numControlPoints[int]*(ctr-numControls +1))
+    for int in 1:Ni for ctr in numControls:-1:1]  # does the outer loop first
+
+    # Organize Tuples by Individual Controls
+    organize_control_array = zeros(Int64,Ni*numControls,); idx=1;
+    for int in 1:Ni
+      for ctr in 1:numControls
+        organize_control_array[idx] = int + (ctr-1)*numControls;
+        idx=idx+1;
+      end
+    end
+    controlIdx_ctr = [(controlIdx_all[jj][1], # all controls are near each other
+                      controlIdx_all[jj][2])
+    for jj in organize_state_array]
+    # ==================================================================================
+    #___________________________ Time Indies ____________________________________________
+    # ===================================================================================
     timeStartIdx = controlStopIdx + 1;
     timeStopIdx = timeStartIdx + 1;
-
-    if false #TODO eventually make print_level an option
-      print(string("lengthStateVector = ", lengthStateVector),"\n")
-      print(string("lengthControlVector = ", lengthControlVector),"\n")
-      print(string("stateStartIdx = ", stateStartIdx),"\n")
-      print(string("stateStopIdx = ", stateStopIdx),"\n")
-      print(string("controlStartIdx = ", controlStartIdx),"\n")
-      print(string("controlStopIdx = ", controlStopIdx),"\n")
-      print(string("timeStartIdx = ", timeStartIdx),"\n")
-      print(string("timeStopIdx = ", timeStopIdx),"\n")
-    end
-
-    # check indecies
+    # ==================================================================================
+    #___________________________ Check Indices __________________________________________
+    # ===================================================================================
     if timeStopIdx != lengthDecVector
       error(string("\n",
                     "-------------------------------------", "\n",
@@ -123,11 +150,41 @@ function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int6
                     )
             )
     end
-
+    ####################################################################################
+    ############################## Matrices ############################################
+    ####################################################################################
+    # CAN ONLY DO THIS IF to and tf where provided
     # each row contains Xi in the stateMatrix where the size = Nck[int]XnumStates
+    # Xi is a vector of ALL of the states at point i
     stateMatrix=[zeros((Nck[int]+1)*numStates,) for int in 1:Ni];
     controlMatrix=[zeros(Nck[int]*numControls,) for int in 1:Ni];
-    if false
+
+    # approximate the derivative --> needed in defect constraints
+    D = [zeros((Nck[int]+1),(Nck[int]+1)) for int in 1:Ni]
+    for int in 1:Ni
+      D[int] = poldif([τ[int];1], 1) # append +1 onto τ
+    end
+    DMatrix = [zeros((Nck[int]),(Nck[int]+1)) for int in 1:Ni];
+    DM = [zeros((Nck[int]),(Nck[int])) for int in 1:Ni];
+    IMatrix = DM;
+    for int in 1:Ni
+      DMatrix[int] = D[int][1:end-1,:];   # turn into a [Nck]X[Nck+1] sized matrix
+      DM[int] = D[int][1:end-1,:1:end-1]; # turn into a [Nck]X[Nck] sized matrix
+      IMatrix[int] = inv(DM[int]);        # integration matrix
+    end
+    # ==================================================================================
+    #___________________________ Debugging _____________________________________________
+    # ===================================================================================
+    if false #TODO  make print_level an option
+      print(string("lengthStateVector = ", lengthStateVector),"\n")
+      print(string("lengthControlVector = ", lengthControlVector),"\n")
+      print(string("stateStartIdx = ", stateStartIdx),"\n")
+      print(string("stateStopIdx = ", stateStopIdx),"\n")
+      print(string("controlStartIdx = ", controlStartIdx),"\n")
+      print(string("controlStopIdx = ", controlStopIdx),"\n")
+      print(string("timeStartIdx = ", timeStartIdx),"\n")
+      print(string("timeStopIdx = ", timeStopIdx),"\n")
+
       print(string("typeof(Nck) = ",typeof(Nck),"\n"))
       print(string("typeof(Ni) = ",typeof(Ni),"\n"))
       print(string("typeof(τ) = ",typeof(τ),"\n"))
@@ -136,40 +193,42 @@ function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int6
       print(string("typeof(tf) = ",typeof(tf),"\n"))
       print(string("typeof(stateMatrix) = ",typeof(stateMatrix),"\n"))
       print(string("typeof(controlMatrix) = ",typeof(controlMatrix),"\n"))
-    end
-
-    # initialize problem data
-    ps = PS_data(Nck=Nck,
-                 Ni=Ni,
-                  τ=τ,
-                  ω=ω,
-                 t0=t0,
-                 tf=tf,
-        stateMatrix=stateMatrix,
-      controlMatrix=controlMatrix
-                );
-    nlp = NLP_data(     numStates=numStates,
-                        numControls=numControls,
-                        numStatePoints=numStatePoints,
-                        numControlPoints=numControlPoints,
-                        #lengthControlVector=lengthControlVector,
-                        #lengthStateVector=lengthStateVector,
-                        #lengthDecVector=lengthDecVector,
-                        #stateStartIdx=stateStartIdx,
-                        stateIdx=stateIdx,
-                        controlIdx=controlIdx,
-                        #stateStopIdx=stateStopIdx,
-                        #controlStartIdx=controlStartIdx,
-                        #controlStopIdx=controlStopIdx,
-                        timeStartIdx=timeStartIdx,
-                        timeStopIdx=timeStopIdx,
-                        decisionVector=decisionVector
-                   );
+      print(string("typeof(DMatrix) = ",typeof(DMatrix),"\n"))
+      print(string("typeof(IMatrix) = ",typeof(IMatrix),"\n"))
+  end
+  # ==================================================================================
+  #_________________________ Initialize Problem Data __________________________________
+  # ===================================================================================
+  ps = PS_data(Nck=Nck,
+               Ni=Ni,
+                τ=τ,
+                ω=ω,
+               t0=t0,
+               tf=tf,
+      stateMatrix=stateMatrix,
+    controlMatrix=controlMatrix,
+          DMatrix=DMatrix,
+          IMatrix=IMatrix
+              );
+  nlp = NLP_data(     numStates=numStates,
+                      numControls=numControls,
+                      numStatePoints=numStatePoints,
+                      numControlPoints=numControlPoints,
+                      lengthControlVector=lengthControlVector,
+                      lengthStateVector=lengthStateVector,
+                      lengthDecVector=lengthDecVector,
+                      stateIdx=stateIdx,
+                      controlIdx=controlIdx,
+                      stateIdx_all=stateIdx_all,
+                      controlIdx_all=controlIdx_all,
+                      controlIdx_ctr=controlIdx_ctr,
+                      stateIdx_st=stateIdx_st,
+                      timeStartIdx=timeStartIdx,
+                      timeStopIdx=timeStopIdx,
+                      decisionVector=decisionVector
+                 );
     return ps, nlp
 end
-#                        controlVector=controlVector,
-#                        stateVector=stateVector,
-
 
 function scale_tau(τ::Array{Float64,1},x₀::Float64,xₙ::Float64)
   (xₙ - x₀)/2*τ + (xₙ + x₀)/2;

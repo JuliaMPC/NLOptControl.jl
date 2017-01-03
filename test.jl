@@ -5,7 +5,7 @@ using FastGaussQuadrature
 using Parameters
 
 # initialize basic problem definition
-ps, nlp = initialize_NLP(numStates=1,numControls=2,Ni=2,Nck=[3, 5]);
+ps, nlp = initialize_NLP(numStates=2,numControls=2,Ni=2,Nck=[3, 5]);
 
 ####################################
 # perform analytical calcualtions -> for plots
@@ -36,15 +36,39 @@ taus_and_weights = [gaussradau(Nck[int]) for int in 1:Ni];
 ω = [taus_and_weights[int][2] for int in 1:Ni];
 di, tm, t_data, ωₛ=create_intervals(t0,tf,Ni,Nck,τ,ω);
 @pack ps = τ, ω
-
-
-@unpack decisionVector, lengthControlVector = nlp
+@unpack decisionVector, lengthControlVector, lengthStateVector, numStates, stateIdx = nlp
 fake_control_data = zeros(lengthControlVector,);
-ts = [t_data[1]; t_data[2]]
-if Ni > 2
-    error("fix ts")
+
+if length(fake_control_data)!=lengthControlVector
+  error(string("\n",
+                "-------------------------------------", "\n",
+                "There is an error with the indecies!!", "\n",
+                "-------------------------------------", "\n",
+                "The following variables should be equal:", "\n",
+                "length(fake_control_data) = ",length(fake_control_data),"\n",
+                "lengthControlVector = ",lengthControlVector,"\n"
+                )
+        )
 end
-fake_state_data = polyval(γ,ts);
+
+# each row contains all of the data for an interval
+fake_state = [[polyval(γ,t_data[int]); zeros(Float64,length(t_data[int]),)] for int in 1:Ni ];
+fake_state_data = zeros(lengthStateVector,);
+for int in 1:Ni # turn into vector
+  fake_state_data[stateIdx[int][1]:stateIdx[int][2]] = fake_state[int];
+end
+
+if length(fake_state_data)!=lengthStateVector
+  error(string("\n",
+                "-------------------------------------", "\n",
+                "There is an error with the indecies!!", "\n",
+                "-------------------------------------", "\n",
+                "The following variables should be equal:", "\n",
+                "length(fake_state_data) = ",length(fake_state_data),"\n",
+                "lengthStateVector = ",lengthStateVector,"\n"
+                )
+        )
+end
 decisionVector=[fake_state_data[:];fake_control_data;t0;tf]; # for now looking at no controls
 @pack  nlp = decisionVector
 
@@ -52,10 +76,19 @@ decisionVector=[fake_state_data[:];fake_control_data;t0;tf]; # for now looking a
 
 function nlp2ocp(decisionVector::Array{Float64,1},nlp::NLP_data,ps::PS_data)
     @unpack t0, tf, stateMatrix, controlMatrix, Ni = ps
-    @unpack stateIdx = nlp
-    @unpack controlIdx = nlp
-    @unpack timeStartIdx,timeStopIdx = nlp
+    @unpack stateIdx, controlIdx, timeStartIdx, timeStopIdx, lengthDecVector = nlp
 
+    if length(decisionVector)!=lengthDecVector
+      error(string("\n",
+                    "-------------------------------------", "\n",
+                    "There is an error with the indecies!!", "\n",
+                    "-------------------------------------", "\n",
+                    "The following variables should be equal:", "\n",
+                    "length(decisionVector) = ",length(decisionVector),"\n",
+                    "lengthDecVector = ",lengthDecVector,"\n"
+                    )
+            )
+    end
     # update parameters
     t0 = decisionVector[timeStartIdx];
     tf = decisionVector[timeStopIdx];
