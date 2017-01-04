@@ -95,7 +95,7 @@ function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int6
                      stateIdx[int][2] - numStatePoints[int]*(st-numStates +1))
     for int in 1:Ni for st in numStates:-1:1]  # does the outer loop first
 
-    # Organize Tuples by Individual States
+    # Organize Tuples by Individual States  TODO make logic for single interval case
     organize_state_array = zeros(Int64,Ni*numStates,); idx=1;
     for int in 1:Ni
       for st in 1:numStates
@@ -134,7 +134,7 @@ function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int6
     end
     controlIdx_ctr = [(controlIdx_all[jj][1], # all controls are near each other
                       controlIdx_all[jj][2])
-    for jj in organize_state_array]
+    for jj in organize_control_array]
     # ==================================================================================
     #___________________________ Time Indies ____________________________________________
     # ===================================================================================
