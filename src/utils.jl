@@ -1,8 +1,8 @@
 """
-ps, nlp = initialize_NLP(numStates=1,numControls=3);
+ps, nlp = initialize_NLP(numStates=2,numControls=2,Ni=2,Nck=[3, 3]);
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/1/2017, Last Modified: 1/2/2017 \n
+Date Create: 1/1/2017, Last Modified: 1/3/2017 \n
 Citations: \n
 ----------\n
 Influenced by: S. Hughes.  steven.p.hughes@nasa.gov
@@ -40,6 +40,10 @@ function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int6
     taus_and_weights = [gaussradau(Nck[int]) for int in 1:Ni];
     τ = [taus_and_weights[int][1] for int in 1:Ni];
     ω = [taus_and_weights[int][2] for int in 1:Ni];
+
+    # initialize scaled variables as zeros
+    ts = 0*τ;
+    ωₛ = 0*ω;
 
     # calculate general properties
     numStatePoints = [(Nck[int]+1) for int in 1:Ni]; # number of states dvs (decisionVector) for each interval and each state
@@ -153,25 +157,14 @@ function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int6
     ####################################################################################
     ############################## Matrices ############################################
     ####################################################################################
-    # CAN ONLY DO THIS IF to and tf where provided
     # each row contains Xi in the stateMatrix where the size = Nck[int]XnumStates
     # Xi is a vector of ALL of the states at point i
-    stateMatrix=[zeros((Nck[int]+1)*numStates,) for int in 1:Ni];
-    controlMatrix=[zeros(Nck[int]*numControls,) for int in 1:Ni];
+    stateMatrix=[zeros((Nck[int]+1),numStates) for int in 1:Ni];
+    controlMatrix=[zeros(Nck[int],numControls) for int in 1:Ni];
 
-    # approximate the derivative --> needed in defect constraints
-    D = [zeros((Nck[int]+1),(Nck[int]+1)) for int in 1:Ni]
-    for int in 1:Ni
-      D[int] = poldif([τ[int];1], 1) # append +1 onto τ
-    end
     DMatrix = [zeros((Nck[int]),(Nck[int]+1)) for int in 1:Ni];
-    DM = [zeros((Nck[int]),(Nck[int])) for int in 1:Ni];
-    IMatrix = DM;
-    for int in 1:Ni
-      DMatrix[int] = D[int][1:end-1,:];   # turn into a [Nck]X[Nck+1] sized matrix
-      DM[int] = D[int][1:end-1,:1:end-1]; # turn into a [Nck]X[Nck] sized matrix
-      IMatrix[int] = inv(DM[int]);        # integration matrix
-    end
+    IMatrix = [zeros((Nck[int]),(Nck[int])) for int in 1:Ni];
+
     # ==================================================================================
     #___________________________ Debugging _____________________________________________
     # ===================================================================================
@@ -202,7 +195,9 @@ function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int6
   ps = PS_data(Nck=Nck,
                Ni=Ni,
                 τ=τ,
+               ts=ts,
                 ω=ω,
+               ωₛ=ωₛ,
                t0=t0,
                tf=tf,
       stateMatrix=stateMatrix,
@@ -228,6 +223,134 @@ function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int6
                       decisionVector=decisionVector
                  );
     return ps, nlp
+end
+"""
+nlp2ocp(nlp,ps);
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 1/2/2017, Last Modified: 1/3/2017 \n
+--------------------------------------------------------------------------\n
+"""
+# to do, pack decisionVector into nlp
+function nlp2ocp(nlp::NLP_data,ps::PS_data)
+    @unpack t0, tf, stateMatrix, controlMatrix, Ni, Nck = ps
+    @unpack stateIdx_all, controlIdx_all, timeStartIdx, timeStopIdx = nlp
+    @unpack numStates, numControls, lengthDecVector = nlp
+    @unpack decisionVector = nlp
+
+    if length(decisionVector)!=lengthDecVector
+      error(string("\n",
+                    "-------------------------------------", "\n",
+                    "There is an error with the indecies!!", "\n",
+                    "-------------------------------------", "\n",
+                    "The following variables should be equal:", "\n",
+                    "length(decisionVector) = ",length(decisionVector),"\n",
+                    "lengthDecVector = ",lengthDecVector,"\n"
+                    )
+            )
+    end
+    # update parameters
+    t0 = decisionVector[timeStartIdx];
+    tf = decisionVector[timeStopIdx];
+
+    # the state matrix is sized according to eq. (40) in the GPOPS II article
+    # n is the total number of states -> the individual states are columns
+    # V[int]      = [X11               X21      ...      Xn1;
+    #                X12               X22      ...      Xn2;
+    #                .                  .                 .
+    #                .                  .                 .
+    #                .                  .                 .
+    #         X1_{Nck[int]+1}    X2_{Nck[int]+1}   Xn_{Nck[int]+1}
+
+    stateMatrix = [zeros(Nck[int]+1, numStates) for int in 1:Ni];
+    idx = 1;
+    for int in 1:Ni
+        for st in 1:numStates
+            stateMatrix[int][:,st] = decisionVector[stateIdx_all[idx][1]:stateIdx_all[idx][2]]
+            idx+=1;
+        end
+    end
+
+    controlMatrix = [zeros(Nck[int], numControls) for int in 1:Ni];
+    idx = 1;
+    for int in 1:Ni
+        for ctr in 1:numControls
+            controlMatrix[int][:,ctr] = decisionVector[controlIdx_all[idx][1]:controlIdx_all[idx][2]]
+            idx+=1;
+        end
+    end
+
+    @pack ps = t0, tf, stateMatrix, controlMatrix
+end
+
+"""
+ζ, approx_int_st = integrate_state(ps,nlp;(:mode=>:LGRIM))
+ζ, approx_int_st = integrate_state(ps,nlp)
+
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 1/2/2017, Last Modified: 1/4/2017 \n
+--------------------------------------------------------------------------\n
+"""
+function integrate_state(ps::PS_data,nlp::NLP_data; kwargs...)
+    @unpack Nck, Ni, stateMatrix, ωₛ, IMatrix = ps
+    @unpack numStates = nlp
+
+    kw = Dict(kwargs);
+    # if there was nothing passed -> set default
+    if !haskey(kw,:mode); kw = Dict(:mode => :default) end
+    mode = get(kw, :mode, 0);
+
+    ζ = [zeros(Float64, numStates, Nck[int],)for int in 1:Ni]; idx = 1;
+    approx_int = zeros(Float64, numStates, Ni);
+    for st in 1:numStates
+        for int in 1:Ni
+            if mode == :default
+                print("Using default Gaussian quarature")
+                ζ[int][st,1:Nck[int]] =  cumsum(ωₛ[int].*stateMatrix[int][1:end-1,st]);
+            elseif mode == :LGRIM     # Legendre-Gauss-Radau integration matrix (LGRIM)
+                print("Using the Legendre-Gauss-Radau integration matrix (LGRIM)")
+                ζ[int][st,1:Nck[int]] =  IMatrix[int]*stateMatrix[int][1:end-1,st];
+            else
+                error("Pick a mode or leave argument blank and it will use Gaussian quadrature")
+            end
+            approx_int[st,int] = ζ[int][st,end];
+            idx=idx+1;
+        end
+    end
+    approx_int_st = sum(approx_int,2);
+    return  ζ, approx_int_st
+end
+
+"""
+dζ = differentiate_state(ps,nlp;(:mode=>:something...no modes yet!))
+dζ = differentiate_state(ps,nlp)
+
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 1/4/2017, Last Modified: 1/4/2017 \n
+--------------------------------------------------------------------------\n
+"""
+function differentiate_state(ps::PS_data,nlp::NLP_data; kwargs...)
+    @unpack Nck, Ni, stateMatrix, ωₛ, DMatrix = ps
+    @unpack numStates = nlp
+
+    kw = Dict(kwargs);
+    if !haskey(kw,:mode); kw = Dict(:mode => :default) end
+    mode = get(kw, :mode, 0);
+
+    dζ = [zeros(Float64, numStates, Nck[int],)for int in 1:Ni]; idx = 1;
+    for st in 1:numStates
+        for int in 1:Ni
+            if mode == :default
+                dζ[int][st,1:Nck[int]] = DMatrix[int]*stateMatrix[int][:,st];
+            else
+                error("Pick a mode or leave argument blank default")
+            end
+            idx=idx+1;
+        end
+    end
+    return  dζ
 end
 
 function scale_tau(τ::Array{Float64,1},x₀::Float64,xₙ::Float64)

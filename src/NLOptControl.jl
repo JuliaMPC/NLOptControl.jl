@@ -1,6 +1,6 @@
 module NLOptControl
 
-using Media, DifferentialEquations, Dierckx, Parameters, Interpolations,FastGaussQuadrature
+using Media, DifferentialEquations, Dierckx, Parameters, Interpolations,FastGaussQuadrature, Polynomials
 
 # To copy a particular piece of code (or function) in some location
 macro def(name, definition)
@@ -11,15 +11,12 @@ macro def(name, definition)
   end
 end
 
-include("utils.jl");
-include("LGL.jl");
-include("LGR.jl");
 
 """
-PS_data = PS_data(Nc=Nc,Ni=Ni,τ=τ,ω=ω,t0=t0,tf=tf);
+ps = PS_data(Nc=Nc,Ni=Ni,τ=τ,ω=ω,t0=t0,tf=tf);
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/1/2017, Last Modified: 1/2/2017 \n
+Date Create: 1/1/2017, Last Modified: 1/3/2017 \n
 --------------------------------------------------------------------------\n
 """
 @with_kw type PS_data
@@ -27,27 +24,30 @@ Date Create: 1/1/2017, Last Modified: 1/2/2017 \n
   Ni::Int64 # number of intervals
   #TODO --> for now default is gaussradau, eventually add other PS methods
   τ::Array{Array{Float64,1},1}  # Node points ---> Nc increasing and distinct numbers ∈ [-1,1] #TODO might be able to calculate here during problem initialization
+  ts::Array{Array{Float64,1},1} # time scaled based off of τ
   ω::Array{Array{Float64,1},1} # weights
+  ωₛ::Array{Array{Float64,1},1} # scaled weights
   t0::Float64 # initial time
   tf::Float64 # final time
   DMatrix::Array{Array{Float64,2},1}  # differention matrix
   IMatrix::Array{Array{Float64,2},1}  # integration matrix
-  stateMatrix::Array{Array{Float64,1},1}
-  controlMatrix::Array{Array{Float64,1},1}
+  stateMatrix::Array{Array{Float64,2},1}
+  controlMatrix::Array{Array{Float64,2},1}
 end
 
 
 """
-NLP_data = NLP_data(numStates=numStates, numControls=numControls);
+nlp = NLP_data(numStates=numStates, numControls=numControls);
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/1/2017, Last Modified: 1/2/2017 \n
+Date Create: 1/1/2017, Last Modified: 1/3/2017 \n
 Citations: \n
 ----------\n
 Original Author: S. Hughes.  steven.p.hughes@nasa.gov
 Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/264a12acad195e6a2467cfdc68abdcee801f73fc/tree/prototype/OptimalControl/LowThrust/@DecisionVector/)
 --------------------------------------------------------------------------\n
 """
+
 @with_kw type NLP_data
 
   # general properties
@@ -75,15 +75,26 @@ Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/26
   # problem data
   decisionVector::Vector{Float64}
 end
+
+# scripts -> need to be called after the data!
+include("utils.jl");
+include("test_data.jl")
+include("LGL.jl");
+include("LGR.jl");
+
   # Objects
 
   # Functions
-export initialize_NLP,
-       LGL_nodes,LGL_weights,LGL_Dmatrix,
-       LGR, lgr_diff,
-       scale_tau,scale_w,create_intervals,
-       lagrange_basis_poly,interpolate_lagrange,
+export initialize_NLP, nlp2ocp,
+       LGL_nodes, LGL_weights, LGL_Dmatrix,
+       LGR, lgr_diff, LGR_matrices,
+       scale_tau, scale_w, create_intervals,
+       lagrange_basis_poly, interpolate_lagrange,
+       integrate_state,
+       differentiate_state,
        lepoly, poldif,
+
+       generate_Fake_data,
 
        # objects
        NLP_data, PS_data,
