@@ -2,5 +2,5 @@ julia 0.5
 Polynomials
 Plots
 FastGaussQuadrature
-IPOPT
+Ipopt
 JuMP

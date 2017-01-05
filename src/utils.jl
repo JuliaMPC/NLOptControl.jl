@@ -1,8 +1,8 @@
 """
-ps, nlp = initialize_NLP(numStates=2,numControls=2,Ni=2,Nck=[3, 3]);
+ps, nlp = initialize_NLP(numStates=2,numControls=2,Ni=4,Nck=[3, 3, 7, 2]);
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/1/2017, Last Modified: 1/3/2017 \n
+Date Create: 1/1/2017, Last Modified: 1/4/2017 \n
 Citations: \n
 ----------\n
 Influenced by: S. Hughes.  steven.p.hughes@nasa.gov
@@ -90,22 +90,27 @@ function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int6
     (st_sum[int] + numStatePoints[int])*numStates + stateStartIdx -1)
     for int in 1:Ni];
 
-    # Break Tuples For Each State Variable within Entire Mesh Grid
-    stateIdx_all = [(stateIdx[int][1] - numStatePoints[int]*(st-numStates),
-                     stateIdx[int][2] - numStatePoints[int]*(st-numStates +1))
-    for int in 1:Ni for st in numStates:-1:1]  # does the outer loop first
+    if numStates  == 1
+      stateIdx_all = [(-99,-99) for int in 1:1];
+      stateIdx_st = [(-99,-99) for int in 1:1];
+    else  # only calculate these if we have more than one state
+       # Break Tuples For Each State Variable within Entire Mesh Grid
+      stateIdx_all = [(stateIdx[int][1] - numStatePoints[int]*(st-numStates),
+                       stateIdx[int][2] - numStatePoints[int]*(st-numStates +1))
+      for int in 1:Ni for st in numStates:-1:1]  # does the outer loop first
 
-    # Organize Tuples by Individual States  TODO make logic for single interval case
-    organize_state_array = zeros(Int64,Ni*numStates,); idx=1;
-    for int in 1:Ni
-      for st in 1:numStates
-        organize_state_array[idx] = int + (st-1)*numStates;
-        idx=idx+1;
+      # Organize Tuples by Individual States  TODO make logic for single interval case
+      organize_state_array = zeros(Int64,Ni*numStates,); idx=1;
+      for int in 1:Ni
+        for st in 1:numStates
+          organize_state_array[idx] = int + (st-1)*numStates;
+          idx=idx+1;
+        end
       end
+      stateIdx_st = [( stateIdx_all[jj][1], # all states are near each other
+                       stateIdx_all[jj][2])
+      for jj in organize_state_array]
     end
-    stateIdx_st = [( stateIdx_all[jj][1], # all states are near each other
-                     stateIdx_all[jj][2])
-    for jj in organize_state_array]
     # ==================================================================================
     #_________________________ Control Indices _________________________________________
     # ==================================================================================
@@ -119,22 +124,27 @@ function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int6
      (ctr_sum[int] + numControlPoints[int])*numControls + controlStartIdx -1)
     for int in 1:Ni]
 
-    # Break Tuples For Each Control Variable within Entire Mesh Grid
-    controlIdx_all = [(controlIdx[int][1] - numControlPoints[int]*(ctr-numControls),
-                     controlIdx[int][2] - numControlPoints[int]*(ctr-numControls +1))
-    for int in 1:Ni for ctr in numControls:-1:1]  # does the outer loop first
+    if numControls == 1
+      controlIdx_all = [(-99,-99) for int in 1:1];
+      controlIdx_ctr = [(-99,-99) for int in 1:1];
+    else # only calculate these if we have more than one control
+      # Break Tuples For Each Control Variable within Entire Mesh Grid
+      controlIdx_all = [(controlIdx[int][1] - numControlPoints[int]*(ctr-numControls),
+                       controlIdx[int][2] - numControlPoints[int]*(ctr-numControls +1))
+      for int in 1:Ni for ctr in numControls:-1:1]  # does the outer loop first
 
-    # Organize Tuples by Individual Controls
-    organize_control_array = zeros(Int64,Ni*numControls,); idx=1;
-    for int in 1:Ni
-      for ctr in 1:numControls
-        organize_control_array[idx] = int + (ctr-1)*numControls;
-        idx=idx+1;
+      # Organize Tuples by Individual Controls
+      organize_control_array = zeros(Int64,Ni*numControls,); idx=1;
+      for int in 1:Ni
+        for ctr in 1:numControls
+          organize_control_array[idx] = int + (ctr-1)*numControls;
+          idx=idx+1;
+        end
       end
+      controlIdx_ctr = [(controlIdx_all[jj][1], # all controls are near each other
+                        controlIdx_all[jj][2])
+      for jj in organize_control_array]
     end
-    controlIdx_ctr = [(controlIdx_all[jj][1], # all controls are near each other
-                      controlIdx_all[jj][2])
-    for jj in organize_control_array]
     # ==================================================================================
     #___________________________ Time Indies ____________________________________________
     # ===================================================================================
@@ -228,13 +238,14 @@ end
 nlp2ocp(nlp,ps);
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/2/2017, Last Modified: 1/3/2017 \n
+Date Create: 1/2/2017, Last Modified: 1/4/2017 \n
 --------------------------------------------------------------------------\n
 """
 # to do, pack decisionVector into nlp
 function nlp2ocp(nlp::NLP_data,ps::PS_data)
     @unpack t0, tf, stateMatrix, controlMatrix, Ni, Nck = ps
     @unpack stateIdx_all, controlIdx_all, timeStartIdx, timeStopIdx = nlp
+    @unpack stateIdx, controlIdx = nlp
     @unpack numStates, numControls, lengthDecVector = nlp
     @unpack decisionVector = nlp
 
@@ -266,8 +277,12 @@ function nlp2ocp(nlp::NLP_data,ps::PS_data)
     idx = 1;
     for int in 1:Ni
         for st in 1:numStates
-            stateMatrix[int][:,st] = decisionVector[stateIdx_all[idx][1]:stateIdx_all[idx][2]]
-            idx+=1;
+            if numStates > 1
+              stateMatrix[int][:,st] = decisionVector[stateIdx_all[idx][1]:stateIdx_all[idx][2]]
+            else # use indexing for single state variable
+              stateMatrix[int][:,st] = decisionVector[stateIdx[idx][1]:stateIdx[idx][2]]
+           end
+          idx+=1;
         end
     end
 
@@ -275,18 +290,20 @@ function nlp2ocp(nlp::NLP_data,ps::PS_data)
     idx = 1;
     for int in 1:Ni
         for ctr in 1:numControls
-            controlMatrix[int][:,ctr] = decisionVector[controlIdx_all[idx][1]:controlIdx_all[idx][2]]
+            if numControls > 1
+              controlMatrix[int][:,ctr] = decisionVector[controlIdx_all[idx][1]:controlIdx_all[idx][2]];
+            else
+              controlMatrix[int][:,ctr] = decisionVector[controlIdx[idx][1]:controlIdx[idx][2]];
+            end
             idx+=1;
         end
     end
-
     @pack ps = t0, tf, stateMatrix, controlMatrix
 end
 
 """
 ζ, approx_int_st = integrate_state(ps,nlp;(:mode=>:LGRIM))
 ζ, approx_int_st = integrate_state(ps,nlp)
-
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 1/2/2017, Last Modified: 1/4/2017 \n
@@ -306,15 +323,19 @@ function integrate_state(ps::PS_data,nlp::NLP_data; kwargs...)
     for st in 1:numStates
         for int in 1:Ni
             if mode == :default
-                print("Using default Gaussian quarature")
                 ζ[int][st,1:Nck[int]] =  cumsum(ωₛ[int].*stateMatrix[int][1:end-1,st]);
             elseif mode == :LGRIM     # Legendre-Gauss-Radau integration matrix (LGRIM)
-                print("Using the Legendre-Gauss-Radau integration matrix (LGRIM)")
                 ζ[int][st,1:Nck[int]] =  IMatrix[int]*stateMatrix[int][1:end-1,st];
             else
                 error("Pick a mode or leave argument blank and it will use Gaussian quadrature")
             end
+            # for the entire integral value; only add up what was accumulated in this interval
             approx_int[st,int] = ζ[int][st,end];
+
+            # for the actual points on the graph, we need to offset by the initial value
+            if int > 1 # add on intitial value
+              ζ[int][st,1:Nck[int]] = ζ[int][st,1:Nck[int]] + ζ[int-1][st,end];
+            end
             idx=idx+1;
         end
     end

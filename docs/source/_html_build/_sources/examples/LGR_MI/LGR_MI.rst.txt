@@ -12,8 +12,22 @@ Now, using Legendre-Gauss-Radau (LGR) points with multiple intervals to calculat
 Functionality
 #############
 
-`asa()`
-********
+**NOTE:** this is not an exhaustive list and there are help notes for most functions, that can be easily seen by typing:
+::
+
+  julia>?  # then press enter and type
+           # the name of the function of interest
+
+`LGR_matrices(ps,nlp)`
+*************************
+* Calculate LGR matrices
+
+  * IMatrix
+  * DMatrix
+
+Notes:
+------
+* Make sure that you calculate these matrices before you try and use them in either `integrate_states()` or `differentiate_state()`.
 
 Examples
 #########

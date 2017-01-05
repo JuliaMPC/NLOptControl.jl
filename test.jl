@@ -38,10 +38,21 @@ mdl = Model(solver = IpoptSolver());
 # dynamic constraints
 dζ = differentiate_state(ps,nlp)
 
-# TODO check the length of the dynamic constraints-> should not be a dynamic constraint at the end
-@NLconstraint(mdl, x_con[i=1:lengthStateVector-Ni], 0 == x[i+1] - x[i] )
-@NLconstraint(mdl, v_con[i=1:lengthStateVector-Ni], 0 == v[i+1] - v[i] )
 
+@unpack DMatrix
+# TODO check the length of the dynamic constraints-> should not be a dynamic constraint at the end
+# TODO are these linear or nonlinear constraints?
+# TODO brush up on sum fucntion in JuMP
+# TODO can we do tripple for loops in JuMP constraints?
+@constraint(mdl, x_con[j=1:Nck[int]+1], 0 == sum( DMatrix[int][i][j]*x[j] - (tf - t0)/2*v[i]) )
+@constraint(mdl, v_con[i=1:lengthStateVector-Ni], 0 == v[i+1] - v[1] )
+
+# TODO  allow for Integration of constraints
+if false
+  @unpack IMatrix
+  @NLconstraint(mdl, x_con[i=1:lengthStateVector-Ni], 0 == x[i+1] - x[1] - (tf - t0)/2* I??)
+  @NLconstraint(mdl, v_con[i=1:lengthStateVector-Ni], 0 == v[i+1] - v[1] )
+end
 # defect constraints between intervals # TODO finish this
 @constraint(mdl, x_defect[i=1:Ni-1], x[ ] == 0);
 @constraint(mdl, v_defect[i=1:Ni-1], v[ ] == );

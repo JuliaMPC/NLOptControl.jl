@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>LGR Multiple Interval &mdash; NLOptControl 0.0.1-rc1 documentation</title>
+  <title>Basic Problem Definition &mdash; NLOptControl 0.0.1-rc1 documentation</title>
   
 
   
@@ -33,10 +33,7 @@
         <link rel="index" title="Index"
               href="../../genindex.html"/>
         <link rel="search" title="Search" href="../../search.html"/>
-    <link rel="top" title="NLOptControl 0.0.1-rc1 documentation" href="../../index.html"/>
-        <link rel="up" title="Completed Functionality" href="../../main_code.html"/>
-        <link rel="next" title="Neglecting Non-Collocated Point \(Y^{(k)}(τ)\) -&gt; ex#1" href="ex1.html"/>
-        <link rel="prev" title="Example 1" href="../LGR_SI/ex1.html"/> 
+    <link rel="top" title="NLOptControl 0.0.1-rc1 documentation" href="../../index.html"/> 
 
   
   <script src="../../_static/js/modernizr.min.js"></script>
@@ -85,19 +82,9 @@
           
             
             
-                <ul class="current">
+                <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../background_info.html">Background Information</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../../functionality.html">Package Functionality</a><ul class="current">
-<li class="toctree-l2 current"><a class="reference internal" href="../../code.html">Code Development</a><ul class="current">
-<li class="toctree-l3 current"><a class="reference internal" href="../../code.html#approximation-of-optimal-control-problem">Approximation of Optimal Control Problem</a><ul class="current">
-<li class="toctree-l4 current"><a class="reference internal" href="../../main_code.html">Completed Functionality</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../../developing_code.html">Developing Code</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="../../functionality.html">Package Functionality</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../bibliography.html">Bibliography</a></li>
 </ul>
 
@@ -129,17 +116,11 @@
   <ul class="wy-breadcrumbs">
     <li><a href="../../index.html">Docs</a> &raquo;</li>
       
-          <li><a href="../../functionality.html">Package Functionality</a> &raquo;</li>
-      
-          <li><a href="../../code.html">Code Development</a> &raquo;</li>
-      
-          <li><a href="../../main_code.html">Completed Functionality</a> &raquo;</li>
-      
-    <li>LGR Multiple Interval</li>
+    <li>Basic Problem Definition</li>
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../../_sources/examples/LGR_MI/LGR_MI.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/examples/NLP2OCP/LGR_MI.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -149,8 +130,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="lgr-multiple-interval">
-<h1>LGR Multiple Interval<a class="headerlink" href="#lgr-multiple-interval" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="basic-problem-definition">
+<h1>Basic Problem Definition<a class="headerlink" href="#basic-problem-definition" title="Permalink to this headline">¶</a></h1>
 <p>Now, using Legendre-Gauss-Radau (LGR) points with multiple intervals to calculate the integral and the derivative of a known polynomial function. This example demonstrates using the Legendre-Gauss-Radau (LGR) points to calculate the integral and the derivative of a known polynomial function using a <strong>multiple interval approach</strong>.</p>
 <div class="sidebar">
 <p class="first sidebar-title">Researchers at the University of Florida</p>
@@ -158,26 +139,26 @@
 </div>
 <div class="section" id="functionality">
 <h2>Functionality<a class="headerlink" href="#functionality" title="Permalink to this headline">¶</a></h2>
-<p><strong>NOTE:</strong> this is not an exhaustive list and there are help notes for most functions, that can be easily seen by typing:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>julia&gt;?  # then press enter and type
-         # the name of the function of interest
-</pre></div>
-</div>
-<div class="section" id="lgr-matrices-ps-nlp">
-<h3><cite>LGR_matrices(ps,nlp)</cite><a class="headerlink" href="#lgr-matrices-ps-nlp" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="ps-nlp-initialize-nlp-numstates-1-numcontrols-1-ni-1-nck-2">
+<h3><cite>ps, nlp = initialize_NLP(numStates=1,numControls=1,Ni=1,Nck=[2])</cite><a class="headerlink" href="#ps-nlp-initialize-nlp-numstates-1-numcontrols-1-ni-1-nck-2" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li>Calculate LGR matrices<ul>
-<li>IMatrix</li>
-<li>DMatrix</li>
+<li>To initialize the problem</li>
+</ul>
+</div>
+<div class="section" id="generate-fake-data-nlp-ps">
+<h3><cite>generate_Fake_data(nlp,ps,γ)</cite><a class="headerlink" href="#generate-fake-data-nlp-ps" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>Generating some data to play with is useful:</li>
+</ul>
+</div>
+<div class="section" id="nlp2ocp-nlp-ps">
+<h3><cite>nlp2ocp(nlp,ps)</cite><a class="headerlink" href="#nlp2ocp-nlp-ps" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>Turning the nonlinear-programming problem into an optimal control problem<ul>
+<li>This function basically takes a large design variable an sorts it back into the original variables</li>
 </ul>
 </li>
 </ul>
-<div class="section" id="notes">
-<h4>Notes:<a class="headerlink" href="#notes" title="Permalink to this headline">¶</a></h4>
-<ul class="simple">
-<li>Make sure that you calculate these matrices before you try and use them in either <cite>integrate_states()</cite> or <cite>differentiate_state()</cite>.</li>
-</ul>
-</div>
 </div>
 </div>
 <div class="section" id="examples">
@@ -192,21 +173,19 @@
 </ul>
 </dd>
 </dl>
+<div class="system-message">
+<p class="system-message-title">System Message: WARNING/2 (<tt class="docutils">/home/febbo/.julia/v0.5/NLOptControl/docs/source/examples/NLP2OCP/LGR_MI.rst</tt>, line 38)</p>
+toctree contains reference to nonexisting document &#8216;examples/NLP2OCP/ex1&#8217;</div>
+<div class="system-message">
+<p class="system-message-title">System Message: WARNING/2 (<tt class="docutils">/home/febbo/.julia/v0.5/NLOptControl/docs/source/examples/NLP2OCP/LGR_MI.rst</tt>, line 38)</p>
+toctree contains reference to nonexisting document &#8216;examples/NLP2OCP/ex2&#8217;</div>
+<div class="system-message">
+<p class="system-message-title">System Message: WARNING/2 (<tt class="docutils">/home/febbo/.julia/v0.5/NLOptControl/docs/source/examples/NLP2OCP/LGR_MI.rst</tt>, line 38)</p>
+toctree contains reference to nonexisting document &#8216;examples/NLP2OCP/ex3&#8217;</div>
+<div class="system-message">
+<p class="system-message-title">System Message: WARNING/2 (<tt class="docutils">/home/febbo/.julia/v0.5/NLOptControl/docs/source/examples/NLP2OCP/LGR_MI.rst</tt>, line 38)</p>
+toctree contains reference to nonexisting document &#8216;examples/NLP2OCP/ex4&#8217;</div>
 <div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="ex1.html">Neglecting Non-Collocated Point <span class="math">\(Y^{(k)}(τ)\)</span> -&gt; ex#1</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="ex1.html#test-1a">Test 1a</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ex1.html#test-1b">Test 1b</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ex1.html#test-1c">Test 1c</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="ex2.html">Approximation of <span class="math">\(Y^{(k)}(τ)\)</span> -&gt; ex#2</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ex3.html">Approximation of State Derivative at of Mesh Grids -&gt; ex#3</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="ex3.html#neglecting-derivative-at-end-of-mesh">Neglecting Derivative At End Of Mesh</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="ex4.html">Higher Level Functionality -&gt; ex#4</a></li>
-</ul>
 </div>
 <dl class="docutils">
 <dt>These examples can be:</dt>
@@ -226,7 +205,7 @@
 </dd>
 </dl>
 <p class="rubric">References</p>
-<p id="bibtex-bibliography-examples/LGR_MI/LGR_MI-0"><table class="docutils citation" frame="void" id="c-darby2011hp" rules="none">
+<p id="bibtex-bibliography-examples/NLP2OCP/LGR_MI-0"><table class="docutils citation" frame="void" id="c-darby2011hp" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
 <tr><td class="label"><a class="fn-backref" href="#id1">[CDar11]</a></td><td>Christopher&nbsp;L Darby. <em>hp–Pseudospectral Method for Solving Continuous-Time Nonlinear Optimal Control Problems</em>. PhD thesis, University of Florida, 2011.</td></tr>
@@ -258,15 +237,6 @@
            </div>
           </div>
           <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="ex1.html" class="btn btn-neutral float-right" title="Neglecting Non-Collocated Point \(Y^{(k)}(τ)\) -&gt; ex#1" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="../LGR_SI/ex1.html" class="btn btn-neutral" title="Example 1" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
-    </div>
   
 
   <hr/>

@@ -1,6 +1,6 @@
-**********************
-LGR Multiple Interval
-**********************
+**************************
+Basic Problem Definition
+**************************
 
 Now, using Legendre-Gauss-Radau (LGR) points with multiple intervals to calculate the integral and the derivative of a known polynomial function. This example demonstrates using the Legendre-Gauss-Radau (LGR) points to calculate the integral and the derivative of a known polynomial function using a **multiple interval approach**.
 
@@ -12,22 +12,20 @@ Now, using Legendre-Gauss-Radau (LGR) points with multiple intervals to calculat
 Functionality
 #############
 
-**NOTE:** this is not an exhaustive list and there are help notes for most functions, that can be easily seen by typing:
-::
+`ps, nlp = initialize_NLP(numStates=1,numControls=1,Ni=1,Nck=[2])`
+*******************************************************************
+* To initialize the problem
 
-  julia>?  # then press enter and type
-           # the name of the function of interest
+`generate_Fake_data(nlp,ps,γ)`
+*******************************
 
-`LGR_matrices(ps,nlp)`
-*************************
-* Calculate LGR matrices
+* Generating some data to play with is useful:
 
-  * IMatrix
-  * DMatrix
+`nlp2ocp(nlp,ps)`
+******************
+* Turning the nonlinear-programming problem into an optimal control problem
 
-Notes:
-------
-* Make sure that you calculate these matrices before you try and use them in either `integrate_states()` or `differentiate_state()`.
+  * This function basically takes a large design variable an sorts it back into the original variables
 
 Examples
 #########

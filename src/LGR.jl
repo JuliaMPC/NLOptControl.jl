@@ -10,7 +10,7 @@ function LGR_matrices(ps::PS_data,nlp::NLP_data)
     @unpack DMatrix, IMatrix = ps
 
     # check input
-    check_ts = zeros(Float64,2);
+    check_ts = zeros(Float64,Ni);
     for int in 1:Ni
         check_ts[int]=maximum(ts[int]);
     end
