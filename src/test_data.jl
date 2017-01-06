@@ -21,23 +21,20 @@ function generate_Fake_data(nlp::NLP_data,ps::PS_data,γ)
 
     # each row contains all of the data for an interval
     if numStates > 1
-      fake_state = [[polyval(γ,ts[int]),zeros(Float64,length(ts[int]),numStates-1)] for int in 1:Ni ];
+      fake_state = [[polyval(γ[st],ts[int]),numStates-1] for int in 1:Ni for st in 1:numStates];
     else
-      fake_state = [polyval(γ,ts[int]) for int in 1:Ni ];
+      fake_state = [polyval(γ[1],ts[int]) for int in 1:Ni ];
     end
 
     fake_state_data = zeros(lengthStateVector,);
-    idx=1;
-    for int in 1:Ni
-        for st in 1:numStates # turn into vector
-          if numStates > 1
-            fake_state_data[stateIdx_all[idx][1]:stateIdx_all[idx][2]] = fake_state[int][st];
-          else
-            fake_state_data[stateIdx[idx][1]:stateIdx[idx][2]] = fake_state[int];
-          end
-         idx+=1;
+    for idx in 1:Ni*numStates
+      if numStates > 1
+        fake_state_data[stateIdx_all[idx][1]:stateIdx_all[idx][2]] = fake_state[idx][1];
+      else
+        fake_state_data[stateIdx[idx][1]:stateIdx[idx][2]] = fake_state[int];
       end
     end
+
     if length(fake_state_data)!=lengthStateVector
       error(string("\n",
                     "-------------------------------------", "\n",

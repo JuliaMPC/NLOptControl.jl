@@ -108,6 +108,7 @@ In these examples we use:
    :maxdepth: 2
 
    ex2
+   ex3
 
 These examples can be:
   *  Viewed remotely on  using the `jupyter nbviewer <http://nbviewer.jupyter.org/github/huckl3b3rry87/NLOptControl.jl/blob/master/examples/NLP2OCP>`_.
@@ -122,11 +123,10 @@ These examples can be:
 
 .. sidebar::  Researchers at the University of Florida
 
-  Describe this method in many papers including :cite:`d-darby2011hp,d-garg2011advances,d-garg2010unified,d-garg2009overview`.
-
+  Describe this method in many papers including :cite:`e-darby2011hp,e-garg2011advances,e-garg2010unified,e-garg2009overview`.
 
 .. rubric:: References
 
 .. bibliography:: zref.bib
-    :labelprefix: D
-    :keyprefix: d-
+    :labelprefix: E
+    :keyprefix: e-

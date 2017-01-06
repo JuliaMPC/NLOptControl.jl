@@ -88,19 +88,21 @@ function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int6
     # Organize Tuples Each Entire Mesh Grid Of All Consecutive State Vectors
     stateIdx = [((st_sum[int])*numStates + stateStartIdx,
     (st_sum[int] + numStatePoints[int])*numStates + stateStartIdx -1)
-    for int in 1:Ni];
+                                                     for int in 1:Ni];
 
-    if numStates  == 1
+    if numStates == 1
       stateIdx_all = [(-99,-99) for int in 1:1];
       stateIdx_st = [(-99,-99) for int in 1:1];
     else  # only calculate these if we have more than one state
        # Break Tuples For Each State Variable within Entire Mesh Grid
       stateIdx_all = [(stateIdx[int][1] - numStatePoints[int]*(st-numStates),
                        stateIdx[int][2] - numStatePoints[int]*(st-numStates +1))
-      for int in 1:Ni for st in numStates:-1:1]  # does the outer loop first
+                                      for int in 1:Ni for st in numStates:-1:1]  # does the outer loop first
 
-      # Organize Tuples by Individual States  TODO make logic for single interval case
-      organize_state_array = zeros(Int64,Ni*numStates,); idx=1;
+      if Ni == 1
+        stateIdx_st = [(-99,-99) for int in 1:1];
+      else         # Organize Tuples by Individual States
+        organize_state_array = zeros(Int64,Ni*numStates,); idx=1;
       for int in 1:Ni
         for st in 1:numStates
           organize_state_array[idx] = int + (st-1)*numStates;
@@ -108,9 +110,11 @@ function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int6
         end
       end
       stateIdx_st = [( stateIdx_all[jj][1], # all states are near each other
-                       stateIdx_all[jj][2])
-      for jj in organize_state_array]
+                     stateIdx_all[jj][2])
+            for jj in organize_state_array]
+      end
     end
+ #TODO try to make a single way to reference states
     # ==================================================================================
     #_________________________ Control Indices _________________________________________
     # ==================================================================================
@@ -122,7 +126,7 @@ function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int6
     # Organize Tuples Each Entire Mesh Grid Of All Consecutive Control Vectors
     controlIdx = [((ctr_sum[int])*numControls + controlStartIdx,
      (ctr_sum[int] + numControlPoints[int])*numControls + controlStartIdx -1)
-    for int in 1:Ni]
+                                                 for int in 1:Ni]
 
     if numControls == 1
       controlIdx_all = [(-99,-99) for int in 1:1];
@@ -132,18 +136,20 @@ function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int6
       controlIdx_all = [(controlIdx[int][1] - numControlPoints[int]*(ctr-numControls),
                        controlIdx[int][2] - numControlPoints[int]*(ctr-numControls +1))
       for int in 1:Ni for ctr in numControls:-1:1]  # does the outer loop first
-
-      # Organize Tuples by Individual Controls
-      organize_control_array = zeros(Int64,Ni*numControls,); idx=1;
-      for int in 1:Ni
-        for ctr in 1:numControls
-          organize_control_array[idx] = int + (ctr-1)*numControls;
-          idx=idx+1;
+        if Ni == 1
+          controlIdx_ctr = [(-99,-99) for int in 1:1];
+        else           # Organize Tuples by Individual Controls
+          organize_control_array = zeros(Int64,Ni*numControls,); idx=1;
+          for int in 1:Ni
+            for ctr in 1:numControls
+              organize_control_array[idx] = int + (ctr-1)*numControls;
+              idx=idx+1;
+            end
+          end
+          controlIdx_ctr = [(controlIdx_all[jj][1], # all controls are near each other
+                            controlIdx_all[jj][2])
+                    for jj in organize_control_array]
         end
-      end
-      controlIdx_ctr = [(controlIdx_all[jj][1], # all controls are near each other
-                        controlIdx_all[jj][2])
-      for jj in organize_control_array]
     end
     # ==================================================================================
     #___________________________ Time Indies ____________________________________________

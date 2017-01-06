@@ -11,23 +11,24 @@ t0 = Float64(0); tf = Float64(10);
 t = Array(linspace(t0,tf,100));
 α₁ =  -0.3; α₂ = 3; α₃ = -8; α₄ =  7;
 
-# state # 1
-γ = Poly([α₁,α₂,α₁]); #TODO check on that imported binding warning
-y = polyval(γ,t);
+γ1 = Poly([α₁,α₂,α₁]);    # state 1
+γ2 = Poly([α₁,α₂,α₁,α₄]); # state 2
+γ = [γ1; γ2]; numStates=length(γ);
+y = [polyval(γ[st],t) for st in 1:numStates];
 
-# evaluate the integral
-∫γ = polyint(γ);
-Y = polyval(∫γ,t[end]) - polyval(∫γ,t[1]);
-C = Y - polyval(∫γ,t[end]); # constant of integration
-∫y = polyval(∫γ,t) + C;
+# evaluate the integrals
+∫γ = [polyint(γ[st]) for st in 1:numStates];
+Y  = [polyval(∫γ[st],t[end]) - polyval(∫γ[st],t[1]) for st in 1:numStates];
+C  = [Y[st] - polyval(∫γ[st],t[end]) for st in 1:numStates]; # constant of integration
+∫y = [polyval(∫γ[st],t) + C[st] for st in 1:numStates];
 
-# evaluate the derivative
-dγ = polyder(γ);
-dy = polyval(dγ,t);
+# evaluate the derivatives
+dγ = [polyder(γ[st]) for st in 1:numStates];
+dy = [polyval(dγ[st],t) for st in 1:numStates];
 ############
 # TEST DATA
 ############
-ps, nlp = initialize_NLP(numStates=1,numControls=1,Ni=5,Nck=[200,3,100,5,100]);
+ps, nlp = initialize_NLP(numStates=numStates,numControls=1,Ni=1,Nck=[4]);
 @pack ps = t0, tf;  # given in problem def.
 @unpack Nck, Ni, t0, tf, τ, ω = ps;
 di, tm, ts, ωₛ = create_intervals(t0,tf,Ni,Nck,τ,ω);
@@ -64,17 +65,20 @@ ls = 1.35;
 lw = 4;
 
 ip=plot(0,leg=:false)
-plot!(t,∫y,label=@sprintf("act. = %0.2f",∫y[end]),w=lw); legend_bool = 1;
-for st in 1:1
+for st in 1:numStates
+  plot!(t,∫y[st],label=string(@sprintf("act. = %0.2f",∫y[st][end])," || st. #",st),w=lw);
+end
+for st in 1:numStates
+    legend_bool=true;
     for int in 1:Ni
-        if legend_bool == 1
-            scatter!(ts[int][1:end-1],ζ[int][st,1:Nck[int]],marker = (:pentagon, 10, 0.9, :red),leg=:bottomright,label=@sprintf("QUAD. = %0.2f",approx_int_st[st]))
-            scatter!(ts[int][1:end-1],ζ2[int][st,1:Nck[int]], marker = (:star5, 10, 0.9, :green),leg=:bottomright,label=@sprintf("LGR  = %0.2f",approx_int_st2[st]))
+        if legend_bool
+            scatter!(ts[int][1:end-1],ζ[int][st,1:Nck[int]],marker = (:pentagon, 10, 0.9, :red),leg=:bottomright,label=string(@sprintf("QUAD. = %0.2f",approx_int_st[st])," || st. #",st))
+            scatter!(ts[int][1:end-1],ζ2[int][st,1:Nck[int]], marker = (:star5, 10, 0.9, :green),leg=:bottomright,label=string(@sprintf("LGR  = %0.2f",approx_int_st2[st])," || st. #",st))
         else # do not show legend a bunch of times
             scatter!(ts[int][1:end-1],ζ[int][st,1:Nck[int]],marker = (:pentagon, 10, 0.9, :red),leg=:bottomright,label= "",leg=true)
             scatter!(ts[int][1:end-1],ζ2[int][st,1:Nck[int]], marker = (:star5, 10, 0.9, :green),leg=:bottomright,label= "",leg=true)
         end
-        legend_bool = 0;
+        legend_bool=false;
     end
 end
 xlims!(t0,tf*ls)
@@ -82,15 +86,19 @@ ylabel!("Integral")
 xlabel!(string("Number of Intervals = ", Ni))
 
 dp=plot(0,leg=:false)
-plot!(t,dy,label="act.",w=lw); legend_bool = 1;
-for st in 1:1
+
+for st in 1:numStates
+  plot!(t,dy[st],label=string("act. state #",st),w=lw);
+end
+for st in 1:numStates
+    legend_bool=true;  # new legend for each state
     for int in 1:Ni
-        if legend_bool == 1
-            scatter!(ts[int][1:end-1],dζ[int][st,1:Nck[int]],marker = (:pentagon, 10, 0.9, :red),label=string("LGR"),leg=:bottomright)
+        if legend_bool
+            scatter!(ts[int][1:end-1],dζ[int][st,1:Nck[int]],marker = (:pentagon, 10, 0.9, :red),label=string(string("LGR")," || st. #",st),leg=:bottomright)
         else # do not show legend a bunch of times
             scatter!(ts[int][1:end-1],dζ[int][st,1:Nck[int]],marker = (:pentagon, 10, 0.9, :red),label= "",leg=true)
         end
-        legend_bool = 0;
+        legend_bool=false;
     end
 end
 xlims!(t0,tf*ls)
@@ -100,7 +108,7 @@ xlabel!(string("State(x) = ",γ))
 tF = zeros(Float64,Ni); yF =  zeros(Float64,Ni);
 fp=plot(0,leg=:false);
 plot!(t,y,label="act.",w=lw)
-for st in 1:1  # currently the second state is all zeros
+for st in 1:numStates  # currently the second state is all zeros
     for int in 1:Ni
         scatter!(ts[int],P[int][:,st],markersize =10,markershape = :rect,leg=:topright,label=string("# cp. = ",Nck[int]))
         tF[int] = ts[int][end];
