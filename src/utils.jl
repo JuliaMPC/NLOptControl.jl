@@ -11,21 +11,21 @@ Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/26
 """
 
 # should only call this once
-function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int64=10,Nck::Array{Int64,1}=4*ones(Int64,Ni,), kwargs...)
+function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int64=10,Nck::Array{Int64,1}=4*ones(Int64,Ni,),stateEquations::Array{Function,1}=[], kwargs...)
     # validate input
     if length(Nck) != Ni
-        error("length(Nck) != Ni");
+        error("\n length(Nck) != Ni \n");
     end
     for int in 1:Ni
         if (Nck[int]<0)
-            error("Nck must be > 0");
+            error("\n Nck must be > 0");
         end
     end
     if  Ni <= 0
-        error("Ni must be > 0");
+        error("\n Ni must be > 0 \n");
     end
     if  numStates <= 0
-        error("numStates must be > 0","\n",
+        error("\n numStates must be > 0","\n",
                 "default value = 0","\n",
               );
     end
@@ -34,7 +34,9 @@ function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int6
               "default value = 0","\n",
               );
     end
-
+    if length(stateEquations) != numStates
+      error(string("\n Number of state equations must match number of states \n"));
+    end
     # initialize node data TODO -> eventually make different PS methods available
 
     taus_and_weights = [gaussradau(Nck[int]) for int in 1:Ni];
@@ -61,14 +63,15 @@ function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int6
     else
         # validate optional input
         if  length(args[1]) != lengthDecVector
-            error(string("length of decisionVector must be = ",lengthDecVector));
+            error(string("Length of decisionVector must be = ",lengthDecVector),"\n");
         end
         if  length(args[2]) != 1
-            error(string("length of t0 must be = 1"));
+            error(string("\n Length of t0 must be = 1 \n"));
         end
         if  length(args[3]) != 1
-            error(string("length of tf must be = 1"));
+            error(string("\n Length of tf must be = 1 \n"));
         end
+
         decisionVector = args[1];
         t0 = args[2];
         tf = args[3];
@@ -180,6 +183,7 @@ function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int6
 
     DMatrix = [zeros((Nck[int]),(Nck[int]+1)) for int in 1:Ni];
     IMatrix = [zeros((Nck[int]),(Nck[int])) for int in 1:Ni];
+    FMatrix = [zeros((Nck[int]),numStates) for int in 1:Ni];
 
     # ==================================================================================
     #___________________________ Debugging _____________________________________________
@@ -219,7 +223,8 @@ function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int6
       stateMatrix=stateMatrix,
     controlMatrix=controlMatrix,
           DMatrix=DMatrix,
-          IMatrix=IMatrix
+          IMatrix=IMatrix,
+          FMatrix=FMatrix
               );
   nlp = NLP_data(     numStates=numStates,
                       numControls=numControls,
@@ -236,7 +241,8 @@ function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int6
                       stateIdx_st=stateIdx_st,
                       timeStartIdx=timeStartIdx,
                       timeStopIdx=timeStopIdx,
-                      decisionVector=decisionVector
+                      decisionVector=decisionVector,
+                      stateEquations=stateEquations
                  );
     return ps, nlp
 end

@@ -31,10 +31,10 @@ Date Create: 1/1/2017, Last Modified: 1/3/2017 \n
   tf::Float64 # final time
   DMatrix::Array{Array{Float64,2},1}  # differention matrix
   IMatrix::Array{Array{Float64,2},1}  # integration matrix
+  FMatrix::Array{Array{Float64,2},1}
   stateMatrix::Array{Array{Float64,2},1}
   controlMatrix::Array{Array{Float64,2},1}
 end
-
 
 """
 nlp = NLP_data(numStates=numStates, numControls=numControls);
@@ -74,6 +74,9 @@ Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/26
   controlIdx_ctr::Array{Tuple{Int64,Int64},1}
   # problem data
   decisionVector::Vector{Float64}
+
+  # state equations
+  stateEquations::Array{Function,1}
 end
 
 # scripts -> need to be called after the data!
@@ -87,7 +90,7 @@ include("LGR.jl");
   # Functions
 export initialize_NLP, nlp2ocp,
        LGL_nodes, LGL_weights, LGL_Dmatrix,
-       LGR, lgr_diff, LGR_matrices,
+       LGR, lgr_diff, LGR_matrices, F_matrix,
        scale_tau, scale_w, create_intervals,
        lagrange_basis_poly, interpolate_lagrange,
        integrate_state,

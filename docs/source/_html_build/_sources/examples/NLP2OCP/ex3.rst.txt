@@ -24,7 +24,7 @@ with:
 
 .. sidebar:: Comments on failing to calculate integral in Problem A
 
-  This is expected. Looking at the smallest mesh grid size `Nck=3`, we can only expect to calculate a the integral for a `2*3-2=4th` order polynomial exactly.
+  This is expected. Looking at the smallest mesh grid size `Nck=1`, we can only expect to calculate a the integral for a `2*1-2=0th` order polynomial exactly.
 
 Problem B
 ----------

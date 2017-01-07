@@ -31,6 +31,23 @@ function LGR_matrices(ps::PS_data,nlp::NLP_data)
     end
     @pack ps = DMatrix, IMatrix
 end
+"""
+F_matrix(nlp,ps,int)
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 1/7/2017, Last Modified: 1/7/2017 \n
+--------------------------------------------------------------------------\n
+"""
+function F_matrix(nlp::NLP_data, ps::PS_data,int::Int64)
+    @unpack Nck, ts, stateMatrix, FMatrix  = ps
+    @unpack numStates, stateEquations = nlp
+    for i in 1:Nck[int]   # number of collocation points in current interval
+        for j in 1:numStates      # each state has an ODE constraint associated with it
+            FMatrix[int][i,j] = stateEquations[j](ts[int][i]); # TODO currently this constriant is only a function of time, later this needs to be more general
+        end
+    end
+    @pack ps = FMatrix
+end
 
 """
 xd=lgr_diff(Nc,Ni,x,t_data)
