@@ -11,15 +11,14 @@ macro def(name, definition)
   end
 end
 
-
 """
 ps = PS_data(Nc=Nc,Ni=Ni,τ=τ,ω=ω,t0=t0,tf=tf);
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/1/2017, Last Modified: 1/3/2017 \n
---------------------------------------------------------------------------\n
+Date Create: 1/1/2017, Last Modified: 1/8/2017 \n
+--------------------------------------------------------------------------------------\n
 """
-@with_kw type PS_data
+@with_kw type PS_data  #TODO consider having only a single type for the entire model, mdl?--> or push this data set deeper
   Nck::Array{Int64,1} # number of collocation points per interval
   Ni::Int64 # number of intervals
   #TODO --> for now default is gaussradau, eventually add other PS methods
@@ -34,22 +33,25 @@ Date Create: 1/1/2017, Last Modified: 1/3/2017 \n
   FMatrix::Array{Array{Float64,2},1}
   stateMatrix::Array{Array{Float64,2},1}
   controlMatrix::Array{Array{Float64,2},1}
+  odeConstraint::Array{Array{Float64,2},1}
+  continuityConstraint::Array{Array{Float64,1},1}
+  boundaryConstraint::Array{Float64,1}
+  stateConstraint::Array{Array{Float64,2},1}
+  controlConstraint::Array{Array{Float64,2},1}
 end
 
 """
 nlp = NLP_data(numStates=numStates, numControls=numControls);
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/1/2017, Last Modified: 1/3/2017 \n
+Date Create: 1/1/2017, Last Modified: 1/8/2017 \n
 Citations: \n
 ----------\n
 Original Author: S. Hughes.  steven.p.hughes@nasa.gov
 Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/264a12acad195e6a2467cfdc68abdcee801f73fc/tree/prototype/OptimalControl/LowThrust/@DecisionVector/)
---------------------------------------------------------------------------\n
+-------------------------------------------------------------------------------------\n
 """
-
 @with_kw type NLP_data
-
   # general properties
   numStates::Int64      # number of states
   numControls::Int64    # number of controls
@@ -72,11 +74,20 @@ Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/26
   controlIdx_all::Array{Tuple{Int64,Int64},1}
   stateIdx_st::Array{Tuple{Int64,Int64},1}
   controlIdx_ctr::Array{Tuple{Int64,Int64},1}
-  # problem data
+
+  # design variable data
   decisionVector::Vector{Float64}
 
   # state equations
   stateEquations::Array{Function,1}
+  X0::Array{Float64,1} # initial state conditions
+  XF::Array{Float64,1} # final state conditions
+
+  # linear bounds on variables
+  XL::Array{Float64,1}
+  XU::Array{Float64,1}
+  CL::Array{Float64,1}
+  CU::Array{Float64,1}
 end
 
 # scripts -> need to be called after the data!
@@ -85,21 +96,23 @@ include("test_data.jl")
 include("LGL.jl");
 include("LGR.jl");
 
-  # Objects
-
-  # Functions
+        # Functions
 export initialize_NLP, nlp2ocp,
        LGL_nodes, LGL_weights, LGL_Dmatrix,
        LGR, lgr_diff, LGR_matrices, F_matrix,
+       constraints,
+       ode_constraint,
+       continuity_constraint,
+       boundary_constraint,
+       inequality_constraint,
        scale_tau, scale_w, create_intervals,
        lagrange_basis_poly, interpolate_lagrange,
        integrate_state,
        differentiate_state,
        lepoly, poldif,
-
        generate_Fake_data,
 
-       # objects
+       # Objects
        NLP_data, PS_data,
 
       # Macros and Support Functions
@@ -156,10 +169,4 @@ export initialize_NLP, nlp2ocp,
               ξN]
 
 =#
-#-----------------------------
-
-#@with_kw immutable CollocationPoint @deftype Float64
-
-  # Define Parameters
-
 end

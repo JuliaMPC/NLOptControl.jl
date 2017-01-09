@@ -7,11 +7,10 @@ Citations: \n
 ----------\n
 Influenced by: S. Hughes.  steven.p.hughes@nasa.gov
 Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/264a12acad195e6a2467cfdc68abdcee801f73fc/tree/prototype/OptimalControl/LowThrust/@DecisionVector/)
---------------------------------------------------------------------------\n
+-------------------------------------------------------------------------------------\n
 """
-
 # should only call this once
-function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int64=10,Nck::Array{Int64,1}=4*ones(Int64,Ni,),stateEquations::Array{Function,1}=[], kwargs...)
+function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int64=10,Nck::Array{Int64,1}=4*ones(Int64,Ni,),stateEquations::Array{Function,1}=[],X0::Array{Float64,1}=zeros(Float64,numStates,1),XF::Array{Float64,1}=zeros(Float64,numStates,1),XL::Array{Float64,1}=zeros(Float64,numStates,1),XU::Array{Float64,1}=zeros(Float64,numStates,1),CL::Array{Float64,1}=zeros(Float64,numControls,1),CU::Array{Float64,1}=zeros(Float64,numControls,1),kwargs...)
     # validate input
     if length(Nck) != Ni
         error("\n length(Nck) != Ni \n");
@@ -36,6 +35,24 @@ function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int6
     end
     if length(stateEquations) != numStates
       error(string("\n Number of state equations must match number of states \n"));
+    end
+    if length(X0) != numStates
+      error(string("\n Length of X0 must match number of states \n"));
+    end
+    if length(XF) != numStates
+      error(string("\n Length of XF must match number of states \n"));
+    end
+    if length(XL) != numStates
+      error(string("\n Length of XL must match number of states \n"));
+    end
+    if length(XU) != numStates
+      error(string("\n Length of XU must match number of states \n"));
+    end
+    if length(CL) != numControls
+      error(string("\n Length of CL must match number of controls \n"));
+    end
+    if length(CU) != numControls
+      error(string("\n Length of CU must match number of controls \n"));
     end
     # initialize node data TODO -> eventually make different PS methods available
 
@@ -185,6 +202,11 @@ function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int6
     IMatrix = [zeros((Nck[int]),(Nck[int])) for int in 1:Ni];
     FMatrix = [zeros((Nck[int]),numStates) for int in 1:Ni];
 
+    odeConstraint = [zeros(Float64,Nck[int],numStates) for int in 1:Ni]; # may also want to call this stateEqConstraint
+    continuityConstraint = [zeros(Float64,numStates+numControls,) for int in 1:Ni-1];
+    boundaryConstraint = zeros(Float64,2*numStates,);
+    stateConstraint = [zeros(Float64,sum(numStatePoints),2) for st in 1:numStates];
+    controlConstraint = [zeros(Float64,sum(numControlPoints),2) for ctr in 1:numControls];
     # ==================================================================================
     #___________________________ Debugging _____________________________________________
     # ===================================================================================
@@ -212,19 +234,24 @@ function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int6
   # ==================================================================================
   #_________________________ Initialize Problem Data __________________________________
   # ===================================================================================
-  ps = PS_data(Nck=Nck,
-               Ni=Ni,
-                τ=τ,
-               ts=ts,
-                ω=ω,
-               ωₛ=ωₛ,
-               t0=t0,
-               tf=tf,
-      stateMatrix=stateMatrix,
-    controlMatrix=controlMatrix,
-          DMatrix=DMatrix,
-          IMatrix=IMatrix,
-          FMatrix=FMatrix
+  ps = PS_data(           Nck=Nck,
+                           Ni=Ni,
+                            τ=τ,
+                           ts=ts,
+                            ω=ω,
+                           ωₛ=ωₛ,
+                           t0=t0,
+                           tf=tf,
+                  stateMatrix=stateMatrix,
+                controlMatrix=controlMatrix,
+                      DMatrix=DMatrix,
+                      IMatrix=IMatrix,
+                      FMatrix=FMatrix,
+                 odeConstraint=odeConstraint,  # might also be state constraint, but this is the same as the variable name below
+         continuityConstraint=continuityConstraint,
+           boundaryConstraint=boundaryConstraint,
+              stateConstraint=stateConstraint,
+            controlConstraint=controlConstraint
               );
   nlp = NLP_data(     numStates=numStates,
                       numControls=numControls,
@@ -242,7 +269,13 @@ function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int6
                       timeStartIdx=timeStartIdx,
                       timeStopIdx=timeStopIdx,
                       decisionVector=decisionVector,
-                      stateEquations=stateEquations
+                      stateEquations=stateEquations,
+                      X0=X0,
+                      XF=XF,
+                      XL=XL,
+                      XU=XU,
+                      CL=CL,
+                      CU=CU
                  );
     return ps, nlp
 end
@@ -314,12 +347,139 @@ function nlp2ocp(nlp::NLP_data,ps::PS_data)
 end
 
 """
+F_matrix(nlp,ps,int)
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 1/7/2017, Last Modified: 1/8/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+function F_matrix(nlp::NLP_data, ps::PS_data)
+    @unpack Ni, Nck, ts, stateMatrix, FMatrix  = ps
+    @unpack numStates, stateEquations = nlp
+    for int in 1:Ni
+      for i in 1:Nck[int]   # number of collocation points in current interval
+          for j in 1:numStates      # each state has an ODE constraint associated with it
+              FMatrix[int][i,j] = stateEquations[j](ts[int][i]); # TODO currently this constriant is only a function of time, later this needs to be more general
+          end
+      end
+    end
+    @pack ps = FMatrix
+end
+
+"""
+c, ceq = constraints(nlp,ps)
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 1/8/2017, Last Modified: 1/9/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+function constraints(nlp::NLP_data,ps::PS_data)
+
+  # calculate equality constraints
+  ode_constraint(nlp,ps); # TODO consider running these in parallel
+  continuity_constraint(nlp,ps);
+  boundary_constraint(nlp,ps);
+  @unpack odeConstraint, continuityConstraint, boundaryConstraint = ps
+  ceq1 = [idx for tempM in odeConstraint for idx = tempM];
+  ceq2 = [idx for tempM in continuityConstraint for idx = tempM];
+  ceq3 = [idx for tempM in boundaryConstraint for idx = tempM];
+  ceq = [ceq1; ceq2; ceq3];
+
+  # calculate inequality constraints
+  inequality_constraint(nlp,ps);
+  @unpack stateConstraint, controlConstraint = ps
+  c1 = [idx for tempM in stateConstraint for idx = tempM];
+  c2 = [idx for tempM in controlConstraint for idx = tempM];
+  c = [c1; c2];
+  return c, ceq
+end
+
+"""
+ode_constraint(nlp,ps)
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 1/8/2017, Last Modified: 1/8/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+function ode_constraint(nlp::NLP_data,ps::PS_data)
+    @unpack FMatrix, DMatrix, stateMatrix, Ni, odeConstraint = ps
+    F_matrix(nlp,ps)
+    for int in 1:Ni
+        odeConstraint[int] = DMatrix[int]*stateMatrix[int]-FMatrix[int];
+    end
+    @pack ps = odeConstraint, FMatrix
+end
+
+"""
+continuity_constraint(nlp,ps)
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 1/7/2017, Last Modified: 1/7/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+function continuity_constraint(nlp::NLP_data,ps::PS_data)
+    @unpack stateMatrix, controlMatrix, Ni, continuityConstraint = ps
+    @unpack numStates, numControls = nlp
+    for int in 1:Ni-1
+        continuityConstraint[int] = [stateMatrix[int][end,:] - stateMatrix[int+1][1,:];
+                                   controlMatrix[int][end,:] - controlMatrix[int+1][1,:]];
+    end
+    @pack ps = continuityConstraint
+end
+
+"""
+boundary_constraint(nlp,ps)
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 1/7/2017, Last Modified: 1/8/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+function boundary_constraint(nlp::NLP_data,ps::PS_data)
+    @unpack stateMatrix, Ni, boundaryConstraint = ps
+    @unpack X0, XF = nlp
+    boundaryConstraint = [X0 - stateMatrix[1][1,:];
+                          XF - stateMatrix[Ni][end,:]];
+    @pack ps = boundaryConstraint
+end
+
+
+"""
+inequality_constraint(nlp,ps)
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 1/8/2017, Last Modified: 1/8/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+function inequality_constraint(nlp::NLP_data,ps::PS_data)
+    @unpack Ni, stateMatrix, stateConstraint = ps
+    @unpack numStates, XL, XU = nlp
+    for st in 1:numStates
+        for int in 1:Ni;
+            L = [idx for tempM in stateMatrix for idx = XL[st] - tempM[:,st]];
+            U = [idx for tempM in stateMatrix for idx = tempM[:,st] - XU[st]];
+            stateConstraint[st]= [L U];
+        end
+    end
+
+    @unpack controlMatrix, controlConstraint = ps
+    @unpack numControls, CL, CU = nlp
+    for ctr in 1:numControls
+        for int in 1:Ni;
+            L = [idx for tempM in controlMatrix for idx = CL[ctr] - tempM[:,ctr]];
+            U = [idx for tempM in controlMatrix for idx = tempM[:,ctr] - CU[ctr]];
+            controlConstraint[ctr]= [L U];
+        end
+    end
+    @pack ps = stateConstraint, controlConstraint
+end
+
+"""
 ζ, approx_int_st = integrate_state(ps,nlp;(:mode=>:LGRIM))
 ζ, approx_int_st = integrate_state(ps,nlp)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 1/2/2017, Last Modified: 1/4/2017 \n
---------------------------------------------------------------------------\n
+--------------------------------------------------------------------------------------\n
 """
 function integrate_state(ps::PS_data,nlp::NLP_data; kwargs...)
     @unpack Nck, Ni, stateMatrix, ωₛ, IMatrix = ps
@@ -358,11 +518,10 @@ end
 """
 dζ = differentiate_state(ps,nlp;(:mode=>:something...no modes yet!))
 dζ = differentiate_state(ps,nlp)
-
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 1/4/2017, Last Modified: 1/4/2017 \n
---------------------------------------------------------------------------\n
+--------------------------------------------------------------------------------------\n
 """
 function differentiate_state(ps::PS_data,nlp::NLP_data; kwargs...)
     @unpack Nck, Ni, stateMatrix, ωₛ, DMatrix = ps
