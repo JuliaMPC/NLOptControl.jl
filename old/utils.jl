@@ -1,4 +1,3 @@
-
 # the following code uses the function lepoly() located at:
 # https://www.mathworks.com/matlabcentral/fileexchange/51104-basic-implementation-of-multiple-interval-pseudospectral-methods-to-solve-optimal-control-problems
 # Last modifed on December 15, 2016 by Huckleberry Febbo

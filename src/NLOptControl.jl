@@ -92,6 +92,8 @@ end
 
 # scripts -> need to be called after the data!
 include("utils.jl");
+include("setup.jl")
+include("constraints.jl")
 include("test_data.jl")
 include("LGL.jl");
 include("LGR.jl");
