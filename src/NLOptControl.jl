@@ -94,6 +94,7 @@ end
 include("utils.jl");
 include("setup.jl")
 include("constraints.jl")
+include("objective.jl")
 include("test_data.jl")
 include("LGL.jl");
 include("LGR.jl");
@@ -109,7 +110,7 @@ export initialize_NLP, nlp2ocp,
        inequality_constraint,
        scale_tau, scale_w, create_intervals,
        lagrange_basis_poly, interpolate_lagrange,
-       integrate_state,
+       integrate,
        differentiate_state,
        lepoly, poldif,
        generate_Fake_data,

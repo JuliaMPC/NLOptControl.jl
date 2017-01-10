@@ -19,45 +19,74 @@ function F_matrix(nlp::NLP_data, ps::PS_data)
 end
 
 """
-ζ, approx_int_st = integrate_state(ps,nlp;(:mode=>:LGRIM))
-ζ, approx_int_st = integrate_state(ps,nlp)
+# integrates everything
+stInt, stIntVal, ctrInt, ctrIntVal = integrate(ps,nlp;(:mode=>:LGRIM))
+stInt, stIntVal, ctrInt, ctrIntVal = integrate(ps,nlp)
+# integrates specific states and or controls
+  * TODO have an option to integrate only certain states and controls
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/2/2017, Last Modified: 1/4/2017 \n
+Date Create: 1/2/2017, Last Modified: 1/9/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function integrate_state(ps::PS_data,nlp::NLP_data; kwargs...)
-    @unpack Nck, Ni, stateMatrix, ωₛ, IMatrix = ps
-    @unpack numStates = nlp
+function integrate(ps::PS_data,nlp::NLP_data; kwargs...)
+    @unpack Nck, Ni, stateMatrix, controlMatrix, ωₛ, IMatrix = ps
+    @unpack numStates, numControls = nlp
 
     kw = Dict(kwargs);
     # if there was nothing passed -> set default
     if !haskey(kw,:mode); kw = Dict(:mode => :default) end
     mode = get(kw, :mode, 0);
 
-    ζ = [zeros(Float64, numStates, Nck[int],)for int in 1:Ni]; idx = 1;
-    approx_int = zeros(Float64, numStates, Ni);
+    # state integral
+    stInt = [zeros(Float64, numStates, Nck[int],)for int in 1:Ni]; idx = 1;
+    stTemp = zeros(Float64, numStates, Ni);
     for st in 1:numStates
         for int in 1:Ni
             if mode == :default
-                ζ[int][st,1:Nck[int]] =  cumsum(ωₛ[int].*stateMatrix[int][1:end-1,st]);
+                stInt[int][st,1:Nck[int]] =  cumsum(ωₛ[int].*stateMatrix[int][1:end-1,st]);
             elseif mode == :LGRIM     # Legendre-Gauss-Radau integration matrix (LGRIM)
-                ζ[int][st,1:Nck[int]] =  IMatrix[int]*stateMatrix[int][1:end-1,st];
+                stInt[int][st,1:Nck[int]] =  IMatrix[int]*stateMatrix[int][1:end-1,st];
             else
                 error("Pick a mode or leave argument blank and it will use Gaussian quadrature")
             end
             # for the entire integral value; only add up what was accumulated in this interval
-            approx_int[st,int] = ζ[int][st,end];
+            stTemp[st,int] = stInt[int][st,end];
 
             # for the actual points on the graph, we need to offset by the initial value
             if int > 1 # add on intitial value
-              ζ[int][st,1:Nck[int]] = ζ[int][st,1:Nck[int]] + ζ[int-1][st,end];
+              stInt[int][st,1:Nck[int]] = stInt[int][st,1:Nck[int]] + stInt[int-1][st,end];
             end
             idx=idx+1;
         end
     end
-    approx_int_st = sum(approx_int,2);
-    return  ζ, approx_int_st
+    stIntVal = sum(stTemp,2);
+
+    # control integral
+    ctrInt = [zeros(Float64, numControls, Nck[int],)for int in 1:Ni]; idx = 1;
+    ctrTemp = zeros(Float64, numControls, Ni);
+    for ctr in 1:numControls
+        for int in 1:Ni
+            if mode == :default
+                ctrInt[int][ctr,1:Nck[int]] =  cumsum(ωₛ[int].*controlMatrix[int][:,ctr]);
+            elseif mode == :LGRIM     # Legendre-Gauss-Radau integration matrix (LGRIM)
+                ctrInt[int][ctr,1:Nck[int]] =  IMatrix[int]*controlMatrix[int][:,ctr];
+            else
+                error("Pick a mode or leave argument blank and it will use Gaussian quadrature")
+            end
+            # for the entire integral value; only add up what was accumulated in this interval
+            ctrTemp[ctr,int] = ctrInt[int][ctr,end];
+
+            # for the actual points on the graph, we need to offset by the initial value
+            if int > 1 # add on intitial value
+              ctrInt[int][ctr,1:Nck[int]] = ctrInt[int][ctr,1:Nck[int]] + ctrInt[int-1][ctr,end];
+            end
+            idx=idx+1;
+        end
+    end
+
+    ctrIntVal = sum(ctrTemp,2);
+    return  stInt, stIntVal, ctrInt, ctrIntVal
 end
 
 """
@@ -162,10 +191,29 @@ function lagrange_basis_poly!{T<:Number}(x::AbstractArray{T},x_data,Nc,L::Abstra
 end
 lagrange_basis_poly{T<:Number}(x::AbstractArray{T},x_data,Nc) = lagrange_basis_poly!(x::AbstractArray{T},x_data,Nc,zeros(x))
 
+"""
+y=interpolate_lagrange(ts[int],ts[int],stateMatrix[int][:,st],Nck[int])
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 1/2/2017, Last Modified: 1/9/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
 function interpolate_lagrange{T<:Number}(x::AbstractArray{T},x_data,y_data,Nc)
     if Nc > length(x_data) -1
-      error("Maximum N value = length(x_data)-1")
+      error("\n Maximum Nc value = length(x_data)-1 \n")
     end
+    if length(x_data)!=length(y_data)
+        error(string("\n",
+                      "-------------------------------------------------------", "\n",
+                      "There is an error with the data vector lengths!!", "\n",
+                      "-------------------------------------------------------", "\n",
+                      "The following variables should be equal:", "\n",
+                      "length(x_data) = ",length(x_data),"\n",
+                      "length(y_data) = ",length(y_data),"\n"
+                      )
+              )
+      end
+
     ns = length(x);
     L = zeros(Float64,Nc+1,ns);
     x = x[:]; x_data = x_data[:]; y_data = y_data[:]; # make sure data is in a column
