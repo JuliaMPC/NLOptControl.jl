@@ -10,7 +10,21 @@ Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/26
 -------------------------------------------------------------------------------------\n
 """
 # should only call this once
-function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int64=10,Nck::Array{Int64,1}=4*ones(Int64,Ni,),stateEquations::Array{Function,1}=[],X0::Array{Float64,1}=zeros(Float64,numStates,1),XF::Array{Float64,1}=zeros(Float64,numStates,1),XL::Array{Float64,1}=zeros(Float64,numStates,1),XU::Array{Float64,1}=zeros(Float64,numStates,1),CL::Array{Float64,1}=zeros(Float64,numControls,1),CU::Array{Float64,1}=zeros(Float64,numControls,1),kwargs...)
+function initialize_NLP(
+  args...;
+  numStates::Int64=0,
+  numControls::Int64=0,
+  Ni::Int64=10,
+  Nck::Array{Int64,1}=4*ones(Int64,Ni,),
+  stateEquations::Function=[],
+  X0::Array{Float64,1}=zeros(Float64,numStates,1),
+  XF::Array{Float64,1}=zeros(Float64,numStates,1),
+  XL::Array{Float64,1}=zeros(Float64,numStates,1),
+  XU::Array{Float64,1}=zeros(Float64,numStates,1),
+  CL::Array{Float64,1}=zeros(Float64,numControls,1),
+  CU::Array{Float64,1}=zeros(Float64,numControls,1),
+  kwargs...)
+
     # validate input
     if length(Nck) != Ni
         error("\n length(Nck) != Ni \n");
@@ -32,9 +46,6 @@ function initialize_NLP(args...;numStates::Int64=0,numControls::Int64=0,Ni::Int6
         error("eventually numControls must be > 0","\n",
               "default value = 0","\n",
               );
-    end
-    if length(stateEquations) != numStates
-      error(string("\n Number of state equations must match number of states \n"));
     end
     if length(X0) != numStates
       error(string("\n Length of X0 must match number of states \n"));

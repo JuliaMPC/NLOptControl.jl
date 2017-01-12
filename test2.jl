@@ -16,7 +16,9 @@ s0 =  0; s1 = 1; s2 = 0;       s3 = -1/(3*2*1); s4 = 0;           s5 = 1/(5*4*3*
 c0 = 1;  c1 = 0; c2 = 1/(2*1); c3 = 0;          c4 = 1/(4*3*2*1); c5 = 0;
 γ1S = Poly([s0,s1,s2,s3,s4,s5]);  # state 1
 γ2S = Poly([c0,c1,c2,c3,c4,c5]);  # state 2
-γS = [γ1S; γ2S]; numStates=length(γS);
+#γS = [γ1S; γ2S]; # ex a
+γS = [γ1S];  # ex b
+numStates=length(γS);
 yS = [polyval(γS[st],t) for st in 1:numStates];
 
 # evaluate the integrals
@@ -35,7 +37,9 @@ s0 =  0; s1 = 1; s2 = 0;       s3 = -1/(3*2*1); s4 = 0;           s5 = 1/(5*4*3*
 c0 = 1;  c1 = 0; c2 = 1/(2*1); c3 = 0;          c4 = 1/(4*3*2*1); c5 = 0;
 γ1C = Poly([s0,s1,s2,s3,s4,s5]);  # control 1
 γ2C = Poly([c0,c1,c2,c3,c4,c5]);  # control 2
-γC = [γ1C; γ2C]; numControls=length(γC);
+#γC = [γ1C; γ2C];  # ex a
+γC = [γ2C];   # ex b
+numControls=length(γC)
 yC = [polyval(γC[ctr],t) for ctr in 1:numControls];
 
 # evaluate the integrals
@@ -51,16 +55,41 @@ dyC = [polyval(dγC[ctr],t) for ctr in 1:numControls];
 ############
 # TEST DATA
 ############
-dx1(t) = 1.0 - 0.5⋅t^2 + 0.0416667⋅t^4;
-dx2(t) = 1.0⋅t + 0.166667⋅t^3;
-dx = [dx1, dx2];
-X0= [yS[1][1];yS[2][1]];
-XF= [yS[1][end];yS[2][end]];
-XL=[0,-Inf];     XU=[1/9,Inf]; # TODO allow for functions of these so we can calculate them on the fly!
-#CL=[-Inf];  CU=[Inf];
-CL=[-Inf,-Inf];  CU=[Inf,Inf];
+#dx1(t) = 1.0 - 0.5⋅t^2 + 0.0416667⋅t^4;
+#dx2(t) = 1.0⋅t + 0.166667⋅t^3;
+#dx = [dx1, dx2]; # ex 1
+#dx = [dx1];      # ex 2
 
-ps, nlp = initialize_NLP(numStates=numStates,numControls=numControls,Ni=5,Nck=[4,4,4,4,4],stateEquations=dx,X0=X0,XF=XF,XL=XL,XU=XU,CL=CL,CU=CU);
+# dyamics
+function dynamics(nlp::NLP_data,ps::PS_data)
+  @unpack ts, Ni, Nck = ps
+
+  pts = [zeros(Float64,length(ts[int])) for int in 1:Ni];
+  dx = [zeros(Float64,pts[int],2) for int in 1:Ni];
+
+  for int in 1:Ni
+    dx[int;1] = 1.0 - 0.5⋅ts[int]^2 + 0.0416667⋅ts[int]^4;
+    dx[int;2] = 1.0⋅ts[int] + 0.166667⋅ts[int]^3;
+  end
+
+  return dx
+end
+
+
+#X0= [yS[1][1];yS[2][1]];
+#XF= [yS[1][end];yS[2][end]];
+#XL=[0,-Inf];     XU=[1/9,Inf]; # TODO allow for functions of these so we can calculate them on the fly!
+#CL=[-Inf];  CU=[Inf];
+X0=zeros(Float64,numStates,);XF=X0;XL=X0;XU=X0;
+CL=zeros(Float64,numControls); CU=CL;
+
+#ps, nlp = initialize_NLP(numStates=numStates,numControls=numControls,Ni=5,Nck=[4,4,4,4,4],stateEquations=dx,X0=X0,XF=XF,XL=XL,XU=XU,CL=CL,CU=CU);
+ps, nlp = initialize_NLP(numStates=numStates,
+                        numControls=numControls,
+                        Ni=5,Nck=[4,4,4,4,4],
+                        stateEquations=dx,
+                        X0=X0,XF=XF,XL=XL,
+                        XU=XU,CL=CL,CU=CU);
 
 @pack ps = t0, tf;  # given in problem def.
 @unpack Nck, Ni, t0, tf, τ, ω = ps;

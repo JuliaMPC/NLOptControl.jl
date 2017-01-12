@@ -30,12 +30,12 @@ end
 ode_constraint(nlp,ps)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/8/2017, Last Modified: 1/8/2017 \n
+Date Create: 1/8/2017, Last Modified: 1/12/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function ode_constraint(nlp::NLP_data,ps::PS_data)
     @unpack FMatrix, DMatrix, stateMatrix, Ni, odeConstraint = ps
-    F_matrix(nlp,ps)
+    FMatrix = F_matrix(nlp,ps);
     for int in 1:Ni
         odeConstraint[int] = DMatrix[int]*stateMatrix[int]-FMatrix[int];
     end

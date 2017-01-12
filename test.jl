@@ -3,8 +3,19 @@ using JuMP
 using Ipopt
 using Parameters
 
+
+
+
+
+
+
 # only want to call this once, even if repeatedly solving problem
-ps, nlp = initialize_NLP(numStates=2,numControls=1,Ni=1,Nck=[4]);
+ps, nlp = initialize_NLP(numStates=numStates,
+                        numControls=numControls,
+                        Ni=5,Nck=[4,4,4,4,4],
+                        stateEquations=dx,
+                        X0=X0,XF=XF,XL=XL,
+                        XU=XU,CL=CL,CU=CU);
 
 # given time interval--> not always given though; might be a design variable (especially for optimal control problems)
 t0 = Float64(0); tf = Float64(1);
@@ -16,7 +27,7 @@ di, tm, ts, ωₛ = create_intervals(t0,tf,Ni,Nck,τ,ω);
 @pack ps = τ, ω, ωₛ, ts;
 
 # now the LGR matrices can be calculated
-LGR_matrices(ps,nlp) # will have to do this inside the optimization if the final time is a design variable
+LGR_matrices(ps,nlp); # will have to do this inside the optimization if the final time is a design variable
 
 # needed to define lengths of dvs
 @unpack lengthStateVector, lengthControlVector = nlp
@@ -49,59 +60,6 @@ function ODE_constraint(pa::PS_data,nlp::NLP_data)
 
 return
 end
-if p.scale == 1
-    x = scaling(x,p.xL,p.xU,2); # unscale design variables
-end
-
-# initialize constraints
-c = []; ceq = []; contin = [];
-# extract from optimization vector
-X = reshape(x(1:p.ns*p.nt),p.nt,[]); # states
-U = reshape(x(p.ns*p.nt+1:end),p.nt,[]); # controls
-
-#--- equality constraints
-# determine defect constraints for each segment
-
-#temp
-#    p.nt = sum(p.Narray); # total number of nodes
-#    p.Narray = Nc
-#    p.cumN = [0,cumsum(p.Narray)]; # segment ending indices
-#temp
-
-for i = 1:length(p.Narray)
-    Xi = X(p.cumN(i)+1:p.cumN(i+1),:); # states for segment i
-    Ui = U(p.cumN(i)+1:p.cumN(i+1),:); # controls for segment i
-    D = p.D{i}; # differentiation matrix
-
-    for i = 1:N+1
-        f(i,:) = eval([p.deriv,'(tau(i),X(i,:),U(i,:),t0,tf,p)']);
-    end
-    F = (tf-t0)/2*f; % scale
-
-    F = Fmatrix(p.tau{i},Xi,Ui,p.t0(i),p.tf(i),p); # differential matrix
-    defect{i,1} = D*Xi - F; # defect constraints
-end
-ceq = [ceq;reshape(cell2mat(defect),[],1)];
-
-# state and control continuity constraints between segments
-for i = 1:length(p.Narray)-1
-    contin{i,1} = [X(p.cumN(i+1),:) - X(p.cumN(i+1)+1,:),...
-        U(p.cumN(i+1),:) - U(p.cumN(i+1)+1,:)];
-end
-ceq = [ceq;reshape(cell2mat(contin),[],1)];
-
-# boundary constraints
-boundary = eval([p.boundary,'(X,U,p)']);
-ceq = [ceq;reshape(boundary,[],1)];
-
-#--- inequality constraints
-# path constraints
-path = eval([p.path,'(X,U,p)']);
-c = [c;reshape(path,[],1)];
-
-
-
-
 
 # dynamic constraints
 dζ = differentiate_state(ps,nlp)

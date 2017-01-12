@@ -79,7 +79,7 @@ Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/26
   decisionVector::Vector{Float64}
 
   # state equations
-  stateEquations::Array{Function,1}
+  stateEquations::Function
   X0::Array{Float64,1} # initial state conditions
   XF::Array{Float64,1} # final state conditions
 

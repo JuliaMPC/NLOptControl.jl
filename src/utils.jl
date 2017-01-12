@@ -2,19 +2,17 @@
 F_matrix(nlp,ps,int)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/7/2017, Last Modified: 1/8/2017 \n
+Date Create: 1/7/2017, Last Modified: 1/12/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function F_matrix(nlp::NLP_data, ps::PS_data)
-    @unpack Ni, Nck, ts, stateMatrix, FMatrix  = ps
-    @unpack numStates, stateEquations = nlp
-    for int in 1:Ni
-      for i in 1:Nck[int]   # number of collocation points in current interval
-          for j in 1:numStates      # each state has an ODE constraint associated with it
-              FMatrix[int][i,j] = stateEquations[j](ts[int][i]); # TODO currently this constriant is only a function of time, later this needs to be more general
-          end
-      end
-    end
+    @unpack FMatrix  = ps
+    @unpack stateEquations = nlp
+
+    # TODO if dynamics() is not defined warn the user
+    FMatrix = stateEquations(nlp,ps)
+
+    print(FMatrix)
     @pack ps = FMatrix
 end
 
