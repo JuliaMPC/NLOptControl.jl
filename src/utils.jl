@@ -9,7 +9,7 @@ function F_matrix(nlp::NLP_data, ps::PS_data)
     @unpack FMatrix  = ps
     @unpack stateEquations = nlp
 
-    # TODO if dynamics() is not defined warn the user
+    # TODO if stateEquations() is not defined warn the user
     FMatrix = stateEquations(nlp,ps)
 
     print(FMatrix)
@@ -88,8 +88,8 @@ function integrate(ps::PS_data,nlp::NLP_data; kwargs...)
 end
 
 """
-dζ = differentiate_state(ps,nlp;(:mode=>:something...no modes yet!))
-dζ = differentiate_state(ps,nlp)
+dx = differentiate_state(ps,nlp;(:mode=>:something...no modes yet!))
+dx = differentiate_state(ps,nlp)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 1/4/2017, Last Modified: 1/4/2017 \n
@@ -103,18 +103,18 @@ function differentiate_state(ps::PS_data,nlp::NLP_data; kwargs...)
     if !haskey(kw,:mode); kw = Dict(:mode => :default) end
     mode = get(kw, :mode, 0);
 
-    dζ = [zeros(Float64, numStates, Nck[int],)for int in 1:Ni]; idx = 1;
+    dx = [zeros(Float64, numStates, Nck[int],)for int in 1:Ni]; idx = 1;
     for st in 1:numStates
         for int in 1:Ni
             if mode == :default
-                dζ[int][st,1:Nck[int]] = DMatrix[int]*stateMatrix[int][:,st];
+                dx[int][st,1:Nck[int]] = DMatrix[int]*stateMatrix[int][:,st];
             else
                 error("Pick a mode or leave argument blank default")
             end
             idx=idx+1;
         end
     end
-    return  dζ
+    return  dx
 end
 
 function scale_tau(τ::Array{Float64,1},x₀::Float64,xₙ::Float64)

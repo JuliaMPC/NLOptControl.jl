@@ -58,7 +58,7 @@ Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/26
 
   numStatePoints::Array{Int64,1} # number of state discretization within each interval
   numControlPoints::Array{Int64,1} # number of control discretization within each interval
-
+                                
   lengthStateVector::Int64  # total number of state variables
   lengthControlVector::Int64 # total number of control parameters
 

@@ -74,7 +74,6 @@ function boundary_constraint(nlp::NLP_data,ps::PS_data)
     @pack ps = boundaryConstraint
 end
 
-
 """
 inequality_constraint(nlp,ps)
 --------------------------------------------------------------------------------------\n

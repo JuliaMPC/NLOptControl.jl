@@ -141,7 +141,7 @@ function initialize_NLP(
         end
       end
       stateIdx_st = [( stateIdx_all[jj][1], # all states are near each other
-                     stateIdx_all[jj][2])
+                     stateIdx_all[jj][2])   # TODO something is wrong with this!!
             for jj in organize_state_array]
       end
     end
