@@ -17,6 +17,9 @@ function F_matrix(nlp::NLP_data, ps::PS_data)
 end
 
 """
+
+integral = integrate(mdl,ps,u;(:mode=>:control))
+
 # integrates everything
 stInt, stIntVal, ctrInt, ctrIntVal = integrate(ps,nlp;(:mode=>:LGRIM))
 stInt, stIntVal, ctrInt, ctrIntVal = integrate(ps,nlp)
@@ -82,11 +85,45 @@ function integrate(ps::PS_data,nlp::NLP_data; kwargs...)
             idx=idx+1;
         end
     end
-
     ctrIntVal = sum(ctrTemp,2);
     return  stInt, stIntVal, ctrInt, ctrIntVal
 end
 
+#Expr = integrate(mdl,ps,u,idx=1;C=0.5,(:variable=>:control),(:integrand=>:squared))
+
+function integrate(mdl::JuMP.Model,ps::PS_data,V::Array{JuMP.Variable,1}; C::Float64=1.0, kwargs...)
+  @unpack ωₛ, Ni, Nck = ps
+
+  kw = Dict(kwargs);
+  if !haskey(kw,:mode); kw_ = Dict(:mode => :quadrature); mode = get(kw_,:mode,0);
+  else; mode  = get(kw,:mode,0);
+  end
+
+  if !haskey(kw,:integrand); kw_ = Dict(:integrand => :default); integrand = get(kw_,:integrand,0);
+  else; integrand = get(kw,:integrand,0);
+  end
+
+  variable = get(kw,:variable,0);
+  if variable == :state; Nck_cum  = [0;cumsum(Nck+1)];
+  elseif variable == :control; Nck_cum = [0;cumsum(Nck)];
+  else; error("\n Set the variable to either (:variable => :state) or (:variable => :control). \n")
+  end
+
+  if mode == :quadrature
+    if integrand == :default    # integrate V
+      @NLexpression(mdl, temp[int=1:Ni], sum((ωₛ[int])[j] * (V[Nck_cum[int] + 1:Nck_cum[int + 1]])[j] for j = 1:Nck[int]));
+      Expr =  @NLexpression(mdl, C*sum(temp[int] for int = 1:Ni));
+    elseif integrand == :squared # integrate V^2
+      @NLexpression(mdl, temp[int=1:Ni],C*sum((ωₛ[int])[j] * (V[Nck_cum[int] + 1:Nck_cum[int + 1]])[j] * (V[Nck_cum[int] + 1:Nck_cum[int + 1]])[j] for j = 1:Nck[int]));
+      Expr =  @NLexpression(mdl, sum(temp[int] for int = 1:Ni));
+    else
+      error("It should not get here...")
+    end
+  elseif mode == :LGRIM# TODO add in option to allow for integration using IMatrix
+      error("\n Not implemented yet!! \n")
+  end
+  return Expr
+end
 """
 dx = differentiate_state(ps,nlp;(:mode=>:something...no modes yet!))
 dx = differentiate_state(ps,nlp)

@@ -1,6 +1,6 @@
 module NLOptControl
 
-using Media, DifferentialEquations, Dierckx, Parameters, Interpolations,FastGaussQuadrature, Polynomials
+using Media, Dierckx, Parameters, Interpolations, FastGaussQuadrature, Polynomials, JuMP
 
 # To copy a particular piece of code (or function) in some location
 macro def(name, definition)
@@ -58,7 +58,7 @@ Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/26
 
   numStatePoints::Array{Int64,1} # number of state discretization within each interval
   numControlPoints::Array{Int64,1} # number of control discretization within each interval
-                                
+
   lengthStateVector::Int64  # total number of state variables
   lengthControlVector::Int64 # total number of control parameters
 
@@ -98,6 +98,8 @@ include("objective.jl")
 include("test_data.jl")
 include("LGL.jl");
 include("LGR.jl");
+#include("macros.jl")
+include("ocp.jl")
 
         # Functions
 export initialize_NLP, nlp2ocp,
@@ -115,6 +117,7 @@ export initialize_NLP, nlp2ocp,
        lepoly, poldif,
        generate_Fake_data,
 
+       OCPdef,
        # Objects
        NLP_data, PS_data,
 
@@ -123,7 +126,7 @@ export initialize_NLP, nlp2ocp,
       @pack_NLP_data,
       @unpack_PS_data,
       @pack_PS_data
-
+    #  @OCPdef
   # MAKE SURE YOU REMOVE THE FINAL COMMA!!
 
 # ---------NOTES--------------
