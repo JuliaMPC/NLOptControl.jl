@@ -110,7 +110,7 @@ function integrate(mdl::JuMP.Model,ps::PS_data,V::Array{JuMP.Variable,1}; C::Flo
   end
 
   if mode == :quadrature
-    if integrand == :default    # integrate V
+    if integrand == :default      # integrate V
       @NLexpression(mdl, temp[int=1:Ni], sum((ωₛ[int])[j] * (V[Nck_cum[int] + 1:Nck_cum[int + 1]])[j] for j = 1:Nck[int]));
       Expr =  @NLexpression(mdl, C*sum(temp[int] for int = 1:Ni));
     elseif integrand == :squared # integrate V^2

@@ -26,7 +26,7 @@ XL=[0.,-Inf]; XU=[L,Inf]; # TODO allow for functions of these so we can calculat
 CL=[-Inf]; CU=[Inf];
 ps, nlp = initialize_NLP(numStates=2,
                          numControls=1,
-                         Ni=2,Nck=[17,12],
+                         Ni=2,Nck=[5,5],
                          stateEquations=stateEquations,
                          X0=X0,XF=XF,XL=XL,XU=XU,CL=CL,CU=CU);
 

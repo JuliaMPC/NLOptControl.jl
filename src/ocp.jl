@@ -28,14 +28,12 @@ function OCPdef(mdl::JuMP.Model, nlp::NLP_data, ps::PS_data)
 
   # state continuity constraints
   @unpack Ni, Nck = ps;
-  Nck_st = [1;cumsum(Nck+1)];
-  Nck_ctr = [1;cumsum(Nck)];
-  for int in 2:Ni
-    for st in 1:numStates
-      @constraint(mdl, x[Nck_st[int],st] == x[Nck_st[int]+1,st])
-    end
-    for ctr in 1:numControls #TODO why do we need this?
-      @constraint(mdl, u[Nck_ctr[int],ctr] == u[Nck_ctr[int]+1,ctr])
+  if Ni >= 2
+    Nck_st = [1;cumsum(Nck+1)];
+    for int in 2:Ni
+      for st in 1:numStates
+        @constraint(mdl, x[Nck_st[int],st] == x[Nck_st[int]+1,st])
+      end
     end
   end
 

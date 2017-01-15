@@ -3,38 +3,37 @@ using JuMP
 using Ipopt
 using Parameters
 using Plots
-using VehicleModels
+#using VehicleModels
 pyplot()
 
 ##################################
 # Define NLOptControl problem
 ##################################
 
-# user defined dynamic constraint equations TODO use this!!
-function stateEquations(nlp::NLP_data,ps::PS_data)
-  @unpack ts, Ni, Nck, stateMatrix, controlMatrix = ps
-  @unpack numStates = nlp
-  dx = [zeros(Float64,length(ts[int])-1,numStates) for int in 1:Ni];
-  for int in 1:Ni
-    dx[int][:,1] = stateMatrix[int][:,2];   # state eq# 1; v(t) TODO either the stateMatrix needs to be updated or we need to put JuMP variables here
-    dx[int][:,2] = controlMatrix[int][:,1]; # state eq# 2; u(t)
+# Moon Lander Problem
+# http://www.gpops2.com/Examples/MoonLander.html
+const g = 1.62519; # m/s^2
+# define dynamic constraint equations
+function stateEquations(x_int::Array{Any,2},u_int::Array{Any,2},st::Int64)
+  if st==1
+    return x_int[1:end-1,2]      # state eq# 1; v(t)
+  elseif st==2
+    return u_int[:,1] - g        # state eq# 2; u(t)-g
   end
-  return dx
 end
 
-L = 1/9;
-X0=[0.;1]; XF=[0.;-1.] #TODO check to see what form this should be in ; or ,
-                       #TODO allow for int inputs and just convert them to Float64
-XL=[0.,-Inf]; XU=[L,Inf]; # TODO allow for functions of these so we can calculate them on the fly!
+X0=[10.0,-2.0]; XF=[0.,0.]    #TODO allow for int inputs and just convert them to Float64
+XL=[-Inf,-Inf]; XU=[Inf,Inf]; # TODO allow for functions of these so we can calculate them on the fly!
 CL=[-Inf]; CU=[Inf];
 ps, nlp = initialize_NLP(numStates=2,
                          numControls=1,
-                         Ni=2,Nck=[17,12],
+                         Ni=4,Nck=[10,13,10,10],
                          stateEquations=stateEquations,
                          X0=X0,XF=XF,XL=XL,XU=XU,CL=CL,CU=CU);
 
+# NOT GIVEN TIME INTERVAL-->fake it for now
 # given time interval--> not always given though; might be a design variable (especially for optimal control problems)
-t0 = Float64(0); tf = Float64(1); @pack ps = t0, tf;
+t0 = Float64(0); tf = Float64(4); @pack ps = t0, tf;
 
 # give the time interval we can calculate these ps parameters
 @unpack Nck, Ni, t0, tf, τ, ω = ps;
@@ -48,154 +47,33 @@ di, tm, ts, ωₛ = create_intervals(t0,tf,Ni,Nck,τ,ω);
 # initialize design problem
 mdl = Model(solver = IpoptSolver());
 
-#TODO consider automatically generating JuMP variables based off user defined problem
-#TODO add time as a optional design variable
+x,u = OCPdef(mdl,nlp,ps)
 
-# inequality constraints and design variable definition
-@unpack numStatePoints, numControlPoints, XL, XU, CL, CU = nlp
-@variable(mdl, XL[1] <= x[1:sum(numStatePoints)] <= XU[1])   # position
-@variable(mdl, XL[2] <= v[1:sum(numStatePoints)] <= XU[2])   # velocity
-@variable(mdl, CL[1] <= u[1:sum(numControlPoints)] <= CU[1]) # control #TODO make sure we can do LGR like this
-
-#TODO automatically add constraints
-# boundary constraints
-@unpack X0, XF = nlp
-@constraint(mdl, x0_con, x[1]   == X0[1]);
-@constraint(mdl, xf_con, x[end] == XF[1]);
-@constraint(mdl, v0_con, v[1]   == X0[2]);
-@constraint(mdl, vf_con, v[end] == XF[2]);
-
-# state continuity constraints
-@unpack Ni, Nck = ps;
-Nck_st = [1;cumsum(Nck+1)];
-for int in 2:Ni
-  @constraint(mdl, x[Nck_st[int]] == x[Nck_st[int]+1])
-  @constraint(mdl, v[Nck_st[int]] == v[Nck_st[int]+1])
-  @constraint(mdl, u[Nck_st[int]] == u[Nck_st[int]+1])
-end
-
-# calculate LGR matrices - > IMatrix and DMatrix
-LGR_matrices(ps,nlp); # TODO if the final time is changing, DMatrix will change!--> needs to be recalcualted during optimization
-@unpack DMatrix, t0, tf = ps; # TODO look into regestering the DMatrix
-
-# state equation constraints
-Nck_st  = [0;cumsum(Nck+1)];
-Nck_ctr = [0;cumsum(Nck)];
-for int in 1:Ni
-  # states
-  x_int = x[Nck_st[int]+1:Nck_st[int+1]];
-  v_int = v[Nck_st[int]+1:Nck_st[int+1]];
-
-  # controls
-  u_int = u[Nck_ctr[int]+1:Nck_ctr[int+1]];
-
-  # dynamics
-  dx1 = DMatrix[int]*x_int - v_int[1:end-1];# TODO automatically insert user defined stateEquations()
-  dx2 = DMatrix[int]*v_int - u_int;
-
-  # add dynamics constraints
-  for j in 1:Nck[int]
-    @constraint(mdl, 0 == dx1[j])
-    @constraint(mdl, 0 == dx2[j])
-  end
-end
-
-# TODO  allow for option to integrate constraints @unpack IMatrix
-# TODO let the user define the objective function above
-# TODO allow user to select from using the IMatrix or quadrature
-
-#TODO find a better way to do this!
-@unpack ωₛ = ps
-@NLexpression(mdl, temp[int=1:Ni], 0.5*sum{ωₛ[int][j]*u[Nck_ctr[int]+1:Nck_ctr[int+1]][j]*u[Nck_ctr[int]+1:Nck_ctr[int+1]][j],j=1:Nck[int]});
-@NLexpression(mdl, obj, sum{temp[int], int=1:Ni});
-# TODO check obj to make sure that it is not an array
+obj = integrate(mdl,ps,u[:,1];(:variable=>:control))
 
 @NLobjective(mdl, Min, obj)
 
 obj_val = solve(mdl)
 
-tol = 10e-3;
-if abs(getvalue(obj) - 4/(9*L)) < tol
-  print("\n Solution is correct to tolerance specs.!! \n \n")
-else
-  print(string("\n",
-                "-------------------------------------", "\n",
-                "The solution is not correct!!", "\n",
-                "-------------------------------------", "\n",
-                "The following values should be equal:", "\n",
-                "4/(9*L)= ",4/(9*L),"\n",
-                "getvalue(obj) = ",getvalue(obj),"\n"
-                )
-        )
-end
-
-####################################
-## analytic soltion when 0<=L<=1/6
-###################################
-# analytic soltion for:    0 <= t <= 3L
-u1(t) = -2/(3*L)*(1-t/(3*L));
-v1(t) = (1 - t/(3*L))^2;
-x1(t) = L*(1 - (1 - t/(3*L))^3 );
-
-# analytic soltion for:   3L <= t <= 1-3L
-u2(t) = 0;
-v2(t) = 0;
-x2(t) = L;
-
-# analytic soltion for: 1-3L <= t <= 1
-u3(t) = -2/(3*L)*(1 - (1-t)/(3*L) )
-v3(t) = -(1 - (1-t)/(3*L) )^2
-x3(t) =  L*(1 - (1 - (1-t)/(3*L) )^3 );
-
-@unpack lengthStateVector = nlp
-pts = 100;
-t = linspace(t0,tf,pts)
-x_analytic = zeros(Float64,pts,);
-v_analytic = zeros(Float64,pts,);
-u_analytic = zeros(Float64,pts,);
-
-for i in 1:pts
-  if L > 1/6
-    warn("\n analytical solution only valid for L < 1/6!! \n")
-  end
-
-  if t[i] < 3*L
-    u_analytic[i]=u1(t[i]);
-    v_analytic[i]=v1(t[i]);
-    x_analytic[i]=x1(t[i]);
-  elseif ((3*L <= t[i]) && (t[i] <= (1-3*L)))
-    u_analytic[i]=u2(t[i]);
-    v_analytic[i]=v2(t[i]);
-    x_analytic[i]=x2(t[i]);
-  elseif (((1-3*L) <= t[i]) && (t[i] <= 1))
-    u_analytic[i]=u3(t[i]);
-    v_analytic[i]=v3(t[i]);
-    x_analytic[i]=x3(t[i]);
-  else
-    error(" \n Not setup for outside of this range \n")
-  end
-end
-
-# visualize solution
+##################################
+# Post Processing
+##################################
 lw=8; lw2=3;
 t_st = [idx for tempM in ts for idx = tempM];
 t_ctr= [idx for tempM in ts for idx = tempM[1:end-1]];
 
-p1=plot(t,x_analytic, label = "x analytic",w=lw)
-plot!(t_st,getvalue(x), label = "x interp.",w=lw2)
-scatter!(t_st,getvalue(x), label = "x optimal",marker = (:star8, 15, 0.9, :green))
-ylabel!("x(t)")
+p1=plot(t_st,getvalue(x[:,1]), label = "x interp.",w=lw2)
+scatter!(t_st,getvalue(x[:,1]), label = "x optimal",marker = (:star8, 15, 0.9, :green))
+ylabel!("h(t)")
 xlabel!("time (s)")
 
-p2=plot(t,v_analytic, label = "v analytic",w=lw)
-plot!(t_st,getvalue(v), label = "v interp.",w=lw2)
-scatter!(t_st,getvalue(v), label = "v optimal",marker = (:star8, 15, 0.9, :green))
+p2=plot(t_st,getvalue(x[:,2]), label = "v interp.",w=lw2)
+scatter!(t_st,getvalue(x[:,2]), label = "v optimal",marker = (:star8, 15, 0.9, :green))
 ylabel!("v(t)")
 xlabel!("time (s)")
 
-p3=plot(t,u_analytic, label = "u analytic",w=lw)
-plot!(t_ctr,getvalue(u), label = "u interp.",w=lw2)
-scatter!(t_ctr,getvalue(u), label = "u optimal",marker = (:star8, 15, 0.9, :green))
+p3=plot(t_ctr,getvalue(u[:,1]), label = "u interp.",w=lw2)
+scatter!(t_ctr,getvalue(u[:,1]), label = "u optimal",marker = (:star8, 15, 0.9, :green))
 ylabel!("u(t)")
 xlabel!("time (s)")
 
