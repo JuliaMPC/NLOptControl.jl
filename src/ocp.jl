@@ -2,9 +2,9 @@
 function OCPdef(mdl::JuMP.Model, nlp::NLP_data, ps::PS_data)
   # inequality constraints and design variable definitions
   @unpack numStates, numStatePoints,  XL, XU = nlp
-  @variable(mdl, x[1:sum(numStatePoints),1:numStates]);
+  @variable(mdl, x[1:sum(numStatePoints-1)+1,1:numStates]); # +1 for the last interval
   for st in 1:numStates
-    for j in 1:sum(numStatePoints)
+    for j in 1:sum(numStatePoints-1)
       setlowerbound(x[j,st], XL[st])
       setupperbound(x[j,st], XU[st])
     end
@@ -26,7 +26,8 @@ function OCPdef(mdl::JuMP.Model, nlp::NLP_data, ps::PS_data)
     @constraint(mdl, x[end,st] == XF[st]);
   end
 
-  # state continuity constraints
+  @unpack Ni, Nck = ps;
+  #= state continuity constraints
   @unpack Ni, Nck = ps;
   if Ni >= 2
     Nck_st = [1;cumsum(Nck+1)];
@@ -36,7 +37,7 @@ function OCPdef(mdl::JuMP.Model, nlp::NLP_data, ps::PS_data)
       end
     end
   end
-
+=#
   # calculate LGR matrices - > IMatrix and DMatrix
   LGR_matrices(ps,nlp); # TODO if the final time is changing, DMatrix will change!--> needs to be recalcualted during optimization
   @unpack DMatrix, t0, tf = ps; # TODO look into regestering the DMatrix
@@ -48,7 +49,7 @@ function OCPdef(mdl::JuMP.Model, nlp::NLP_data, ps::PS_data)
     # states
     x_int = Array(Any,length(Nck_st[int]+1:Nck_st[int+1]),numStates);
     for st in 1:numStates
-      x_int[:,st] = x[Nck_st[int]+1:Nck_st[int+1],st];
+      x_int[:,st] = x[Nck_ctr[int]+1:Nck_ctr[int+1]+1,st];  #+1 adds the DV in the next interval
     end
     # controls
     u_int = Array(Any,length(Nck_ctr[int]+1:Nck_ctr[int+1]),numControls);

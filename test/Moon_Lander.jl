@@ -22,12 +22,12 @@ function stateEquations(x_int::Array{Any,2},u_int::Array{Any,2},st::Int64)
   end
 end
 
-X0=[10.0,-2.0]; XF=[0.,0.]    #TODO allow for int inputs and just convert them to Float64
+X0=[10.0,-2.0]; XF=[0.,0.]    # TODO allow for int inputs and just convert them to Float64
 XL=[-Inf,-Inf]; XU=[Inf,Inf]; # TODO allow for functions of these so we can calculate them on the fly!
 CL=[-Inf]; CU=[Inf];
 ps, nlp = initialize_NLP(numStates=2,
                          numControls=1,
-                         Ni=4,Nck=[10,13,10,10],
+                         Ni=1,Nck=[100],
                          stateEquations=stateEquations,
                          X0=X0,XF=XF,XL=XL,XU=XU,CL=CL,CU=CU);
 
@@ -59,8 +59,9 @@ obj_val = solve(mdl)
 # Post Processing
 ##################################
 lw=8; lw2=3;
-t_st = [idx for tempM in ts for idx = tempM];
+#_st = [idx for tempM in ts for idx = tempM];
 t_ctr= [idx for tempM in ts for idx = tempM[1:end-1]];
+t_st = append!(t_ctr,ts[end][end]);
 
 p1=plot(t_st,getvalue(x[:,1]), label = "x interp.",w=lw2)
 scatter!(t_st,getvalue(x[:,1]), label = "x optimal",marker = (:star8, 15, 0.9, :green))

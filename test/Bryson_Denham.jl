@@ -26,7 +26,7 @@ XL=[0.,-Inf]; XU=[L,Inf]; # TODO allow for functions of these so we can calculat
 CL=[-Inf]; CU=[Inf];
 ps, nlp = initialize_NLP(numStates=2,
                          numControls=1,
-                         Ni=2,Nck=[5,5],
+                         Ni=3,Nck=[8,20,8],
                          stateEquations=stateEquations,
                          X0=X0,XF=XF,XL=XL,XU=XU,CL=CL,CU=CU);
 
@@ -117,8 +117,9 @@ end
 
 # visualize solution
 lw=8; lw2=3;
-t_st = [idx for tempM in ts for idx = tempM];
+#t_st = [idx for tempM in ts for idx = tempM];
 t_ctr= [idx for tempM in ts for idx = tempM[1:end-1]];
+t_st = append!(t_ctr,ts[end][end]);
 
 p1=plot(t,x_analytic, label = "x analytic",w=lw)
 plot!(t_st,getvalue(x[:,1]), label = "x interp.",w=lw2)
