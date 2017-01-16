@@ -27,7 +27,7 @@ CL=[-Inf]; CU=[Inf];
 t0 = Float64(0); tf = Float64(1);
 ps, nlp = initialize_NLP(t0,tf,numStates=2,
                          numControls=1,
-                         Ni=1,Nck=[100],
+                         Ni=2,Nck=[10,5],
                          stateEquations=stateEquations,
                          X0=X0,XF=XF,XL=XL,XU=XU,CL=CL,CU=CU;
                          (:finalTimeDV => false));

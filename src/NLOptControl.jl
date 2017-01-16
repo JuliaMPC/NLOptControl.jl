@@ -23,9 +23,9 @@ Date Create: 1/1/2017, Last Modified: 1/8/2017 \n
   Ni::Int64 # number of intervals
   #TODO --> for now default is gaussradau, eventually add other PS methods
   τ::Array{Array{Float64,1},1}  # Node points ---> Nc increasing and distinct numbers ∈ [-1,1] #TODO might be able to calculate here during problem initialization
-  ts::Array{Array{Float64,1},1} # time scaled based off of τ
+  ts::Array{Array{Any,1},1} # time scaled based off of τ
   ω::Array{Array{Float64,1},1} # weights
-  ωₛ::Array{Array{Float64,1},1} # scaled weights
+  ωₛ::Array{Array{Any,1},1} # scaled weights
   t0::Float64 # initial time
   tf::Float64 # final time
   DMatrix::Array{Array{Float64,2},1}  # differention matrix
@@ -119,8 +119,12 @@ export initialize_NLP, nlp2ocp,
        differentiate_state,
        lepoly, poldif,
        generate_Fake_data,
-
        OCPdef,
+       # JuMP registered functions
+       create_intervals_JuMP,
+       poldif_JuMP,
+       D_matrix_JuMP,
+       
        # Objects
        NLP_data, PS_data,
 

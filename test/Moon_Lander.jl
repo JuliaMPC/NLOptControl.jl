@@ -25,13 +25,13 @@ end
 X0=[10.0,-2.0]; XF=[0.,0.]    # TODO allow for int inputs and just convert them to Float64
 XL=[-Inf,-Inf]; XU=[Inf,Inf]; # TODO allow for functions of these so we can calculate them on the fly!
 CL=[-Inf]; CU=[Inf];
-t0 = Float64(0); tf = Float64(4);
-ps, nlp = initialize_NLP(t0,tf,numStates=2,
+#t0 = Float64(0); tf = Float64(4);
+ps, nlp = initialize_NLP(numStates=2,
                          numControls=1,
-                         Ni=1,Nck=[100],
+                         Ni=2,Nck=[10,5],
                          stateEquations=stateEquations,
                          X0=X0,XF=XF,XL=XL,XU=XU,CL=CL,CU=CU;
-                         (:finalTimeDV => false));
+                         (:finalTimeDV => true));
 
 #=
 t0 = Float64(0); tf = Float64(4); @pack ps = t0, tf;
@@ -52,7 +52,7 @@ x,u = OCPdef(mdl,nlp,ps)
 
 obj = integrate(mdl,ps,u[:,1];(:variable=>:control))
 
-@NLobjective(mdl, Min, obj)
+@NLobjective(mdl, Min, obj) # for now might actually be able to remove this! tf_var
 
 obj_val = solve(mdl)
 
