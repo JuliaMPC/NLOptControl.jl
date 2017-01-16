@@ -15,7 +15,8 @@ function LGR_matrices(ps::PS_data,nlp::NLP_data)
         check_ts[int]=maximum(ts[int]);
     end
     if maximum(check_ts) < 10*eps()
-      error("\n ts is full of zeros: make sure that you call create_intervals() first to calculate ts! \n ")
+      error("\n ts is full of zeros: make sure that you call create_intervals() first to calculate ts! \n
+                NOTE: This may have occured because  (:finalTimeDV => true) and the final time dv is not working properly!! \n")
     end
 
     D = [zeros((Nck[int]+1),(Nck[int]+1)) for int in 1:Ni];

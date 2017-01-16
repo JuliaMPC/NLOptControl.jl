@@ -24,25 +24,18 @@ X0=[0.;1]; XF=[0.;-1.] #TODO check to see what form this should be in ; or ,
                        #TODO allow for int inputs and just convert them to Float64
 XL=[0.,-Inf]; XU=[L,Inf]; # TODO allow for functions of these so we can calculate them on the fly!
 CL=[-Inf]; CU=[Inf];
-ps, nlp = initialize_NLP(numStates=2,
+t0 = Float64(0); tf = Float64(1);
+ps, nlp = initialize_NLP(t0,tf,numStates=2,
                          numControls=1,
-                         Ni=3,Nck=[8,20,8],
+                         Ni=1,Nck=[100],
                          stateEquations=stateEquations,
-                         X0=X0,XF=XF,XL=XL,XU=XU,CL=CL,CU=CU);
-
-# given time interval--> not always given though; might be a design variable (especially for optimal control problems)
-t0 = Float64(0); tf = Float64(1); @pack ps = t0, tf;
-
-# give the time interval we can calculate these ps parameters
-@unpack Nck, Ni, t0, tf, τ, ω = ps;
-di, tm, ts, ωₛ = create_intervals(t0,tf,Ni,Nck,τ,ω);
-@pack ps = τ, ω, ωₛ, ts;
+                         X0=X0,XF=XF,XL=XL,XU=XU,CL=CL,CU=CU;
+                         (:finalTimeDV => false));
 
 ##################################
 # Define JuMP problem
 ##################################
 
-# initialize design problem
 mdl = Model(solver = IpoptSolver());
 
 x,u=OCPdef(mdl,nlp,ps)
@@ -87,6 +80,7 @@ v3(t) = -(1 - (1-t)/(3*L) )^2
 x3(t) =  L*(1 - (1 - (1-t)/(3*L) )^3 );
 
 @unpack lengthStateVector = nlp
+@unpack t0, tf = ps
 pts = 100;
 t = linspace(t0,tf,pts)
 x_analytic = zeros(Float64,pts,);
@@ -111,13 +105,17 @@ for i in 1:pts
     v_analytic[i]=v3(t[i]);
     x_analytic[i]=x3(t[i]);
   else
-    error(" \n Not setup for outside of this range \n")
+    error(" \n Not setup for outside of this range \n
+                TRY: t0 = 0. and tf = 1. \n")
   end
 end
 
+##################################
+# Post Processing
+##################################
 # visualize solution
+@unpack ts = ps
 lw=8; lw2=3;
-#t_st = [idx for tempM in ts for idx = tempM];
 t_ctr= [idx for tempM in ts for idx = tempM[1:end-1]];
 t_st = append!(t_ctr,ts[end][end]);
 
@@ -143,29 +141,7 @@ plot(p1,p2,p3,layout=(1,3),background_color_subplot=RGB(0.2,0.2,0.2), background
 plot!(foreground_color_grid=RGB(1,1,1))
 
 
-#= COMMENTS old code and TODO stuff
-
-#objective_fun(u1) = 0.5*integrate(u1,t0,tf);
-#JuMP.register(:objective_fun,1,objective_fun,autodiff=true)
-
-#=
-#TODO add time as a optional design variable
-@unpack numStatePoints, numControlPoints, XL, XU, CL, CU = nlp
-@variable(mdl, XL[1] <= x[1:sum(numStatePoints)] <= XU[1])   # position
-@variable(mdl, XL[2] <= v[1:sum(numStatePoints)] <= XU[2])   # velocity
-@variable(mdl, CL[1] <= u[1:sum(numControlPoints)] <= CU[1]) # control #TODO make sure we can do LGR like this
-
-#TODO automatically add constraints
-# boundary constraints
-@unpack X0, XF = nlp
-@constraint(mdl, x0_con, x[1]   == X0[1]);
-@constraint(mdl, xf_con, x[end] == XF[1]);
-@constraint(mdl, v0_con, v[1]   == X0[2]);
-@constraint(mdl, vf_con, v[end] == XF[2]);
-=#
-
-
-# TODO  allow for option to integrate constraints @unpack IMatrix
+#=TODO stuff
 # TODO let the user define the objective function above
 # TODO allow user to select from using the IMatrix or quadrature
 =#

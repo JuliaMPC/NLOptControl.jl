@@ -88,6 +88,9 @@ Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/26
   XU::Array{Float64,1}
   CL::Array{Float64,1}
   CU::Array{Float64,1}
+
+  # options
+  finalTimeDV::Bool
 end
 
 # scripts -> need to be called after the data!
