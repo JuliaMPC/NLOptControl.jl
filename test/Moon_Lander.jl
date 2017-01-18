@@ -14,7 +14,7 @@ pyplot()
 # http://www.gpops2.com/Examples/MoonLander.html
 const g = 1.62519; # m/s^2
 # define dynamic constraint equations
-function stateEquations(x_int::Array{Any,2},u_int::Array{Any,2},st::Int64)
+function stateEquations(mdl::JuMP.Model,x_int::Array{Any,2},u_int::Array{Any,2},st::Int64)
   if st==1
     return x_int[1:end-1,2]      # state eq# 1; v(t)
   elseif st==2
@@ -46,7 +46,9 @@ di, tm, ts, ωₛ = create_intervals(t0,tf,Ni,Nck,τ,ω);
 ##################################
 
 # initialize design problem
-mdl = Model(solver = IpoptSolver());
+#mdl = Model(solver = IpoptSolver());
+mdl = Model(solver=IpoptSolver(linear_solver = "mumps")) #linear_solver = "mumps"
+
 
 x,u = OCPdef(mdl,nlp,ps)
 

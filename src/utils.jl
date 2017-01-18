@@ -17,8 +17,9 @@ function F_matrix(nlp::NLP_data, ps::PS_data)
 end
 
 """
-
-integral = integrate(mdl,ps,u;(:mode=>:control))
+# integrating JuMP variables
+Expr = integrate(mdl,ps,u;(:mode=>:control))
+Expr = integrate(mdl,ps,u,idx=1;C=0.5,(:variable=>:control),(:integrand=>:squared))
 
 # integrates everything
 stInt, stIntVal, ctrInt, ctrIntVal = integrate(ps,nlp;(:mode=>:LGRIM))
@@ -89,7 +90,6 @@ function integrate(ps::PS_data,nlp::NLP_data; kwargs...)
     return  stInt, stIntVal, ctrInt, ctrIntVal
 end
 
-#Expr = integrate(mdl,ps,u,idx=1;C=0.5,(:variable=>:control),(:integrand=>:squared))
 
 function integrate(mdl::JuMP.Model,ps::PS_data,V::Array{JuMP.Variable,1}; C::Float64=1.0, kwargs...)
   @unpack ωₛ, Ni, Nck = ps
@@ -184,22 +184,18 @@ function create_intervals(t0::Float64,tf::Float64,Ni::Int64,Nck::Array{Int64,1},
     return di, tm, ts, ωₛ
 end
 
-function create_intervals_JuMP(tf_var,Nck_const,Ni_const,τ_const,ω_const)
-  Nck=Nck_const; Ni=Ni_const;
-  t0 = 0; # less variables if we start here
-  di = (tf_var - t0)/Ni; # interval size
-  # create mesh points
-  tm = Array(Any,Ni+1); tm[1] = t0*tf_var;
-  for idx in 1:Ni
-    tm[idx+1] = tm[idx] + di;
-  end
+function create_intervals_JuMP(mdl::JuMP.Model,tf_var,Nck_const,Ni_const,τ_const,ω_const)
+  Nck=Nck_const; Ni=Ni_const;τ=τ_const;ω=ω_const;
+  di=@NLexpression(mdl, tf_var/Ni);                    # interval size
+  tm = @NLexpression(mdl, [idx=1:Ni+1], (idx-1)*di);   # create mesh points
 
   # go through each mesh interval creating time intervals; [t(i-1),t(i)] --> [-1,1]
-  ts_JuMP = [Array(Any, Nck[int],) for int in 1:Ni];
-  ωₛ_JuMP = [Array(Any, Nck[int],) for int in 1:Ni];
+  ts_JuMP = [Array(Any,Nck[int]+1,) for int in 1:Ni];
+  ωₛ_JuMP = [Array(Any,Nck[int],) for int in 1:Ni];
   for int in 1:Ni
-    ts_JuMP[int] = tf_var/2*τ_const[int] + tf_var/2;
-    ωₛ_JuMP[int] = tf_var/2*ω_const[int];
+    ts_JuMP[int][1:end-1]=@NLexpression(mdl,[j=1:Nck[int]], tm[int+1]/2*τ[int][j] +  tm[int+1]/2);
+    ts_JuMP[int][end]=@NLexpression(mdl, di*int) # append +1 at end of each interval
+    ωₛ_JuMP[int]=@NLexpression(mdl, [j=1:Nck[int]], tm[int+1]/2*ω_const[int][j])
   end
   return ts_JuMP, ωₛ_JuMP
 end
@@ -307,59 +303,96 @@ The function DM =  poldif(x, maplha, B) computes the differentiation matrices D1
  (CURRENTLY NOT TESTED IN julia)
 
 """
-function poldif_JuMP(x)
-  B_given = false; malpha = 1;
-         N = length(x);
-         x = x[:];                     # Make sure x is a column vector
+function poldif_JuMP(mdl::JuMP.Model,ts_JuMP,Ni_const,Nck_const)
+  Ni=Ni_const; Nck=Nck_const;
+  DX = [Array(Any,Nck[int]+1,Nck[int]+1) for int in 1:Ni];
+  c = [Array(Any,Nck[int],) for int in 1:Ni];
+  C = [Array(Any,Nck[int]+1,Nck[int]+1) for int in 1:Ni];
+  Z = [Array(Any,Nck[int]+1,Nck[int]+1) for int in 1:Ni];
+  Y = [Array(Any,Nck[int]+1,Nck[int]+1) for int in 1:Ni];
+  X2 = [Array(Any,Nck[int]+1,Nck[int]+1) for int in 1:Ni];
+  DMatrix_JuMP = [Array(Any,Nck[int]+1,Nck[int]+1) for int in 1:Ni];
 
-  if !B_given                       # Check if constant weight function
-         M = malpha;                   # is to be assumed.
-     alpha = ones(N,1);
-         B = zeros(M,N);
-  elseif B_given
-     alpha = malpha(:);                # Make sure alpha is a column vector
-         M = length(B[:,1]);           # First dimension of B is the number
-  end                                  # of derivative matrices to be computed
+  B_given = false; malpha = 1; #TODO get ride of B stuff
+  for int in 1:Ni
+    x = ts_JuMP[int];
+    N = length(x);  # should == Nck[int] + 1
+    x = x[:];                     # Make sure x is a column vector
 
-        #  I = eye(N);                  # Identity matrix.
-          #L = logical(I);              # Logical identity matrix.
-          L=eye(Bool, N, N);
-      # XX = x(:,ones(1,N));
-         XX = repmat(x,1,N);
-         DX = XX-XX';                  # DX contains entries x(k)-x(j).
+  #  if !B_given                       # Check if constant weight function
+    M = malpha;                     # is to be assumed.
+    alpha = ones(N,1);
+    B = zeros(M,N);
+  #  elseif B_given
+    #  alpha = malpha(:);                # Make sure alpha is a column vector
+    #  M = length(B[:,1]);               # First dimension of B is the number
+  #  end                                  # of derivative matrices to be computed
 
-      DX[L] = ones(N,1);               # Put 1's one the main diagonal.
+    #  I = eye(N);                  # Identity matrix.
+    #L = logical(I);              # Logical identity matrix.
+    L=eye(Bool, N, N);
+    # XX = x(:,ones(1,N));
+    XX = repmat(x,1,N);
+    #DX = XX-XX';                  # DX contains entries x(k)-x(j).
+    XX_transposed = permutedims(XX,[2,1]);
+    DX[int] = @NLexpression(mdl, [i=1:N,j=1:N], XX[i,j] - XX_transposed[i,j])
+    DX[int][L] = ones(N,1);               # Put 1's one the main diagonal.
 
-          c = alpha.*prod(DX,2);       # Quantities c(j).
+    #  c = alpha.*prod(DX,2);       # Quantities c(j).
+    c[int] = @NLexpression(mdl,[j=1:N],prod(DX[int][i,j] for i in 1:N))
 
-          #C = c[:,ones(1,N)];
-          C = repmat(c,1,N);
-          C = C./C';                   # Matrix with entries c(k)/c(j).
+    #C = c[:,ones(1,N)];
+    C_temp = repmat(c[int],1,N);
+    #C = C./C';                   # Matrix with entries c(k)/c(j).
+    C_temp_transposed = permutedims(C_temp,[2,1]);
+    EPS = 10*eps(); #TODO make this a constant
+    C[int] = @NLexpression(mdl,[i=1:N,j=1:N], C_temp[i,j]/(C_temp_transposed[i,j]+EPS))
 
-          Z = 1./DX;                   # Z contains entries 1/(x(k)-x(j))
-       Z[L] = zeros(N,1);              # with zeros on the diagonal.
+    #Z = 1./DX;                      # Z contains entries 1/(x(k)-x(j))
+    Z[int] = @NLexpression(mdl,[i=1:N,j=1:N], 1/(DX[int][i,j]+EPS))
+    Z[int][L] = zeros(N,1);              # with zeros on the diagonal.
 
-          X = Z';                      # X is same as Z', but with
-       #X[L] = [];                      # diagonal entries removed.
-       flag = trues(size(X));
+    #X = Z';                         # X is same as Z', but with
+    #X[L] = [];                      # diagonal entries removed.
+    X = permutedims(Z[int],[2,1]);
+
+
+    flag = trues(size(X));
     flag[L] = false;
-          X = X[flag];
-          X = reshape(X,N-1,N);
+    X = X[flag];
+    X = reshape(X,N-1,N);
 
-          Y = ones(N-1,N);             # Initialize Y and D matrices.
-          D = eye(N);                  # Y is matrix of cumulative sums,
+  #  Y = ones(N-1,N);             # Initialize Y and D matrices.
+    D1 = eye(N);                  # Y is matrix of cumulative sums,
 
-  DM = zeros(Float64,N,N,M);                                   # D differentiation matrices.
-  for ell = 1:M
-          temp = reshape(B[ell,:],1,N)
-          Y   = cumsum([temp; ell*Y[1:N-1,:].*X]); # Diagonals
-          D   = ell*Z.*(C.*repmat(diag(D),1,N) - D);   # Off-diagonals
-       D[L]   = Y[N,:];                                # Correct the diagonal
-  DM[:,:,ell] = D;                                     # Store the current D
+    DM = zeros(Float64,N,N,M);                                   # D differentiation matrices.
+  #  for ell = 1:M
+    ell = 1;
+    temp = reshape(B[ell,:],1,N)
+    X = [temp;X]
+    X2[int] = @NLexpression(mdl, [i=1:N,j=1:N], X[i,j])
 
+    #Y   = cumsum([temp; ell*Y[1:N-1,:].*X]); # Diagonals
+    for i in 1:N
+      for j in 1:N
+        if i == 1
+          Y[int][i,j] = @NLexpression(mdl, X2[int][i,j] )
+        else
+          Y[int][i,j] = @NLexpression(mdl, Y[int][i-1,j] + X2[int][i,j] )
+        end
+      end
+    end
+    #D   = ell*Z.*(C.*repmat(diag(D),1,N) - D);   # Off-diagonals
+    D_temp = repmat(diag(D1),1,N);
+    DMatrix_JuMP[int] = @NLexpression(mdl, [i in 1:N, j in 1:N], Z[int][i,j]*(C[int][i,j]*D_temp[i,j] - D1[i,j]) )
+    DMatrix_JuMP[int][L] = Y[int][N,:];
+  #  D[L]   = Y[N,:];                                # Correct the diagonal
+  #  DM[:,:,ell] = D;                                     # Store the current D
+
+  #  end
   end
-  return squeeze(DM,3)
-end
+  return DMatrix_JuMP
+end  #TODO compare the speed of this to directe automatic differention
 
 function poldif(x::Array{Any,1}, malpha, B...)
   B_given = Bool(length(B));
