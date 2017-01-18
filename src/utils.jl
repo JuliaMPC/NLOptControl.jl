@@ -163,6 +163,8 @@ function scale_w(ω::Array{Float64,1},x₀::Float64,xₙ::Float64)
 end
 
 
+
+
 """
 di, tm, ts, ωₛ=create_intervals(t0,tf,Ni,Nck,τ,ω);
 ts, ωₛ =  create_intervals(ps,t0_var,tf_var) # using JuMP variables
@@ -186,16 +188,15 @@ end
 
 function create_intervals_JuMP(mdl::JuMP.Model,tf_var,Nck_const,Ni_const,τ_const,ω_const)
   Nck=Nck_const; Ni=Ni_const;τ=τ_const;ω=ω_const;
-  di=@NLexpression(mdl, tf_var/Ni);                    # interval size
-  tm = @NLexpression(mdl, [idx=1:Ni+1], (idx-1)*di);   # create mesh points
-
+  # create mesh points, interval size = tf_var/Ni
+  tm = @NLexpression(mdl, [idx=1:Ni+1], (idx-1)*tf_var/Ni);
   # go through each mesh interval creating time intervals; [t(i-1),t(i)] --> [-1,1]
   ts_JuMP = [Array(Any,Nck[int]+1,) for int in 1:Ni];
   ωₛ_JuMP = [Array(Any,Nck[int],) for int in 1:Ni];
   for int in 1:Ni
-    ts_JuMP[int][1:end-1]=@NLexpression(mdl,[j=1:Nck[int]], tm[int+1]/2*τ[int][j] +  tm[int+1]/2);
-    ts_JuMP[int][end]=@NLexpression(mdl, di*int) # append +1 at end of each interval
-    ωₛ_JuMP[int]=@NLexpression(mdl, [j=1:Nck[int]], tm[int+1]/2*ω_const[int][j])
+    ts_JuMP[int][1:end-1]=@NLexpression(mdl,[j=1:Nck[int]], (tm[int+1]-tm[int])/2*τ[int][j] +  (tm[int+1]+tm[int])/2);
+    ts_JuMP[int][end]=@NLexpression(mdl, tf_var/Ni*int) # append +1 at end of each interval
+    ωₛ_JuMP[int]=@NLexpression(mdl, [j=1:Nck[int]], (tm[int+1]-tm[int])/2*ω_const[int][j])
   end
   return ts_JuMP, ωₛ_JuMP
 end
@@ -248,7 +249,7 @@ lagrange_basis_poly{T<:Number}(x::AbstractArray{T},x_data,Nc) = lagrange_basis_p
 y=interpolate_lagrange(ts[int],ts[int],stateMatrix[int][:,st],Nck[int])
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/2/2017, Last Modified: 1/9/2017 \n
+Date Created: 1/2/2017, Last Modified: 1/9/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function interpolate_lagrange{T<:Number}(x::AbstractArray{T},x_data,y_data,Nc)
@@ -312,9 +313,10 @@ function poldif_JuMP(mdl::JuMP.Model,ts_JuMP,Ni_const,Nck_const)
   Y = [Array(Any,Nck[int]+1,Nck[int]+1) for int in 1:Ni];
   X2 = [Array(Any,Nck[int]+1,Nck[int]+1) for int in 1:Ni];
   DMatrix_JuMP = [Array(Any,Nck[int]+1,Nck[int]+1) for int in 1:Ni];
+  EPS = 10*eps(); #TODO make this a constant
 
   B_given = false; malpha = 1; #TODO get ride of B stuff
-  for int in 1:Ni
+  for int = 1:Ni
     x = ts_JuMP[int];
     N = length(x);  # should == Nck[int] + 1
     x = x[:];                     # Make sure x is a column vector
@@ -345,7 +347,6 @@ function poldif_JuMP(mdl::JuMP.Model,ts_JuMP,Ni_const,Nck_const)
     C_temp = repmat(c[int],1,N);
     #C = C./C';                   # Matrix with entries c(k)/c(j).
     C_temp_transposed = permutedims(C_temp,[2,1]);
-    EPS = 10*eps(); #TODO make this a constant
     C[int] = @NLexpression(mdl,[i=1:N,j=1:N], C_temp[i,j]/(C_temp_transposed[i,j]+EPS))
 
     #Z = 1./DX;                      # Z contains entries 1/(x(k)-x(j))
@@ -355,7 +356,6 @@ function poldif_JuMP(mdl::JuMP.Model,ts_JuMP,Ni_const,Nck_const)
     #X = Z';                         # X is same as Z', but with
     #X[L] = [];                      # diagonal entries removed.
     X = permutedims(Z[int],[2,1]);
-
 
     flag = trues(size(X));
     flag[L] = false;
@@ -394,7 +394,7 @@ function poldif_JuMP(mdl::JuMP.Model,ts_JuMP,Ni_const,Nck_const)
   return DMatrix_JuMP
 end  #TODO compare the speed of this to directe automatic differention
 
-function poldif(x::Array{Any,1}, malpha, B...)
+function poldif(x, malpha, B...)
   B_given = Bool(length(B));
          N = length(x);
          x = x[:];                     # Make sure x is a column vector

@@ -47,9 +47,17 @@ di, tm, ts, ωₛ = create_intervals(t0,tf,Ni,Nck,τ,ω);
 
 # initialize design problem
 #mdl = Model(solver = IpoptSolver());
-mdl = Model(solver=IpoptSolver(linear_solver = "mumps")) #linear_solver = "mumps"
+mdl = Model(solver=IpoptSolver(linear_solver = "mumps")) #linear_solver = "ma57"
 
-
+d = JuMP.NLPEvaluator(mdl)
+MathProgBase.initialize(d, [:Grad,:Hess, :Jac, :ExprGraph])
+#MathProgBase.hesslag_structure(d)
+#MathProgBase.jac_structure(d)
+ #MathProgBase.obj_expr(d)
+ for i in 1:20
+  print(i)
+ MathProgBase.constr_expr(d,7) #6
+ end
 x,u = OCPdef(mdl,nlp,ps)
 
 obj = integrate(mdl,ps,u[:,1];(:variable=>:control))
