@@ -3,13 +3,11 @@ using JuMP
 using Ipopt
 using Parameters
 using Plots
-#using VehicleModels
 pyplot()
 
 ##################################
 # Define NLOptControl problem
 ##################################
-
 # user defined dynamic constraint equations
 function stateEquations(x_int::Array{Any,2},u_int::Array{Any,2},st::Int64)
   if st==1
@@ -20,14 +18,13 @@ function stateEquations(x_int::Array{Any,2},u_int::Array{Any,2},st::Int64)
 end
 
 L = 1/9;
-X0=[0.;1]; XF=[0.;-1.] #TODO check to see what form this should be in ; or ,
-                       #TODO allow for int inputs and just convert them to Float64
-XL=[0.,-Inf]; XU=[L,Inf]; # TODO allow for functions of these so we can calculate them on the fly!
+X0=[0.;1]; XF=[0.;-1.]
+XL=[0.,-Inf]; XU=[L,Inf];
 CL=[-Inf]; CU=[Inf];
 t0 = Float64(0); tf = Float64(1);
 ps, nlp = initialize_NLP(t0,tf,numStates=2,
                          numControls=1,
-                         Ni=2,Nck=[10,5],
+                         Ni=2,Nck=[10,15],
                          stateEquations=stateEquations,
                          X0=X0,XF=XF,XL=XL,XU=XU,CL=CL,CU=CU;
                          (:finalTimeDV => false));
@@ -35,17 +32,14 @@ ps, nlp = initialize_NLP(t0,tf,numStates=2,
 ##################################
 # Define JuMP problem
 ##################################
-
 mdl = Model(solver = IpoptSolver());
-
 x,u=OCPdef(mdl,nlp,ps)
-
 obj = integrate(mdl,ps,u[:,1];C=0.5,(:variable=>:control),(:integrand=>:squared))
-
 @NLobjective(mdl, Min, obj)
-
 obj_val = solve(mdl)
-
+####################################
+## analytic soltion when 0<=L<=1/6
+###################################
 tol = 10e-3;
 if abs(getvalue(obj) - 4/(9*L)) < tol
   print("\n Solution is correct to tolerance specs.!! \n \n")
@@ -61,9 +55,6 @@ else
         )
 end
 
-####################################
-## analytic soltion when 0<=L<=1/6
-###################################
 # analytic soltion for:    0 <= t <= 3L
 u1(t) = -2/(3*L)*(1-t/(3*L));
 v1(t) = (1 - t/(3*L))^2;
@@ -91,7 +82,6 @@ for i in 1:pts
   if L > 1/6
     warn("\n analytical solution only valid for L < 1/6!! \n")
   end
-
   if t[i] < 3*L
     u_analytic[i]=u1(t[i]);
     v_analytic[i]=v1(t[i]);
@@ -139,9 +129,3 @@ xlabel!("time (s)")
 
 plot(p1,p2,p3,layout=(1,3),background_color_subplot=RGB(0.2,0.2,0.2), background_color_legend=RGB(1,1,1))
 plot!(foreground_color_grid=RGB(1,1,1))
-
-
-#=TODO stuff
-# TODO let the user define the objective function above
-# TODO allow user to select from using the IMatrix or quadrature
-=#

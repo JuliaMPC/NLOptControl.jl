@@ -51,8 +51,8 @@ function D_matrix_JuMP(mdl::JuMP.Model,tf_var,Nck_const,Ni_const,τ_const,ω_con
 #  DM = [Matrix((Nck[int]),(Nck[int])) for int in 1:Ni];
   for int in 1:Ni
       DMatrix_JuMP[int] = D[int][1:end-1,:];   # [Nck]X[Nck+1]
-      #DM[int] = D[int][1:end-1,2:end];         # [Nck]X[Nck]
       #TODO make IMatrix and option
+      #DM[int] = D[int][1:end-1,2:end];         # [Nck]X[Nck]
     #  IMatrix[int] = inv(DM[int]);        # I = inv[D_{2:N_k+1}]
   end
   return DMatrix_JuMP

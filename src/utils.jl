@@ -90,9 +90,10 @@ function integrate(ps::PS_data,nlp::NLP_data; kwargs...)
     return  stInt, stIntVal, ctrInt, ctrIntVal
 end
 
-
-function integrate(mdl::JuMP.Model,ps::PS_data,V::Array{JuMP.Variable,1}; C::Float64=1.0, kwargs...)
-  @unpack ωₛ, Ni, Nck = ps
+# this function integrates within the optimization problem
+function integrate(mdl::JuMP.Model,ps::PS_data,V::Array{JuMP.Variable,1}, args...; C::Float64=1.0, kwargs...)
+  if length(args)==0; @unpack ωₛ=ps; else ωₛ=args[1]; end
+  @unpack Ni, Nck = ps
 
   kw = Dict(kwargs);
   if !haskey(kw,:mode); kw_ = Dict(:mode => :quadrature); mode = get(kw_,:mode,0);
@@ -109,7 +110,7 @@ function integrate(mdl::JuMP.Model,ps::PS_data,V::Array{JuMP.Variable,1}; C::Flo
   else; error("\n Set the variable to either (:variable => :state) or (:variable => :control). \n")
   end
 
-  if mode == :quadrature
+  if mode == :quadrature  #TODO recalculate ws based off of time
     if integrand == :default      # integrate V
       @NLexpression(mdl, temp[int=1:Ni], sum((ωₛ[int])[j] * (V[Nck_cum[int] + 1:Nck_cum[int + 1]])[j] for j = 1:Nck[int]));
       Expr =  @NLexpression(mdl, C*sum(temp[int] for int = 1:Ni));
@@ -161,9 +162,6 @@ end
 function scale_w(ω::Array{Float64,1},x₀::Float64,xₙ::Float64)
   (xₙ - x₀)/2*ω;
 end
-
-
-
 
 """
 di, tm, ts, ωₛ=create_intervals(t0,tf,Ni,Nck,τ,ω);
@@ -392,7 +390,7 @@ function poldif_JuMP(mdl::JuMP.Model,ts_JuMP,Ni_const,Nck_const)
   #  end
   end
   return DMatrix_JuMP
-end  #TODO compare the speed of this to directe automatic differention
+end  #TODO compare the speed of this to direct automatic differention
 
 function poldif(x, malpha, B...)
   B_given = Bool(length(B));
