@@ -68,7 +68,7 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt)
         n.DMatrix = D_matrix(mdl,n);
         for int in 1:n.Ni
           for st in 1:n.numStates
-            dx[int][:,st] = @NLexpression(mdl, [j=1:n.Nck[int]], n.stateEquations([Nck_ctr[int]+1:Nck_ctr[int+1]+1,:][j],u[Nck_ctr[int]+1:Nck_ctr[int+1],:][j],st) );
+            dx[int][:,st] = @NLexpression(mdl, [j=1:n.Nck[int]], n.stateEquations(n,[Nck_ctr[int]+1:Nck_ctr[int+1]+1,:][j],u[Nck_ctr[int]+1:Nck_ctr[int+1],:][j],st) );
           end
         end
         for st in 1:n.numStates
@@ -80,12 +80,12 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt)
           end
         end
       else
-        # redo these every interval
+        # redo every interval
         n=LGR_matrices(n);       # calculate LGR matrices
-        dx = [n.stateEquations(x_int,u_int,st) for st in 1:n.numStates];
+        dx = [n.stateEquations(n,x_int,u_int,st) for st in 1:n.numStates];
         dynamics = Array(Any,length(Nck_ctr[int]+1:Nck_ctr[int+1]),n.numStates);
         for st in 1:n.numStates
-          dynamics[:,st] = n.DMatrix[int]*x_int[:,st] - dx[st];
+          dynamics[:,st] = n.DMatrix[int]*x_int[:,st] - dx[st]; #TODO current issue is number of controls is different than num states for ps methods but same for tm methods
           for j in 1:n.Nck[int] # add dynamics constraints
             dyn_con[int][j,st] = @constraint(mdl, 0 == dynamics[j,st])
           end
@@ -104,7 +104,7 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt)
     n.dt = n.tf/n.N*ones(n.N,);
 
     for st in 1:n.numStates
-      dx[:,st] = @NLexpression(mdl, [j=1:n.N+1], n.stateEquations(x,u,st)[j] );
+      dx[:,st] = @NLexpression(mdl, [j=1:n.N+1], n.stateEquations(n,x,u,st)[j] );
     end
 
     if n.integrationScheme==:bkwEuler
