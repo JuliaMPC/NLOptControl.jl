@@ -164,7 +164,7 @@ function scale_w(ω::Array{Float64,1},x₀::Float64,xₙ::Float64)
 end
 
 """
-di, tm, ts, ωₛ=create_intervals(t0,tf,Ni,Nck,τ,ω);
+ts, ωₛ=create_intervals(t0,tf,Ni,Nck,τ,ω);
 ts, ωₛ =  create_intervals(ps,t0_var,tf_var) # using JuMP variables
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
@@ -181,7 +181,7 @@ function create_intervals(t0::Float64,tf::Float64,Ni::Int64,Nck::Array{Int64,1},
     # go through each mesh interval creating time intervals; [t(i-1),t(i)] --> [-1,1]
     ts=[[scale_tau(τ[int],tm[int],tm[int+1]);di*int] for int in 1:Ni];
     ωₛ=[scale_w(ω[int],tm[int],tm[int+1]) for int in 1:Ni];
-    return di, tm, ts, ωₛ
+    return ts, ωₛ
 end
 
 function create_intervals_JuMP(mdl::JuMP.Model,tf_var,Nck_const,Ni_const,τ_const,ω_const)

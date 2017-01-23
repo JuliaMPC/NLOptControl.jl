@@ -20,18 +20,19 @@ function OCPdef(mdl::JuMP.Model, nlp::NLP_data, ps::PS_data)
   @unpack finalTimeDV = nlp
   if finalTimeDV
     @variable(mdl, 0.01 <= tf_var <= 20.)
-    @unpack Ni, Nck, τ, ω = ps
-    const Ni_const = Ni  #TODO either way these can all be constants ! --> simplify
-    const Nck_const = Nck
-    const τ_const = τ
-    const ω_const = ω
-    #JuMP.register(mdl, :create_intervals_JuMP, 1, create_intervals_JuMP, autodiff=true)
-    #JuMP.register(mdl, :poldif_JuMP, 1, poldif_JuMP, autodiff=true)
-    #JuMP.register(mdl, :D_matrix_JuMP, 1, D_matrix_JuMP, autodiff=true)
-    ts_JuMP, ωₛ_JuMP = create_intervals_JuMP(mdl,tf_var,Nck_const,Ni_const,τ_const,ω_const); #TODO pull this out of D_matrix_JuMP
-    DMatrix_JuMP = D_matrix_JuMP(mdl,tf_var,Nck_const,Ni_const,τ_const,ω_const);
-    state_eqs = [Array(Any,Nck[int],numStates) for int in 1:Ni];
-    dynamics_expr  = [Array(Any,Nck[int],numStates) for int in 1:Ni];
+    if integration_method==:psuedospectral
+      @unpack Ni, Nck, τ, ω = ps
+
+      #JuMP.register(mdl, :create_intervals_JuMP, 1, create_intervals_JuMP, autodiff=true)
+      #JuMP.register(mdl, :poldif_JuMP, 1, poldif_JuMP, autodiff=true)
+      #JuMP.register(mdl, :D_matrix_JuMP, 1, D_matrix_JuMP, autodiff=true)
+      ts_JuMP, ωₛ_JuMP = create_intervals_JuMP(mdl,tf_var,Nck_const,Ni_const,τ_const,ω_const); #TODO pull this out of D_matrix_JuMP
+      DMatrix_JuMP = D_matrix_JuMP(mdl,tf_var,Nck_const,Ni_const,τ_const,ω_const);
+      state_eqs = [Array(Any,Nck[int],numStates) for int in 1:Ni];
+      dynamics_expr  = [Array(Any,Nck[int],numStates) for int in 1:Ni];
+    elseif integration_method==:time_marching
+
+    end
   end
 
   @unpack numControls, numControlPoints, CL, CU = nlp
@@ -79,7 +80,14 @@ function OCPdef(mdl::JuMP.Model, nlp::NLP_data, ps::PS_data)
     # dynamics
     if finalTimeDV
       for st in 1:numStates
-        dynamics_expr[int][:,st] = @NLexpression(mdl, [j in 1:Nck[int]], sum(DMatrix_JuMP[int][j,i]*x_int[i,st] - state_eqs[int][i,st]  for i in 1:Nck[int]))
+        if integration_scheme==:explicit_LGR
+          dynamics_expr[int][:,st] = @NLexpression(mdl, [j in 1:Nck[int]], sum(DMatrix_JuMP[int][j,i]*x_int[i,st] - state_eqs[int][i,st]  for i in 1:Nck[int]))
+        elseif integration_scheme==:backward_euler
+          dynamics_expr[int][:,st] = @NLconstraint(mdl, [j in 1:Nck[int]], 0 == x[i+1]   - x[i]    - (u[i+1]*cos(psi[i+1])-(v[i+1]+la*r[i+1])*sin(psi[i+1]))*dt[i] )
+
+        elseif integration_scheme==:trapazoidal
+
+        end
         for j in 1:Nck[int]
           dyn_con[int][j,st] = @NLconstraint(mdl, 0 == dynamics_expr[int][j,st])
         end

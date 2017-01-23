@@ -1,47 +1,26 @@
 """
-ps, nlp = initialize_NLP(numStates=2,numControls=2,Ni=4,Nck=[3, 3, 7, 2];(:finalTimeDV => false));
+n = define(numStates=2,numControls=2,Ni=4,Nck=[3, 3, 7, 2];(:finalTimeDV => false));
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/1/2017, Last Modified: 1/9/2017 \n
+Date Create: 1/1/2017, Last Modified: 1/20/2017 \n
 Citations: \n
 ----------\n
-Influenced by: S. Hughes.  steven.p.hughes@nasa.gov
+Initially Influenced by: S. Hughes.  steven.p.hughes@nasa.gov
 Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/264a12acad195e6a2467cfdc68abdcee801f73fc/tree/prototype/OptimalControl/LowThrust/@DecisionVector/)
 -------------------------------------------------------------------------------------\n
 """
-# should only call this once
-function initialize_NLP(
-  args...;
-  numStates::Int64=0,
-  numControls::Int64=0,
-  Ni::Int64=10,
-  Nck::Array{Int64,1}=4*ones(Int64,Ni,),
-  stateEquations::Function=[],
-  X0::Array{Float64,1}=zeros(Float64,numStates,1),
-  XF::Array{Float64,1}=zeros(Float64,numStates,1),
-  XL::Array{Float64,1}=zeros(Float64,numStates,1),
-  XU::Array{Float64,1}=zeros(Float64,numStates,1),
-  CL::Array{Float64,1}=zeros(Float64,numControls,1),
-  CU::Array{Float64,1}=zeros(Float64,numControls,1),
-  kwargs...)
-
-  kw = Dict(kwargs);
-  if !haskey(kw,:finalTimeDV); kw_ = Dict(:finalTimeDV => false); finalTimeDV = get(kw_,:finalTimeDV,0);
-  else; finalTimeDV  = get(kw,:finalTimeDV,0);
-  end
+function define(n::NLOpt;
+                numStates::Int64=0,
+                numControls::Int64=0,
+                X0::Array{Float64,1}=zeros(Float64,numStates,1),
+                XF::Array{Float64,1}=zeros(Float64,numStates,1),
+                XL::Array{Float64,1}=zeros(Float64,numStates,1),
+                XU::Array{Float64,1}=zeros(Float64,numStates,1),
+                CL::Array{Float64,1}=zeros(Float64,numControls,1),
+                CU::Array{Float64,1}=zeros(Float64,numControls,1)
+                )
 
   # validate input
-  if length(Nck) != Ni
-      error("\n length(Nck) != Ni \n");
-  end
-  for int in 1:Ni
-      if (Nck[int]<0)
-          error("\n Nck must be > 0");
-      end
-  end
-  if  Ni <= 0
-    error("\n Ni must be > 0 \n");
-  end
   if  numStates <= 0
       error("\n numStates must be > 0","\n",
               "default value = 0","\n",
@@ -71,228 +50,100 @@ function initialize_NLP(
     error(string("\n Length of CU must match number of controls \n"));
   end
 
-  # calculate general properties
-  numStatePoints = [(Nck[int]+1) for int in 1:Ni]; # number of states dvs (decisionVector) for each interval and each state
-  numControlPoints = [Nck[int] for int in 1:Ni];   # number of control dvs for each interval and each control
+  n.numStates = numStates;
+  n.numControls = numControls;
+  n.X0 = X0;
+  n.XF = XF;
+  n.XL = XL;
+  n.XU = XU;
+  n.CL = CL;
+  n.CU = CU;
+  return n
+end
 
-  # calculate length of vectors
-  lengthStateVector = sum([numStatePoints[int]*numStates for int in 1:Ni]);
-  lengthControlVector = sum([numControlPoints[int]*numControls for int in 1:Ni]);
-  lengthDecVector = lengthStateVector + lengthControlVector + 2; # + 2 is for t0 and tf
-  decisionVector = zeros(lengthDecVector,);
+"""
+n = configure(n::NLOpt,Ni=4,Nck=[3, 3, 7, 2];(:integrationMethod => ps),(:integrationScheme => lgrExplicit),(:finalTimeDV => false));
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 1/1/2017, Last Modified: 1/23/2017 \n
+Citations: \n
+----------\n
+Initially Influenced by: S. Hughes.  steven.p.hughes@nasa.gov
+Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/264a12acad195e6a2467cfdc68abdcee801f73fc/tree/prototype/OptimalControl/LowThrust/@DecisionVector/)
+-------------------------------------------------------------------------------------\n
+"""
+function configure(n::NLOpt, args...; kwargs... )
+  kw = Dict(kwargs);
 
-  if length(args) == 0
-    if !finalTimeDV
-      error("\n If the final time is not a design variable time t0 and tf must be passed as args... \n ")
-    end
-    t0 = 0.0; tf = 0.0;
-  else
-      if finalTimeDV # validate optional input
-        error("\n If the final time is a design variable time t0 and tf should not be passed as args... \n ")
-      end
-      if  length(args[1]) != 1
-          error(string("\n Length of t0 must be = 1 \n"));
-      end
-      if  length(args[2]) != 1
-          error(string("\n Length of tf must be = 1 \n"));
-      end
-      t0 = args[1]; tf = args[2];
+  # final time
+  if !haskey(kw,:finalTimeDV); kw_ = Dict(:finalTimeDV => false); finalTimeDV = get(kw_,:finalTimeDV,0);
+  else; finalTimeDV  = get(kw,:finalTimeDV,0);
   end
 
-  # initialize node data TODO  make different PS methods available
-  taus_and_weights = [gaussradau(Nck[int]) for int in 1:Ni];
-  τ = [taus_and_weights[int][1] for int in 1:Ni];
-  ω = [taus_and_weights[int][2] for int in 1:Ni];
+  if !haskey(kw,:tf) && !finalTimeDV
+    error("\n If the final is not a design variable pass it as: (:tf=>Float64(some #)) \n
+        If the final time is a design variable, indicate that as: (:finalTimeDV=>true)\n")
+  elseif haskey(kw,:tf) && !finalTimeDV
+    tf = get(kw,:tf,0);
+  elseif finalTimeDV
+    tf = NaN;
+  end
 
-  if finalTimeDV   # initialize scaled variables as zeros
-    ts = 0*τ; ωₛ = 0*ω;
-  else
-    di, tm, ts, ωₛ = create_intervals(t0,tf,Ni,Nck,τ,ω);
-  end  #TODO don't need di and tm
-  ####################################################################################
-  ############################## Indices #############################################
-  ####################################################################################
+  # integration method
+  if !haskey(kw,:integrationMethod); kw_ = Dict(:integrationMethod => :ps); integrationMethod = get(kw_,:integrationMethod,0);
+  else; integrationMethod  = get(kw,:integrationMethod,0);
+  end
 
-  # ==================================================================================
-  #__________________________ State Indices ___________________________________________
-  # ===================================================================================
-  # General Properties
-  stateStartIdx = 1;
-  stateStopIdx = stateStartIdx + lengthStateVector -1; # -1 because we start on 1
-  st_sum = [0; cumsum(numStatePoints)];
-
-  # Organize Tuples Each Entire Mesh Grid Of All Consecutive State Vectors
-  stateIdx = [((st_sum[int])*numStates + stateStartIdx,
-  (st_sum[int] + numStatePoints[int])*numStates + stateStartIdx -1)
-                                                   for int in 1:Ni];
-
-  if numStates == 1
-    stateIdx_all = [(-99,-99) for int in 1:1];
-    stateIdx_st = [(-99,-99) for int in 1:1];
-  else  # only calculate these if we have more than one state
-     # Break Tuples For Each State Variable within Entire Mesh Grid
-    stateIdx_all = [(stateIdx[int][1] - numStatePoints[int]*(st-numStates),
-                     stateIdx[int][2] - numStatePoints[int]*(st-numStates +1))
-                                    for int in 1:Ni for st in numStates:-1:1]  # does the outer loop first
-
-    if Ni == 1
-      stateIdx_st = [(-99,-99) for int in 1:1];
-    else         # Organize Tuples by Individual States
-      organize_state_array = zeros(Int64,Ni*numStates,); idx=1;
+  if integrationMethod==:ps
+    if haskey(kw,:N)
+      error(" \n N is not an appropriate kwargs for :tm methods \n")
+    end
+    if !haskey(kw,:Ni); kw_ = Dict(:Ni => 1); const Ni=get(kw_,:Ni,0);        # default
+    else; const Ni = get(kw,:Ni,0);
+    end
+    if !haskey(kw,:Nck); kw_ = Dict(:Nck => [10]); const Nck=get(kw_,:Nck,0); # default
+    else; const Nck = get(kw,:Nck,0);
+    end
+    if !haskey(kw,:integrationScheme); kw_ = Dict(:integrationScheme => :lgrExplicit);const integrationScheme=get(kw_,:integrationScheme,0); # default
+    else; const integrationScheme=get(kw,:integrationScheme,0);
+    end
+    if length(Nck) != Ni
+        error("\n length(Nck) != Ni \n");
+    end
     for int in 1:Ni
-      for st in 1:numStates
-        organize_state_array[idx] = int + (st-1)*numStates;
-        idx=idx+1;
-      end
-    end
-    stateIdx_st = [( stateIdx_all[jj][1], # all states are near each other
-                   stateIdx_all[jj][2])   # TODO something is wrong with this!!
-          for jj in organize_state_array]
-    end
-  end
-#TODO try to make a single way to reference states
-  # ==================================================================================
-  #_________________________ Control Indices _________________________________________
-  # ==================================================================================
-  # General Properties
-  controlStartIdx = stateStopIdx + 1;
-  controlStopIdx = controlStartIdx + lengthControlVector -1; # -1 because we start on 1
-  ctr_sum = [0; cumsum(numControlPoints)];
-
-  # Organize Tuples Each Entire Mesh Grid Of All Consecutive Control Vectors
-  controlIdx = [((ctr_sum[int])*numControls + controlStartIdx,
-   (ctr_sum[int] + numControlPoints[int])*numControls + controlStartIdx -1)
-                                               for int in 1:Ni]
-
-  if numControls == 1
-    controlIdx_all = [(-99,-99) for int in 1:1];
-    controlIdx_ctr = [(-99,-99) for int in 1:1];
-  else # only calculate these if we have more than one control
-    # Break Tuples For Each Control Variable within Entire Mesh Grid
-    controlIdx_all = [(controlIdx[int][1] - numControlPoints[int]*(ctr-numControls),
-                     controlIdx[int][2] - numControlPoints[int]*(ctr-numControls +1))
-    for int in 1:Ni for ctr in numControls:-1:1]  # does the outer loop first
-      if Ni == 1
-        controlIdx_ctr = [(-99,-99) for int in 1:1];
-      else           # Organize Tuples by Individual Controls
-        organize_control_array = zeros(Int64,Ni*numControls,); idx=1;
-        for int in 1:Ni
-          for ctr in 1:numControls
-            organize_control_array[idx] = int + (ctr-1)*numControls;
-            idx=idx+1;
-          end
+        if (Nck[int]<0)
+            error("\n Nck must be > 0");
         end
-        controlIdx_ctr = [(controlIdx_all[jj][1], # all controls are near each other
-                          controlIdx_all[jj][2])
-                  for jj in organize_control_array]
-      end
-  end
-  # ==================================================================================
-  #___________________________ Time Indies ____________________________________________
-  # ===================================================================================
-  timeStartIdx = controlStopIdx + 1;
-  timeStopIdx = timeStartIdx + 1;
-  # ===================================================================================
-  if timeStopIdx != lengthDecVector
-    error(string("\n",
-                  "-------------------------------------", "\n",
-                  "There is an error with the indecies!!", "\n",
-                  "-------------------------------------", "\n",
-                  "The following variables should be equal:", "\n",
-                  "timeStopIdx = ",timeStopIdx,"\n",
-                  "lengthDecVector = ",lengthDecVector,"\n"
-                  )
-          )
-  end
-  ####################################################################################
-  ############################## Matrices ############################################
-  ####################################################################################
-  # each row contains Xi in the stateMatrix where the size = Nck[int]XnumStates
-  # Xi is a vector of ALL of the states at point i
-  stateMatrix=[zeros((Nck[int]+1),numStates) for int in 1:Ni];
-  controlMatrix=[zeros(Nck[int],numControls) for int in 1:Ni];
+    end
+    if  Ni <= 0
+      error("\n Ni must be > 0 \n");
+    end
+    const numPoints = [Nck[int] for int in 1:Ni];  # number of design variables per interval
 
-  DMatrix = [zeros((Nck[int]),(Nck[int]+1)) for int in 1:Ni];
-  IMatrix = [zeros((Nck[int]),(Nck[int])) for int in 1:Ni];
-  FMatrix = [zeros((Nck[int]),numStates) for int in 1:Ni];
+    # initialize node data
+    if integrationScheme==:lgrExplicit
+      taus_and_weights = [gaussradau(Nck[int]) for int in 1:Ni];
+    end
+    τ = [taus_and_weights[int][1] for int in 1:Ni];
+    ω = [taus_and_weights[int][2] for int in 1:Ni];
+    if finalTimeDV   # initialize scaled variables as zeros
+      ts = 0*τ; ωₛ = 0*ω;
+    else
+      ts, ωₛ = create_intervals(t0,tf,Ni,Nck,τ,ω);
+    end
 
-  odeConstraint = [zeros(Float64,Nck[int],numStates) for int in 1:Ni]; # may also want to call this stateEqConstraint
-  continuityConstraint = [zeros(Float64,numStates+numControls,) for int in 1:Ni-1];
-  boundaryConstraint = zeros(Float64,2*numStates,);
-  stateConstraint = [zeros(Float64,sum(numStatePoints),2) for st in 1:numStates];
-  controlConstraint = [zeros(Float64,sum(numControlPoints),2) for ctr in 1:numControls];
-  # ==================================================================================
-  #___________________________ Debugging _____________________________________________
-  # ===================================================================================
-  if false #TODO  make print_level an option
-    print(string("lengthStateVector = ", lengthStateVector),"\n")
-    print(string("lengthControlVector = ", lengthControlVector),"\n")
-    print(string("stateStartIdx = ", stateStartIdx),"\n")
-    print(string("stateStopIdx = ", stateStopIdx),"\n")
-    print(string("controlStartIdx = ", controlStartIdx),"\n")
-    print(string("controlStopIdx = ", controlStopIdx),"\n")
-    print(string("timeStartIdx = ", timeStartIdx),"\n")
-    print(string("timeStopIdx = ", timeStopIdx),"\n")
-
-    print(string("typeof(Nck) = ",typeof(Nck),"\n"))
-    print(string("typeof(Ni) = ",typeof(Ni),"\n"))
-    print(string("typeof(τ) = ",typeof(τ),"\n"))
-    print(string("typeof(ω) = ",typeof(ω),"\n"))
-    print(string("typeof(t0) = ",typeof(t0),"\n"))
-    print(string("typeof(tf) = ",typeof(tf),"\n"))
-    print(string("typeof(stateMatrix) = ",typeof(stateMatrix),"\n"))
-    print(string("typeof(controlMatrix) = ",typeof(controlMatrix),"\n"))
-    print(string("typeof(DMatrix) = ",typeof(DMatrix),"\n"))
-    print(string("typeof(IMatrix) = ",typeof(IMatrix),"\n"))
+  elseif integrationMethod==:tm
+    if haskey(kw,:Nck) || haskey(kw,:Ni)
+      error(" \n Nck and Ni are not appropriate kwargs for :tm methods \n")
+    end
+    if !haskey(kw,:N); kw_ = Dict(:N => 10); const N=get(kw_,:N,0); # default
+    else; const N = get(kw,:N,0);
+    end
+    if !haskey(kw,:integrationScheme); kw_ = Dict(:integrationScheme => :bkwEuler); const integrationScheme=get(kw_,:integrationScheme,0); # default
+    else; const integrationScheme=get(kw,:integrationScheme,0);
+    end
   end
-  # ==================================================================================
-  #_________________________ Initialize Problem Data __________________________________
-  # ===================================================================================
-  ps = PS_data(           Nck=Nck,
-                           Ni=Ni,
-                            τ=τ,
-                           ts=ts,
-                            ω=ω,
-                           ωₛ=ωₛ,
-                           t0=t0,
-                           tf=tf,
-                  stateMatrix=stateMatrix,
-                controlMatrix=controlMatrix,
-                      DMatrix=DMatrix,
-                      IMatrix=IMatrix,
-                      FMatrix=FMatrix,
-                 odeConstraint=odeConstraint,  # might also be state constraint, but this is the same as the variable name below
-         continuityConstraint=continuityConstraint,
-           boundaryConstraint=boundaryConstraint,
-              stateConstraint=stateConstraint,
-            controlConstraint=controlConstraint
-              );
-  nlp = NLP_data(     numStates=numStates,
-                      numControls=numControls,
-                      numStatePoints=numStatePoints,
-                      numControlPoints=numControlPoints,
-                      lengthControlVector=lengthControlVector,
-                      lengthStateVector=lengthStateVector,
-                      lengthDecVector=lengthDecVector,
-                      stateIdx=stateIdx,
-                      controlIdx=controlIdx,
-                      stateIdx_all=stateIdx_all,
-                      controlIdx_all=controlIdx_all,
-                      controlIdx_ctr=controlIdx_ctr,
-                      stateIdx_st=stateIdx_st,
-                      timeStartIdx=timeStartIdx,
-                      timeStopIdx=timeStopIdx,
-                      decisionVector=decisionVector,
-                      stateEquations=stateEquations,
-                      X0=X0,
-                      XF=XF,
-                      XL=XL,
-                      XU=XU,
-                      CL=CL,
-                      CU=CU,
-                      finalTimeDV=finalTimeDV
-                 );
-    return ps, nlp
+
 end
 """
 nlp2ocp(nlp,ps);

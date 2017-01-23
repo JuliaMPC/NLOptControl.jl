@@ -11,77 +11,19 @@ macro def(name, definition)
   end
 end
 
-"""
-ps = PS_data(Nc=Nc,Ni=Ni,τ=τ,ω=ω,t0=t0,tf=tf);
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/1/2017, Last Modified: 1/8/2017 \n
---------------------------------------------------------------------------------------\n
-"""
-@with_kw type PS_data  #TODO consider having only a single type for the entire model, mdl?--> or push this data set deeper
-  Nck::Array{Int64,1} # number of collocation points per interval
-  Ni::Int64 # number of intervals
-  #TODO --> for now default is gaussradau, eventually add other PS methods
-  τ::Array{Array{Float64,1},1}  # Node points ---> Nc increasing and distinct numbers ∈ [-1,1] #TODO might be able to calculate here during problem initialization
-  ts::Array{Array{Any,1},1} # time scaled based off of τ
-  ω::Array{Array{Float64,1},1} # weights
-  ωₛ::Array{Array{Any,1},1} # scaled weights
-  t0::Float64 # initial time
-  tf::Float64 # final time
-  DMatrix::Array{Array{Float64,2},1}  # differention matrix
-  IMatrix::Array{Array{Float64,2},1}  # integration matrix
-  FMatrix::Array{Array{Float64,2},1}
-  stateMatrix::Array{Array{Float64,2},1}
-  controlMatrix::Array{Array{Float64,2},1}
-  odeConstraint::Array{Array{Float64,2},1}
-  continuityConstraint::Array{Array{Float64,1},1}
-  boundaryConstraint::Array{Float64,1}
-  stateConstraint::Array{Array{Float64,2},1}
-  controlConstraint::Array{Array{Float64,2},1}
-end
-
-"""
-nlp = NLP_data(numStates=numStates, numControls=numControls);
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/1/2017, Last Modified: 1/8/2017 \n
-Citations: \n
-----------\n
-Original Author: S. Hughes.  steven.p.hughes@nasa.gov
-Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/264a12acad195e6a2467cfdc68abdcee801f73fc/tree/prototype/OptimalControl/LowThrust/@DecisionVector/)
--------------------------------------------------------------------------------------\n
-"""
-@with_kw type NLP_data
+# Model Class
+abstract AbstractNLOpt
+type NLOpt <: AbstractNLOpt
   # general properties
-  numStates::Int64      # number of states
-  numControls::Int64    # number of controls
+  numStates::Int64          # number of states
+  numControls::Int64        # number of controls
+  numPoints::Array{Int64,1} # number of dv discretization within each interval
+  lengthDV::Int64           # total number of dv discretizations per variables
+  tf                        # final time
 
-  numStatePoints::Array{Int64,1} # number of state discretization within each interval
-  numControlPoints::Array{Int64,1} # number of control discretization within each interval
-
-  lengthStateVector::Int64  # total number of state variables
-  lengthControlVector::Int64 # total number of control parameters
-
-  # properties for entire decision vector
-  lengthDecVector::Int64
-
-  # vector indeces
-  timeStartIdx::Int64
-  timeStopIdx::Int64
-  stateIdx::Array{Tuple{Int64,Int64},1}
-  controlIdx::Array{Tuple{Int64,Int64},1}
-  stateIdx_all::Array{Tuple{Int64,Int64},1}
-  controlIdx_all::Array{Tuple{Int64,Int64},1}
-  stateIdx_st::Array{Tuple{Int64,Int64},1}
-  controlIdx_ctr::Array{Tuple{Int64,Int64},1}
-
-  # design variable data
-  decisionVector::Vector{Float64}
-
-  # state equations
-  stateEquations::Function
-  X0::Array{Float64,1} # initial state conditions
-  XF::Array{Float64,1} # final state conditions
+  # boundary constraits
+  X0::Array{Float64,1}      # initial state conditions
+  XF::Array{Float64,1}      # final state conditions
 
   # linear bounds on variables
   XL::Array{Float64,1}
@@ -89,11 +31,50 @@ Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/26
   CL::Array{Float64,1}
   CU::Array{Float64,1}
 
+  # ps method data
+  Nck::Array{Int64,1}           # number of collocation points per interval
+  Ni::Int64                     # number of intervals
+  τ::Array{Array{Float64,1},1}  # Node points ---> Nc increasing and distinct numbers ∈ [-1,1]
+  ts::Array{Array{Any,1},1}     # time scaled based off of τ
+  ω::Array{Array{Float64,1},1}  # weights
+  ωₛ::Array{Array{Any,1},1}     # scaled weights
+
+  # tm method data
+  N::Int64                      # number of points in discretization
+
   # options
   finalTimeDV::Bool
+  integrationMethod::Symbol
+  integrationScheme::Symbol
 end
 
-# scripts -> need to be called after the data!
+# Default Constructor
+function NLOpt()
+NLOpt(0,                  # number of states
+      0,                  # number of controls
+      Int[],              # number of dv discretization within each interval
+      0,                  # total number of dv discretizations per variables
+      Any[],              # final time
+      Float64[],          # initial state conditions
+      Float64[],          # final state conditions
+      Float64[],          # XL
+      Float64[],          # XU
+      Float64[],          # CL
+      Float64[],          # CU
+      Int[],              # number of collocation points per interval
+      0,                  # number of intervals
+      Vector{Float64}[],  # τ
+      Vector{Any}[],      # ts
+      Vector{Float64}[],  # weights
+      Vector{Any}[],      # scaled weights
+      0,                  # number of points in discretization
+      false,              # finalTimeDV
+      :ts,                # integrtionMethod
+      :bkwEuler           # integrationScheme
+    );
+end
+
+# scripts
 include("utils.jl");
 include("setup.jl")
 include("constraints.jl")
@@ -101,18 +82,15 @@ include("objective.jl")
 include("test_data.jl")
 include("LGL.jl");
 include("LGR.jl");
-#include("macros.jl")
 include("ocp.jl")
 
-        # Functions
-export initialize_NLP, nlp2ocp,
-       LGL_nodes, LGL_weights, LGL_Dmatrix,
+       # Functions
+export
+        # setup functions
+        NLOpt, define, configure,
+
        LGR, lgr_diff, LGR_matrices, F_matrix,
-       constraints,
-       ode_constraint,
-       continuity_constraint,
-       boundary_constraint,
-       inequality_constraint,
+
        scale_tau, scale_w, create_intervals,
        lagrange_basis_poly, interpolate_lagrange,
        integrate,
@@ -120,66 +98,12 @@ export initialize_NLP, nlp2ocp,
        lepoly, poldif,
        generate_Fake_data,
        OCPdef,
+
        # JuMP registered functions
        create_intervals_JuMP,
        poldif_JuMP,
        D_matrix_JuMP,
-       
+
        # Objects
-       NLP_data, PS_data,
-
-      # Macros and Support Functions
-      @unpack_NLP_data,
-      @pack_NLP_data,
-      @unpack_PS_data,
-      @pack_PS_data
-    #  @OCPdef
-  # MAKE SURE YOU REMOVE THE FINAL COMMA!!
-
-# ---------NOTES--------------
-# ns: number of state variables
-# nc: number of control variables
-# τ: interval that collocation points are defined on:
-  # LG: τ ∈ [-1, 1)
-  # LGR: τ ∈ [-1, 1)
-  # backward LGR: τ ∈ (-1, 1]
-  # LGL: τ ∈ [-1, 1]
-# N: number of collocation points
-# P_{N}(τ): Nth degree Legendre polynomial
-  # LG points:
-    # are the roots of: P_{N}(τ)
-    # exact for polynomials with degree <= 2N-1
-  # LGR points:
-    # are the roots of: P{N-1}(τ)+P_{N}(τ)
-    # exact for polynomials with degree <= 2N-2
-  # backward LGR points:
-    # are the negative roots of: P{N-1}(τ)+P_{N}(τ)
-    # exact for polynomials with degree <= 2N-2
-  # LGL points:
-    # are the roots of: \dot{P}{N-1}(τ) with -1 and _1
-    # exact for polynomials with degree <= 2N-3
-
-#= states:
-  # ξ₀: intial state vectors
-
-  # all states at τᵢ
-    # ξᵢ(τ) = [ξ₁(τᵢ),....,ξns(τᵢ)], 1<=i<=N
-    # vectors are row vectors
-
-  # full state matrix--> size (N+1) x n ; includes ξ₀
-      Ξ(τ) = [ξ₀;
-              ξᵢ;
-              .
-              .
-              .
-              ξN]
-
-   # partial state matrix--> size (N) x n
-      Ξp(τ) = ξᵢ;
-              .
-              .
-              .
-              ξN]
-
-=#
+       NLOpt
 end
