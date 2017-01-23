@@ -1,177 +1,77 @@
 """
-F_matrix(nlp,ps,int)
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/7/2017, Last Modified: 1/12/2017 \n
---------------------------------------------------------------------------------------\n
-"""
-function F_matrix(nlp::NLP_data, ps::PS_data)
-    @unpack FMatrix  = ps
-    @unpack stateEquations = nlp
-
-    # TODO if stateEquations() is not defined warn the user
-    FMatrix = stateEquations(nlp,ps)
-
-    print(FMatrix)
-    @pack ps = FMatrix
-end
-
-"""
 # integrating JuMP variables
-Expr = integrate(mdl,ps,u;(:mode=>:control))
-Expr = integrate(mdl,ps,u,idx=1;C=0.5,(:variable=>:control),(:integrand=>:squared))
-
-# integrates everything
-stInt, stIntVal, ctrInt, ctrIntVal = integrate(ps,nlp;(:mode=>:LGRIM))
-stInt, stIntVal, ctrInt, ctrIntVal = integrate(ps,nlp)
-# integrates specific states and or controls
-  * TODO have an option to integrate only certain states and controls
+Expr = integrate(mdl,n,u;(:mode=>:control))
+Expr = integrate(mdl,n,u,idx=1;C=0.5,(:variable=>:control),(:integrand=>:squared))
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/2/2017, Last Modified: 1/9/2017 \n
+Date Create: 1/2/2017, Last Modified: 1/23/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function integrate(ps::PS_data,nlp::NLP_data; kwargs...)
-    @unpack Nck, Ni, stateMatrix, controlMatrix, ωₛ, IMatrix = ps
-    @unpack numStates, numControls = nlp
-
-    kw = Dict(kwargs);
-    # if there was nothing passed -> set default
-    if !haskey(kw,:mode); kw = Dict(:mode => :default) end
-    mode = get(kw, :mode, 0);
-
-    # state integral
-    stInt = [zeros(Float64, numStates, Nck[int],)for int in 1:Ni]; idx = 1;
-    stTemp = zeros(Float64, numStates, Ni);
-    for st in 1:numStates
-        for int in 1:Ni
-            if mode == :default
-                stInt[int][st,1:Nck[int]] =  cumsum(ωₛ[int].*stateMatrix[int][1:end-1,st]);
-            elseif mode == :LGRIM     # Legendre-Gauss-Radau integration matrix (LGRIM)
-                stInt[int][st,1:Nck[int]] =  IMatrix[int]*stateMatrix[int][1:end-1,st];
-            else
-                error("Pick a mode or leave argument blank and it will use Gaussian quadrature")
-            end
-            # for the entire integral value; only add up what was accumulated in this interval
-            stTemp[st,int] = stInt[int][st,end];
-
-            # for the actual points on the graph, we need to offset by the initial value
-            if int > 1 # add on intitial value
-              stInt[int][st,1:Nck[int]] = stInt[int][st,1:Nck[int]] + stInt[int-1][st,end];
-            end
-            idx=idx+1;
-        end
-    end
-    stIntVal = sum(stTemp,2);
-
-    # control integral
-    ctrInt = [zeros(Float64, numControls, Nck[int],)for int in 1:Ni]; idx = 1;
-    ctrTemp = zeros(Float64, numControls, Ni);
-    for ctr in 1:numControls
-        for int in 1:Ni
-            if mode == :default
-                ctrInt[int][ctr,1:Nck[int]] =  cumsum(ωₛ[int].*controlMatrix[int][:,ctr]);
-            elseif mode == :LGRIM     # Legendre-Gauss-Radau integration matrix (LGRIM)
-                ctrInt[int][ctr,1:Nck[int]] =  IMatrix[int]*controlMatrix[int][:,ctr];
-            else
-                error("Pick a mode or leave argument blank and it will use Gaussian quadrature")
-            end
-            # for the entire integral value; only add up what was accumulated in this interval
-            ctrTemp[ctr,int] = ctrInt[int][ctr,end];
-
-            # for the actual points on the graph, we need to offset by the initial value
-            if int > 1 # add on intitial value
-              ctrInt[int][ctr,1:Nck[int]] = ctrInt[int][ctr,1:Nck[int]] + ctrInt[int-1][ctr,end];
-            end
-            idx=idx+1;
-        end
-    end
-    ctrIntVal = sum(ctrTemp,2);
-    return  stInt, stIntVal, ctrInt, ctrIntVal
-end
-
-# this function integrates within the optimization problem
-function integrate(mdl::JuMP.Model,ps::PS_data,V::Array{JuMP.Variable,1}, args...; C::Float64=1.0, kwargs...)
-  if length(args)==0; @unpack ωₛ=ps; else ωₛ=args[1]; end
-  @unpack Ni, Nck = ps
-
+function integrate(mdl::JuMP.Model,n::NLOpt,V::Array{JuMP.Variable,1}, args...; C::Float64=1.0, kwargs...)
   kw = Dict(kwargs);
-  if !haskey(kw,:mode); kw_ = Dict(:mode => :quadrature); mode = get(kw_,:mode,0);
-  else; mode  = get(kw,:mode,0);
-  end
-
   if !haskey(kw,:integrand); kw_ = Dict(:integrand => :default); integrand = get(kw_,:integrand,0);
   else; integrand = get(kw,:integrand,0);
   end
-
-  variable = get(kw,:variable,0);
-  if variable == :state; Nck_cum  = [0;cumsum(Nck+1)];
-  elseif variable == :control; Nck_cum = [0;cumsum(Nck)];
-  else; error("\n Set the variable to either (:variable => :state) or (:variable => :control). \n")
-  end
-
-  if mode == :quadrature  #TODO recalculate ws based off of time
+  if n.integrationMethod==:tm #TODO investigate differences in control and state variables
     if integrand == :default      # integrate V
-      @NLexpression(mdl, temp[int=1:Ni], sum((ωₛ[int])[j] * (V[Nck_cum[int] + 1:Nck_cum[int + 1]])[j] for j = 1:Nck[int]));
-      Expr =  @NLexpression(mdl, C*sum(temp[int] for int = 1:Ni));
+      if n.integrationScheme==:bkwEuler
+        Expr =  @NLexpression(mdl, C*sum(V[j+1]*n.dt[j] for j = 1:n.N));
+      elseif n.integrationScheme==:trapezoidal
+        Expr =  @NLexpression(mdl, C*sum(0.5*(V[j]+V[j+1])*n.dt[j] for j = 1:n.N));
+      end
     elseif integrand == :squared # integrate V^2
-      @NLexpression(mdl, temp[int=1:Ni],C*sum((ωₛ[int])[j] * (V[Nck_cum[int] + 1:Nck_cum[int + 1]])[j] * (V[Nck_cum[int] + 1:Nck_cum[int + 1]])[j] for j = 1:Nck[int]));
-      Expr =  @NLexpression(mdl, sum(temp[int] for int = 1:Ni));
+      if n.integrationScheme==:bkwEuler
+        Expr =  @NLexpression(mdl, C*sum(V[j+1]^2*n.dt[j] for j = 1:n.N));
+      elseif n.integrationScheme==:trapezoidal
+        Expr =  @NLexpression(mdl, C*sum(0.5*(V[j]^2+V[j+1]^2)*n.dt[j] for j = 1:n.N));
+      end
     else
-      error("It should not get here...")
+      error("\n Check :integrand \n")
     end
-  elseif mode == :LGRIM# TODO add in option to allow for integration using IMatrix
-      error("\n Not implemented yet!! \n")
+  elseif n.integrationMethod==:ps
+    if !haskey(kw,:mode); kw_ = Dict(:mode => :quadrature); mode = get(kw_,:mode,0);
+    else; mode  = get(kw,:mode,0);
+    end
+    variable = get(kw,:variable,0);
+    if variable == :state; Nck_cum  = [0;cumsum(n.Nck+1)];
+    elseif variable == :control; Nck_cum = [0;cumsum(n.Nck)];
+    else; error("\n Set the variable to either (:variable => :state) or (:variable => :control). \n")
+    end
+
+    if mode == :quadrature  #TODO recalculate ws based off of time
+      if integrand == :default      # integrate V
+        @NLexpression(mdl, temp[int=1:n.Ni], sum((n.ωₛ[int])[j] * (V[Nck_cum[int] + 1:Nck_cum[int + 1]])[j] for j = 1:n.Nck[int]));
+        Expr =  @NLexpression(mdl, C*sum(temp[int] for int = 1:n.Ni));
+      elseif integrand == :squared # integrate V^2
+        @NLexpression(mdl, temp[int=1:n.Ni],C*sum((n.ωₛ[int])[j] * (V[Nck_cum[int] + 1:Nck_cum[int + 1]])[j] * (V[Nck_cum[int] + 1:Nck_cum[int + 1]])[j] for j = 1:n.Nck[int]));
+        Expr =  @NLexpression(mdl, sum(temp[int] for int = 1:n.Ni));
+      else
+        error("\n Check :integrand \n")
+      end
+    elseif mode == :LGRIM# TODO add in option to allow for integration using IMatrix
+        error("\n Not implemented yet!! \n")
+    end
   end
   return Expr
 end
-"""
-dx = differentiate_state(ps,nlp;(:mode=>:something...no modes yet!))
-dx = differentiate_state(ps,nlp)
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/4/2017, Last Modified: 1/4/2017 \n
---------------------------------------------------------------------------------------\n
-"""
-function differentiate_state(ps::PS_data,nlp::NLP_data; kwargs...)
-    @unpack Nck, Ni, stateMatrix, ωₛ, DMatrix = ps
-    @unpack numStates = nlp
 
-    kw = Dict(kwargs);
-    if !haskey(kw,:mode); kw = Dict(:mode => :default) end
-    mode = get(kw, :mode, 0);
-
-    dx = [zeros(Float64, numStates, Nck[int],)for int in 1:Ni]; idx = 1;
-    for st in 1:numStates
-        for int in 1:Ni
-            if mode == :default
-                dx[int][st,1:Nck[int]] = DMatrix[int]*stateMatrix[int][:,st];
-            else
-                error("Pick a mode or leave argument blank default")
-            end
-            idx=idx+1;
-        end
-    end
-    return  dx
-end
-
-function scale_tau(τ::Array{Float64,1},x₀::Float64,xₙ::Float64)
+function scale_tau(τ,x₀,xₙ)
   (xₙ - x₀)/2*τ + (xₙ + x₀)/2;
 end
 
-function scale_w(ω::Array{Float64,1},x₀::Float64,xₙ::Float64)
+function scale_w(ω,x₀,xₙ)
   (xₙ - x₀)/2*ω;
 end
 
 """
 ts, ωₛ=create_intervals(t0,tf,Ni,Nck,τ,ω);
-ts, ωₛ =  create_intervals(ps,t0_var,tf_var) # using JuMP variables
+n = create_intervals(mdl,n) # using JuMP variables
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 12/23/2017, Last Modified: 1/15/2017 \n
+Date Create: 12/23/2017, Last Modified: 1/23/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function create_intervals(t0::Float64,tf::Float64,Ni::Int64,Nck::Array{Int64,1},τ::Array{Vector{Float64},1},ω::Array{Vector{Float64},1})
+function create_intervals(t0,tf,Ni::Int64,Nck::Array{Int64,1},τ::Array{Vector{Float64},1},ω::Array{Vector{Float64},1})
   di = (tf - t0)/Ni; # interval size
   # create mesh points
   tm = zeros(Float64,Ni+1); tm[1] = t0;
@@ -184,19 +84,18 @@ function create_intervals(t0::Float64,tf::Float64,Ni::Int64,Nck::Array{Int64,1},
     return ts, ωₛ
 end
 
-function create_intervals_JuMP(mdl::JuMP.Model,tf_var,Nck_const,Ni_const,τ_const,ω_const)
-  Nck=Nck_const; Ni=Ni_const;τ=τ_const;ω=ω_const;
+function create_intervals(mdl::JuMP.Model,n::NLOpt)
   # create mesh points, interval size = tf_var/Ni
-  tm = @NLexpression(mdl, [idx=1:Ni+1], (idx-1)*tf_var/Ni);
+  tm = @NLexpression(mdl, [idx=1:n.Ni+1], (idx-1)*n.tf/n.Ni);
   # go through each mesh interval creating time intervals; [t(i-1),t(i)] --> [-1,1]
-  ts_JuMP = [Array(Any,Nck[int]+1,) for int in 1:Ni];
-  ωₛ_JuMP = [Array(Any,Nck[int],) for int in 1:Ni];
+  n.ts = [Array(Any,n.Nck[int]+1,) for int in 1:n.Ni];
+  n.ωₛ = [Array(Any,n.Nck[int],) for int in 1:n.Ni];
   for int in 1:Ni
-    ts_JuMP[int][1:end-1]=@NLexpression(mdl,[j=1:Nck[int]], (tm[int+1]-tm[int])/2*τ[int][j] +  (tm[int+1]+tm[int])/2);
-    ts_JuMP[int][end]=@NLexpression(mdl, tf_var/Ni*int) # append +1 at end of each interval
-    ωₛ_JuMP[int]=@NLexpression(mdl, [j=1:Nck[int]], (tm[int+1]-tm[int])/2*ω_const[int][j])
+    n.ts[int][1:end-1]=@NLexpression(mdl,[j=1:n.Nck[int]], (tm[int+1]-tm[int])/2*n.τ[int][j] +  (tm[int+1]+tm[int])/2);
+    n.ts[int][end]=@NLexpression(mdl, n.tf/n.Ni*int) # append +1 at end of each interval
+    n.ωₛ[int]=@NLexpression(mdl, [j=1:n.Nck[int]], (tm[int+1]-tm[int])/2*n.ω[int][j])
   end
-  return ts_JuMP, ωₛ_JuMP
+  return n
 end
 
 """
@@ -280,8 +179,9 @@ end
 
 """
 D = poldif(x, malpha, B...);
+n = polyDiff(mdl,n);
 --------------------------------------------------------------------------\n
-Last modifed for julia on January 16, 2016 by Huckleberry Febbo\n
+Last modifed for julia on January 23, 2016 by Huckleberry Febbo\n
 Original Author: JJ.A.C. Weideman, S.C. Reddy 1998\n
 Original Function Name: poldif.m  |  Source: [matlabcentral](https://www.mathworks.com/matlabcentral/fileexchange/29-dmsuite)\n
 --------------------------------------------------------------------------\n
@@ -302,20 +202,19 @@ The function DM =  poldif(x, maplha, B) computes the differentiation matrices D1
  (CURRENTLY NOT TESTED IN julia)
 
 """
-function poldif_JuMP(mdl::JuMP.Model,ts_JuMP,Ni_const,Nck_const)
-  Ni=Ni_const; Nck=Nck_const;
-  DX = [Array(Any,Nck[int]+1,Nck[int]+1) for int in 1:Ni];
-  c = [Array(Any,Nck[int],) for int in 1:Ni];
-  C = [Array(Any,Nck[int]+1,Nck[int]+1) for int in 1:Ni];
-  Z = [Array(Any,Nck[int]+1,Nck[int]+1) for int in 1:Ni];
-  Y = [Array(Any,Nck[int]+1,Nck[int]+1) for int in 1:Ni];
-  X2 = [Array(Any,Nck[int]+1,Nck[int]+1) for int in 1:Ni];
-  DMatrix_JuMP = [Array(Any,Nck[int]+1,Nck[int]+1) for int in 1:Ni];
+function polyDiff(mdl::JuMP.Model,n::NLOpt)
+  DX = [Array(Any,n.Nck[int]+1,n.Nck[int]+1) for int in 1:n.Ni];
+  c = [Array(Any,n.Nck[int],) for int in 1:n.Ni];
+  C = [Array(Any,n.Nck[int]+1,n.Nck[int]+1) for int in 1:n.Ni];
+  Z = [Array(Any,n.Nck[int]+1,n.Nck[int]+1) for int in 1:n.Ni];
+  Y = [Array(Any,n.Nck[int]+1,n.Nck[int]+1) for int in 1:n.Ni];
+  X2 = [Array(Any,n.Nck[int]+1,n.Nck[int]+1) for int in 1:n.Ni];
+  n.DMatrix = [Array(Any,n.Nck[int]+1,n.Nck[int]+1) for int in 1:n.Ni];
   EPS = 10*eps(); #TODO make this a constant
 
   B_given = false; malpha = 1; #TODO get ride of B stuff
-  for int = 1:Ni
-    x = ts_JuMP[int];
+  for int = 1:n.Ni
+    x = n.ts[int];
     N = length(x);  # should == Nck[int] + 1
     x = x[:];                     # Make sure x is a column vector
 
@@ -382,14 +281,14 @@ function poldif_JuMP(mdl::JuMP.Model,ts_JuMP,Ni_const,Nck_const)
     end
     #D   = ell*Z.*(C.*repmat(diag(D),1,N) - D);   # Off-diagonals
     D_temp = repmat(diag(D1),1,N);
-    DMatrix_JuMP[int] = @NLexpression(mdl, [i in 1:N, j in 1:N], Z[int][i,j]*(C[int][i,j]*D_temp[i,j] - D1[i,j]) )
-    DMatrix_JuMP[int][L] = Y[int][N,:];
+    n.DMatrix[int] = @NLexpression(mdl, [i in 1:N, j in 1:N], Z[int][i,j]*(C[int][i,j]*D_temp[i,j] - D1[i,j]) )
+    n.DMatrix[int][L] = Y[int][N,:];
   #  D[L]   = Y[N,:];                                # Correct the diagonal
   #  DM[:,:,ell] = D;                                     # Store the current D
 
   #  end
   end
-  return DMatrix_JuMP
+  return n
 end  #TODO compare the speed of this to direct automatic differention
 
 function poldif(x, malpha, B...)

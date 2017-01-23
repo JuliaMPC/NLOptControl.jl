@@ -1,59 +1,55 @@
 """
 LGR_matrices(ps,nlp)
+n=LGR_matrices(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/3/2017, Last Modified: 1/4/2017 \n
+Date Create: 1/3/2017, Last Modified: 1/23/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function LGR_matrices(ps::PS_data,nlp::NLP_data)
-    @unpack Nck, Ni, ts = ps
-    @unpack DMatrix, IMatrix = ps
+function LGR_matrices(n::NLOpt)
 
     # check input
-    check_ts = zeros(Float64,Ni);
-    for int in 1:Ni
-        check_ts[int]=maximum(ts[int]);
+    check_ts = zeros(Float64,n.Ni);
+    for int in 1:n.Ni
+        check_ts[int]=maximum(n.ts[int]);
     end
     if maximum(check_ts) < 10*eps()
       error("\n ts is full of zeros: make sure that you call create_intervals() first to calculate ts! \n
                 NOTE: This may have occured because  (:finalTimeDV => true) and the final time dv is not working properly!! \n")
     end
 
-    D = [zeros((Nck[int]+1),(Nck[int]+1)) for int in 1:Ni];
-    for int in 1:Ni
-        D[int] = poldif(ts[int], 1) # +1 is already appended onto ts
+    D = [zeros((n.Nck[int]+1),(n.Nck[int]+1)) for int in 1:n.Ni];
+    for int in 1:n.Ni
+        D[int] = poldif(n.ts[int], 1) # +1 is already appended onto ts
     end
 
-    DM = [zeros((Nck[int]),(Nck[int])) for int in 1:Ni];
-    for int in 1:Ni
-        DMatrix[int] = D[int][1:end-1,:];   # [Nck]X[Nck+1]
+    n.DMatrix = [zeros((n.Nck[int]),(n.Nck[int]+1)) for int in 1:n.Ni];
+    DM = [zeros((n.Nck[int]),(n.Nck[int])) for int in 1:n.Ni];
+    for int in 1:n.Ni
+        n.DMatrix[int] = D[int][1:end-1,:]; # [Nck]X[Nck+1]
         DM[int] = D[int][1:end-1,2:end];    # [Nck]X[Nck]
-        IMatrix[int] = inv(DM[int]);        # I = inv[D_{2:N_k+1}]
+      #  IMatrix[int] = inv(DM[int]);        # I = inv[D_{2:N_k+1}]
     end
-    @pack ps = DMatrix, IMatrix
+    return n
 end
 """
-DMatrix_JuMP=D_matrix_JuMP(tf_var,Nck_const,Ni_const,τ_const,ω_const)
+n = D_matrix(mdl,n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/15/2017, Last Modified: 1/16/2017 \n
+Date Create: 1/15/2017, Last Modified: 1/23/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function D_matrix_JuMP(mdl::JuMP.Model,tf_var,Nck_const,Ni_const,τ_const,ω_const)
-  # calculate ts and ωₛ based off of tf
-  ts_JuMP, ωₛ_JuMP = create_intervals_JuMP(mdl,tf_var,Nck_const,Ni_const,τ_const,ω_const);
-
-  Nck=Nck_const; Ni=Ni_const;
+function D_matrix(mdl::JuMP.Model,n::NLOpt)
   #D = [Matrix((Nck[int]+1),(Nck[int]+1)) for int in 1:Ni];
-  D = poldif_JuMP(mdl,ts_JuMP,Ni_const,Nck_const) # +1 is already appended onto ts
+  D = polyDiff(mdl,n) # +1 is already appended onto ts
 
-  DMatrix_JuMP = [Matrix((Nck[int]),(Nck[int]+1)) for int in 1:Ni];
+  n.DMatrix = [Matrix((Nck[int]),(Nck[int]+1)) for int in 1:Ni];
 #  DM = [Matrix((Nck[int]),(Nck[int])) for int in 1:Ni];
-  for int in 1:Ni
-      DMatrix_JuMP[int] = D[int][1:end-1,:];   # [Nck]X[Nck+1]
+  for int in 1:n.Ni
+      n.DMatrix[int] = D[int][1:end-1,:];   # [Nck]X[Nck+1]
       #TODO make IMatrix and option
       #DM[int] = D[int][1:end-1,2:end];         # [Nck]X[Nck]
     #  IMatrix[int] = inv(DM[int]);        # I = inv[D_{2:N_k+1}]
   end
-  return DMatrix_JuMP
+  return n
 end

@@ -1,11 +1,11 @@
 """
-c, ceq = constraints(nlp,ps)
+c, ceq = constraints(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/8/2017, Last Modified: 1/9/2017 \n
+Date Create: 1/8/2017, Last Modified: 1/23/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function constraints(nlp::NLP_data,ps::PS_data)
+function constraints(n::NLOpt) #TODO fix this
 
   # calculate equality constraints
   ode_constraint(nlp,ps); # TODO consider running these in parallel
@@ -27,13 +27,13 @@ function constraints(nlp::NLP_data,ps::PS_data)
 end
 
 """
-ode_constraint(nlp,ps)
+ode_constraint(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/8/2017, Last Modified: 1/12/2017 \n
+Date Create: 1/8/2017, Last Modified: 1/23/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function ode_constraint(nlp::NLP_data,ps::PS_data)
+function ode_constraint(n::NLOpt) #TODO fix this
     @unpack FMatrix, DMatrix, stateMatrix, Ni, odeConstraint = ps
     FMatrix = F_matrix(nlp,ps);
     for int in 1:Ni
@@ -43,13 +43,13 @@ function ode_constraint(nlp::NLP_data,ps::PS_data)
 end
 
 """
-continuity_constraint(nlp,ps)
+continuity_constraint(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 1/7/2017, Last Modified: 1/7/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function continuity_constraint(nlp::NLP_data,ps::PS_data)
+function continuity_constraint(n::NLOpt) #TODO fix this
     @unpack stateMatrix, controlMatrix, Ni, continuityConstraint = ps
     @unpack numStates, numControls = nlp
     for int in 1:Ni-1
@@ -60,13 +60,13 @@ function continuity_constraint(nlp::NLP_data,ps::PS_data)
 end
 
 """
-boundary_constraint(nlp,ps)
+boundary_constraint(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/7/2017, Last Modified: 1/8/2017 \n
+Date Create: 1/7/2017, Last Modified: 1/23/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function boundary_constraint(nlp::NLP_data,ps::PS_data)
+function boundary_constraint(n::NLOpt) #TODO fix this
     @unpack stateMatrix, Ni, boundaryConstraint = ps
     @unpack X0, XF = nlp
     boundaryConstraint = [X0 - stateMatrix[1][1,:];
@@ -75,13 +75,13 @@ function boundary_constraint(nlp::NLP_data,ps::PS_data)
 end
 
 """
-inequality_constraint(nlp,ps)
+inequality_constraint(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/8/2017, Last Modified: 1/8/2017 \n
+Date Create: 1/8/2017, Last Modified: 1/23/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function inequality_constraint(nlp::NLP_data,ps::PS_data)
+function inequality_constraint(n::NLOpt) #TODO fix this
     @unpack Ni, stateMatrix, stateConstraint = ps
     @unpack numStates, XL, XU = nlp
     for st in 1:numStates

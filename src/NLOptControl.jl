@@ -15,11 +15,12 @@ end
 abstract AbstractNLOpt
 type NLOpt <: AbstractNLOpt
   # general properties
+  stateEquations
   numStates::Int64          # number of states
   numControls::Int64        # number of controls
   numPoints::Array{Int64,1} # number of dv discretization within each interval
   lengthDV::Int64           # total number of dv discretizations per variables
-  tf                        # final time
+  tf::Any                   # final time
 
   # boundary constraits
   X0::Array{Float64,1}      # initial state conditions
@@ -38,9 +39,10 @@ type NLOpt <: AbstractNLOpt
   ts::Array{Array{Any,1},1}     # time scaled based off of τ
   ω::Array{Array{Float64,1},1}  # weights
   ωₛ::Array{Array{Any,1},1}     # scaled weights
-
+  DMatrix::Array{Array{Any,2},1}# differention matrix
   # tm method data
   N::Int64                      # number of points in discretization
+  dt::Array{Any,1}              # array of dts
 
   # options
   finalTimeDV::Bool
@@ -50,11 +52,12 @@ end
 
 # Default Constructor
 function NLOpt()
-NLOpt(0,                  # number of states
+NLOpt(Any,                # state equations
+      0,                  # number of states
       0,                  # number of controls
       Int[],              # number of dv discretization within each interval
       0,                  # total number of dv discretizations per variables
-      Any[],              # final time
+      Any,                # final time
       Float64[],          # initial state conditions
       Float64[],          # final state conditions
       Float64[],          # XL
@@ -67,7 +70,9 @@ NLOpt(0,                  # number of states
       Vector{Any}[],      # ts
       Vector{Float64}[],  # weights
       Vector{Any}[],      # scaled weights
+      Matrix{Any}[],      # DMatrix
       0,                  # number of points in discretization
+      Any[],              # array of dts
       false,              # finalTimeDV
       :ts,                # integrtionMethod
       :bkwEuler           # integrationScheme
@@ -77,32 +82,25 @@ end
 # scripts
 include("utils.jl");
 include("setup.jl")
-include("constraints.jl")
-include("objective.jl")
-include("test_data.jl")
-include("LGL.jl");
 include("LGR.jl");
 include("ocp.jl")
 
        # Functions
 export
-        # setup functions
-        NLOpt, define, configure,
-
-       LGR, lgr_diff, LGR_matrices, F_matrix,
-
-       scale_tau, scale_w, create_intervals,
-       lagrange_basis_poly, interpolate_lagrange,
-       integrate,
-       differentiate_state,
-       lepoly, poldif,
-       generate_Fake_data,
+       # setup functions
+       NLOpt, define, configure,
        OCPdef,
 
-       # JuMP registered functions
-       create_intervals_JuMP,
-       poldif_JuMP,
-       D_matrix_JuMP,
+       # ps functions
+       LGR, lgr_diff, LGR_matrices,
+       scale_tau, scale_w, create_intervals,
+       lagrange_basis_poly, interpolate_lagrange,
+       polyDiff,
+       D_matrix,
+       lepoly, poldif,
+
+       # math functions
+       integrate,
 
        # Objects
        NLOpt

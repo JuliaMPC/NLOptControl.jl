@@ -1,8 +1,8 @@
 """
-n = define(numStates=2,numControls=2,Ni=4,Nck=[3, 3, 7, 2];(:finalTimeDV => false));
+n = define(n,numStates=2,numControls=1,X0=[0.,1],XF=[0.,-1.],XL=[0.,-Inf],XU=[1/9,Inf],CL=[-Inf],CU=[Inf])
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/1/2017, Last Modified: 1/20/2017 \n
+Date Create: 1/1/2017, Last Modified: 1/23/2017 \n
 Citations: \n
 ----------\n
 Initially Influenced by: S. Hughes.  steven.p.hughes@nasa.gov
@@ -10,6 +10,7 @@ Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/26
 -------------------------------------------------------------------------------------\n
 """
 function define(n::NLOpt;
+                stateEquations::Function=[],
                 numStates::Int64=0,
                 numControls::Int64=0,
                 X0::Array{Float64,1}=zeros(Float64,numStates,1),
@@ -50,6 +51,7 @@ function define(n::NLOpt;
     error(string("\n Length of CU must match number of controls \n"));
   end
 
+  n.stateEquations = stateEquations;
   n.numStates = numStates;
   n.numControls = numControls;
   n.X0 = X0;
@@ -62,7 +64,7 @@ function define(n::NLOpt;
 end
 
 """
-n = configure(n::NLOpt,Ni=4,Nck=[3, 3, 7, 2];(:integrationMethod => ps),(:integrationScheme => lgrExplicit),(:finalTimeDV => false));
+n = configure(n::NLOpt,Ni=4,Nck=[3, 3, 7, 2];(:integrationMethod => :ps),(:integrationScheme => :lgrExplicit),(:finalTimeDV => false),(:tf => 1))
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 1/1/2017, Last Modified: 1/23/2017 \n
@@ -76,84 +78,85 @@ function configure(n::NLOpt, args...; kwargs... )
   kw = Dict(kwargs);
 
   # final time
-  if !haskey(kw,:finalTimeDV); kw_ = Dict(:finalTimeDV => false); finalTimeDV = get(kw_,:finalTimeDV,0);
-  else; finalTimeDV  = get(kw,:finalTimeDV,0);
+  if !haskey(kw,:finalTimeDV); kw_ = Dict(:finalTimeDV => false); n.finalTimeDV = get(kw_,:finalTimeDV,0);
+  else; n.finalTimeDV  = get(kw,:finalTimeDV,0);
   end
 
-  if !haskey(kw,:tf) && !finalTimeDV
+  if !haskey(kw,:tf) && !n.finalTimeDV
     error("\n If the final is not a design variable pass it as: (:tf=>Float64(some #)) \n
         If the final time is a design variable, indicate that as: (:finalTimeDV=>true)\n")
-  elseif haskey(kw,:tf) && !finalTimeDV
-    tf = get(kw,:tf,0);
-  elseif finalTimeDV
-    tf = NaN;
+  elseif haskey(kw,:tf) && !n.finalTimeDV
+    n.tf = get(kw,:tf,0);
+  elseif n.finalTimeDV
+    n.tf = NaN;
   end
 
   # integration method
-  if !haskey(kw,:integrationMethod); kw_ = Dict(:integrationMethod => :ps); integrationMethod = get(kw_,:integrationMethod,0);
-  else; integrationMethod  = get(kw,:integrationMethod,0);
+  if !haskey(kw,:integrationMethod); kw_ = Dict(:integrationMethod => :ps); n.integrationMethod = get(kw_,:integrationMethod,0);
+  else; n.integrationMethod  = get(kw,:integrationMethod,0);
   end
 
-  if integrationMethod==:ps
+  if n.integrationMethod==:ps
     if haskey(kw,:N)
       error(" \n N is not an appropriate kwargs for :tm methods \n")
     end
-    if !haskey(kw,:Ni); kw_ = Dict(:Ni => 1); const Ni=get(kw_,:Ni,0);        # default
-    else; const Ni = get(kw,:Ni,0);
+    if !haskey(kw,:Ni); kw_ = Dict(:Ni => 1); n.Ni=get(kw_,:Ni,0);        # default
+    else; n.Ni = get(kw,:Ni,0);
     end
-    if !haskey(kw,:Nck); kw_ = Dict(:Nck => [10]); const Nck=get(kw_,:Nck,0); # default
-    else; const Nck = get(kw,:Nck,0);
+    if !haskey(kw,:Nck); kw_ = Dict(:Nck => [10]); n.Nck=get(kw_,:Nck,0); # default
+    else; n.Nck = get(kw,:Nck,0);
     end
-    if !haskey(kw,:integrationScheme); kw_ = Dict(:integrationScheme => :lgrExplicit);const integrationScheme=get(kw_,:integrationScheme,0); # default
-    else; const integrationScheme=get(kw,:integrationScheme,0);
+    if !haskey(kw,:integrationScheme); kw_ = Dict(:integrationScheme => :lgrExplicit); n.integrationScheme=get(kw_,:integrationScheme,0); # default
+    else;  n.integrationScheme=get(kw,:integrationScheme,0);
     end
-    if length(Nck) != Ni
+    if length(n.Nck) != n.Ni
         error("\n length(Nck) != Ni \n");
     end
-    for int in 1:Ni
-        if (Nck[int]<0)
+    for int in 1:n.Ni
+        if (n.Nck[int]<0)
             error("\n Nck must be > 0");
         end
     end
-    if  Ni <= 0
+    if  n.Ni <= 0
       error("\n Ni must be > 0 \n");
     end
-    const numPoints = [Nck[int] for int in 1:Ni];  # number of design variables per interval
+     n.numPoints = [n.Nck[int] for int in 1:n.Ni];  # number of design variables per interval
 
     # initialize node data
-    if integrationScheme==:lgrExplicit
-      taus_and_weights = [gaussradau(Nck[int]) for int in 1:Ni];
+    if n.integrationScheme==:lgrExplicit
+      taus_and_weights = [gaussradau(n.Nck[int]) for int in 1:n.Ni];
     end
-    τ = [taus_and_weights[int][1] for int in 1:Ni];
-    ω = [taus_and_weights[int][2] for int in 1:Ni];
-    if finalTimeDV   # initialize scaled variables as zeros
-      ts = 0*τ; ωₛ = 0*ω;
+    n.τ = [taus_and_weights[int][1] for int in 1:n.Ni];
+    n.ω = [taus_and_weights[int][2] for int in 1:n.Ni];
+    if n.finalTimeDV   # initialize scaled variables as zeros
+      n.ts = 0*n.τ; n.ωₛ = 0*n.ω;
     else
-      ts, ωₛ = create_intervals(t0,tf,Ni,Nck,τ,ω);
+      n.ts, n.ωₛ = create_intervals(0.0,n.tf,n.Ni,n.Nck,n.τ,n.ω);
     end
 
-  elseif integrationMethod==:tm
+  elseif n.integrationMethod==:tm
     if haskey(kw,:Nck) || haskey(kw,:Ni)
       error(" \n Nck and Ni are not appropriate kwargs for :tm methods \n")
     end
-    if !haskey(kw,:N); kw_ = Dict(:N => 10); const N=get(kw_,:N,0); # default
-    else; const N = get(kw,:N,0);
+    if !haskey(kw,:N); kw_ = Dict(:N => 10); n.N=get(kw_,:N,0); # default
+    else; n.N = get(kw,:N,0);
     end
-    if !haskey(kw,:integrationScheme); kw_ = Dict(:integrationScheme => :bkwEuler); const integrationScheme=get(kw_,:integrationScheme,0); # default
-    else; const integrationScheme=get(kw,:integrationScheme,0);
+    if !haskey(kw,:integrationScheme); kw_ = Dict(:integrationScheme => :bkwEuler);  n.integrationScheme=get(kw_,:integrationScheme,0); # default
+    else;  n.integrationScheme=get(kw,:integrationScheme,0);
     end
   end
 
+  return n
 end
 """
-nlp2ocp(nlp,ps);
+nlp2ocp(n);
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 1/2/2017, Last Modified: 1/4/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 # to do, pack decisionVector into nlp
-function nlp2ocp(nlp::NLP_data,ps::PS_data)
+function nlp2ocp(n::NLOpt) #TODO fix this
     @unpack t0, tf, stateMatrix, controlMatrix, Ni, Nck = ps
     @unpack stateIdx_all, controlIdx_all, timeStartIdx, timeStopIdx = nlp
     @unpack stateIdx, controlIdx = nlp

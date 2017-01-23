@@ -11,15 +11,12 @@ pyplot()
 #TODO
 # 1) why is it failing when we run it again?
 # 4) try implicit method to see if that helps
-# 5) pass state equations
 # 6) try other linear solvers
-# 7) define variables as constants
-# 8) consider getting ride of PS_data _ or maybe we can add both PS_data and OCP_data to another type? Like JuMP does with model?
 # 9) allow for functions of state constraints of these so we can calculate them on the fly!
-# 10) allow for int inputs and just convert them to Float64
 # 11) let the user define the objective function above
 # 12) allow user to select from using the IMatrix or quadrature
 # 13) make a bool to tell the user to restart julia if they change the model significantly -> or do this for them
+# 14) make functionality to easily compare all intergration schemes
 
 ##################################
 # Define NLOptControl problem
