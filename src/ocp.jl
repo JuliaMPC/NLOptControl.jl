@@ -61,9 +61,9 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt)
       # dynamics
       if int==1
         if n.finalTimeDV
-          @variable(mdl, 0.01 <= tf <= Inf) #TODO allow user to pass ranges
+          @variable(mdl, 0.5 <= tf <= Inf) #TODO allow user to pass ranges TODO for some reason  things work well unless the numbers are lower than .15 and it really diverges after that
           n.tf = tf;
-          n = create_intervals(mdl,n);
+          n = create_intervals(mdl,n,tf);
           n = D_matrix(mdl,n);
         else
           n = LGR_matrices(n);
@@ -100,7 +100,7 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt)
     end
   end
   c = [x0_con, xf_con, dyn_con];  # pack up all constraints
-  return n,x,u,c
+  return n,x,u,c,tf #TODO fix for other cases
 end
 
 #= old

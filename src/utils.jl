@@ -15,7 +15,7 @@ function integrate(mdl::JuMP.Model,n::NLOpt,V::Array{JuMP.Variable,1}, args...; 
   if n.integrationMethod==:tm #TODO investigate differences in control and state variables
     if integrand == :default      # integrate V
       if n.integrationScheme==:bkwEuler
-        Expr =  @NLexpression(mdl, C*sum(V[j+1]*n.tf/(n.N) for j = 1:n.N));  #TODO fix this it is controlling the system for free on the first time step
+        Expr =  @NLexpression(mdl, C*sum(V[j+1]*n.tf/(n.N) for j = 1:n.N));  #TODO fix this.. there is an extra dv here for control, but it does not effect solution
       elseif n.integrationScheme==:trapezoidal
         Expr =  @NLexpression(mdl, C*sum(0.5*(V[j]+V[j+1])*n.tf/(n.N) for j = 1:n.N));
       end
@@ -68,7 +68,7 @@ ts, ωₛ=create_intervals(t0,tf,Ni,Nck,τ,ω);
 n = create_intervals(mdl,n) # using JuMP variables
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 12/23/2017, Last Modified: 1/23/2017 \n
+Date Create: 12/23/2017, Last Modified: 1/25/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function create_intervals(t0,tf,Ni::Int64,Nck::Array{Int64,1},τ::Array{Vector{Float64},1},ω::Array{Vector{Float64},1})
@@ -84,9 +84,9 @@ function create_intervals(t0,tf,Ni::Int64,Nck::Array{Int64,1},τ::Array{Vector{F
     return ts, ωₛ
 end
 
-function create_intervals(mdl::JuMP.Model,n::NLOpt)
+function create_intervals(mdl::JuMP.Model,n::NLOpt,tf)
   # create mesh points, interval size = tf_var/Ni
-  tm = @NLexpression(mdl, [idx=1:n.Ni+1], (idx-1)*n.tf/n.Ni);
+  tm = @NLexpression(mdl, [idx=1:n.Ni+1], (idx-1)*tf/n.Ni);
   # go through each mesh interval creating time intervals; [t(i-1),t(i)] --> [-1,1]
   n.ts = [Array(Any,n.Nck[int]+1,) for int in 1:n.Ni];
   n.ωₛ = [Array(Any,n.Nck[int],) for int in 1:n.Ni];
@@ -178,28 +178,18 @@ function interpolate_lagrange{T<:Number}(x::AbstractArray{T},x_data,y_data,Nc)
 end
 
 """
-D = poldif(x, malpha, B...);
+D = poldif(x);
 n = polyDiff(mdl,n);
 --------------------------------------------------------------------------\n
-Last modifed for julia on January 23, 2016 by Huckleberry Febbo\n
+Last modifed for julia on January 25, 2016 by Huckleberry Febbo\n
 Original Author: JJ.A.C. Weideman, S.C. Reddy 1998\n
 Original Function Name: poldif.m  |  Source: [matlabcentral](https://www.mathworks.com/matlabcentral/fileexchange/29-dmsuite)\n
 --------------------------------------------------------------------------\n
 # Input Arguments
 * `x::Vector`: Vector of N distinct nodes.
-* `malpha::Int65`: M, the number of derivatives required
-    * Note:     0 < M < N-1
-*  `B`: Currently this functionality is not tested with this input (only works for constant weights)
 
 # Output Arguments
 * `D::Array{Float64,2}`: Differention Matrix
-    * DM(1:N,1:N,ell) contains ell-th derivative matrix, ell=1..M
-
-The function DM =  poldif(x, maplha, B) computes the differentiation matrices D1, D2, ..., DM on arbitrary nodes.
- The function is called with either two or three input arguments.
- If two input arguments are supplied, the weight function is assumed to be constant.
- If three arguments are supplied, the weights should be defined as the second and third arguments.
- (CURRENTLY NOT TESTED IN julia)
 
 """
 function polyDiff(mdl::JuMP.Model,n::NLOpt)
@@ -212,64 +202,46 @@ function polyDiff(mdl::JuMP.Model,n::NLOpt)
   D = [Array(Any,n.Nck[int]+1,n.Nck[int]+1) for int in 1:n.Ni];
   EPS = 10*eps(); #TODO make this a constant
 
-  B_given = false; malpha = 1; #TODO get ride of B stuff
   for int = 1:n.Ni
     x = n.ts[int];
     N = length(x);  # should == Nck[int] + 1
-    x = x[:];                     # Make sure x is a column vector
-
-  #  if !B_given                       # Check if constant weight function
-    M = malpha;                     # is to be assumed.
+    x = x[:];       # Make sure x is a column vector
+    M = 1; # assume
     alpha = ones(N,1);
     B = zeros(M,N);
-  #  elseif B_given
-    #  alpha = malpha(:);                # Make sure alpha is a column vector
-    #  M = length(B[:,1]);               # First dimension of B is the number
-  #  end                                  # of derivative matrices to be computed
-
-    #  I = eye(N);                  # Identity matrix.
-    #L = logical(I);              # Logical identity matrix.
     L=eye(Bool, N, N);
-    # XX = x(:,ones(1,N));
     XX = repmat(x,1,N);
-    #DX = XX-XX';                  # DX contains entries x(k)-x(j).
+   # DX contains entries x(k)-x(j).
     XX_transposed = permutedims(XX,[2,1]);
     DX[int] = @NLexpression(mdl, [i=1:N,j=1:N], XX[i,j] - XX_transposed[i,j])
-    DX[int][L] = ones(N,1);               # Put 1's one the main diagonal.
+    DX[int][L] = ones(N,1);  # Put 1's one the main diagonal.
 
-    #  c = alpha.*prod(DX,2);       # Quantities c(j).
+    # Quantities c(j).
     c[int] = @NLexpression(mdl,[j=1:N],prod(DX[int][i,j] for i in 1:N))
 
-    #C = c[:,ones(1,N)];
     C_temp = repmat(c[int],1,N);
-    #C = C./C';                   # Matrix with entries c(k)/c(j).
+    # Matrix with entries c(k)/c(j).
     C_temp_transposed = permutedims(C_temp,[2,1]);
     C[int] = @NLexpression(mdl,[i=1:N,j=1:N], C_temp[i,j]/(C_temp_transposed[i,j]+EPS))
 
-    #Z = 1./DX;                      # Z contains entries 1/(x(k)-x(j))
+    # Z contains entries 1/(x(k)-x(j))
     Z[int] = @NLexpression(mdl,[i=1:N,j=1:N], 1/(DX[int][i,j]+EPS))
-    Z[int][L] = zeros(N,1);              # with zeros on the diagonal.
+    Z[int][L] = zeros(N,1); # with zeros on the diagonal.
 
-    #X = Z';                         # X is same as Z', but with
-    #X[L] = [];                      # diagonal entries removed.
+    # X is same as Z', but with diagonal entries removed.
     X = permutedims(Z[int],[2,1]);
-
     flag = trues(size(X));
     flag[L] = false;
     X = X[flag];
     X = reshape(X,N-1,N);
 
-  #  Y = ones(N-1,N);             # Initialize Y and D matrices.
-    D1 = eye(N);                  # Y is matrix of cumulative sums,
-
-    DM = zeros(Float64,N,N,M);                                   # D differentiation matrices.
-  #  for ell = 1:M
+    # Initialize Y and D matrices.
+    D1 = eye(N);                  # Y is matrix of cumulative sums
+    DM = zeros(Float64,N,N,M);    # D differentiation matrices
     ell = 1;
     temp = reshape(B[ell,:],1,N)
     X = [temp;X]
     X2[int] = @NLexpression(mdl, [i=1:N,j=1:N], X[i,j])
-
-    #Y   = cumsum([temp; ell*Y[1:N-1,:].*X]); # Diagonals
     for i in 1:N
       for j in 1:N
         if i == 1
@@ -279,68 +251,40 @@ function polyDiff(mdl::JuMP.Model,n::NLOpt)
         end
       end
     end
-    #D   = ell*Z.*(C.*repmat(diag(D),1,N) - D);   # Off-diagonals
+    # Off-diagonals
     D_temp = repmat(diag(D1),1,N);
     D[int] = @NLexpression(mdl, [i in 1:N, j in 1:N], Z[int][i,j]*(C[int][i,j]*D_temp[i,j] - D1[i,j]) )
-    D[int][L] = Y[int][N,:];
-  #  D[L]   = Y[N,:];                                # Correct the diagonal
-  #  DM[:,:,ell] = D;                                     # Store the current D
-
-  #  end
+    D[int][L] = Y[int][N,:]; # Correct the diagonal
   end
   return D
 end  #TODO compare the speed of this to direct automatic differention
 
-function poldif(x, malpha, B...)
-  B_given = Bool(length(B));
-         N = length(x);
-         x = x[:];                     # Make sure x is a column vector
-
-  if !B_given                       # Check if constant weight function
-         M = malpha;                   # is to be assumed.
-     alpha = ones(N,1);
-         B = zeros(M,N);
-  elseif B_given
-     alpha = malpha(:);                # Make sure alpha is a column vector
-         M = length(B[:,1]);           # First dimension of B is the number
-  end                                  # of derivative matrices to be computed
-
-        #  I = eye(N);                  # Identity matrix.
-          #L = logical(I);              # Logical identity matrix.
-          L=eye(Bool, N, N);
-      # XX = x(:,ones(1,N));
-         XX = repmat(x,1,N);
-         DX = XX-XX';                  # DX contains entries x(k)-x(j).
-
-      DX[L] = ones(N,1);               # Put 1's one the main diagonal.
-
-          c = alpha.*prod(DX,2);       # Quantities c(j).
-
-          #C = c[:,ones(1,N)];
-          C = repmat(c,1,N);
-          C = C./C';                   # Matrix with entries c(k)/c(j).
-
-          Z = 1./DX;                   # Z contains entries 1/(x(k)-x(j))
-       Z[L] = zeros(N,1);              # with zeros on the diagonal.
-
-          X = Z';                      # X is same as Z', but with
-       #X[L] = [];                      # diagonal entries removed.
-       flag = trues(size(X));
-    flag[L] = false;
-          X = X[flag];
-          X = reshape(X,N-1,N);
-
-          Y = ones(N-1,N);             # Initialize Y and D matrices.
-          D = eye(N);                  # Y is matrix of cumulative sums,
-
-  DM = zeros(Float64,N,N,M);                                   # D differentiation matrices.
-  for ell = 1:M
-          temp = reshape(B[ell,:],1,N)
-          Y   = cumsum([temp; ell*Y[1:N-1,:].*X]); # Diagonals
-          D   = ell*Z.*(C.*repmat(diag(D),1,N) - D);   # Off-diagonals
-       D[L]   = Y[N,:];                                # Correct the diagonal
-  DM[:,:,ell] = D;                                     # Store the current D
-
-  end
-  return squeeze(DM,3)
+function polyDiff(x)  #TODO get ride of B stuff
+  N = length(x);
+  x = x[:];                     # Make sure x is a column vector
+  M = 1;                        # assume
+  alpha = ones(N,1);
+  B = zeros(M,N);
+  L=eye(Bool, N, N);
+  XX = repmat(x,1,N);
+  DX = XX-XX';                 # DX contains entries x(k)-x(j).
+  DX[L] = ones(N,1);           # Put 1's one the main diagonal.
+  c = alpha.*prod(DX,2);       # Quantities c(j).
+  C = repmat(c,1,N);
+  C = C./C';                   # Matrix with entries c(k)/c(j).
+  Z = 1./DX;                   # Z contains entries 1/(x(k)-x(j))
+  Z[L] = zeros(N,1);           # with zeros on the diagonal.
+  X = Z';                      # X is same as Z', but with
+  # diagonal entries removed.
+  flag = trues(size(X));
+  flag[L] = false;
+  X = X[flag];
+  X = reshape(X,N-1,N);
+  Y = ones(N-1,N);             # Initialize Y and D matrices.
+  D = eye(N);                  # Y is matrix of cumulative sums,
+  temp = reshape(B[1,:],1,N)
+  Y   = cumsum([temp; Y[1:N-1,:].*X]);     # Diagonals
+  D   = Z.*(C.*repmat(diag(D),1,N) - D);   # Off-diagonals
+  D[L]   = Y[N,:];                             # Correct the diagonal
+  return D
 end

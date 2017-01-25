@@ -33,20 +33,38 @@ n = define(n,stateEquations=MoonLander,numStates=2,numControls=1,X0=[10.,-2],XF=
 #n = configure(n,Ni=2,Nck=[15,10];(:integrationMethod => :ps),(:integrationScheme => :lgrExplicit),(:finalTimeDV => false),(:tf => 4.0))
 #n = configure(n,N=10;(:integrationMethod => :tm),(:integrationScheme => :bkwEuler),(:finalTimeDV => false),(:tf => 4.0))
 #n = configure(n,N=10;(:integrationMethod => :tm),(:integrationScheme => :trapezoidal),(:finalTimeDV => false),(:tf => 4.0))
-n = configure(n,Ni=3,Nck=[20,15,10];(:integrationMethod => :ps),(:integrationScheme => :lgrExplicit),(:finalTimeDV =>false),(:tf => 4.0))
+
+#time
+n = configure(n,Ni=1,Nck=[10];(:integrationMethod => :ps),(:integrationScheme => :lgrExplicit),(:finalTimeDV =>true))
 #n = configure(n,N=30;(:integrationMethod => :tm),(:integrationScheme => :bkwEuler),(:finalTimeDV => true))
+#n = configure(n,N=30;(:integrationMethod => :tm),(:integrationScheme => :trapezoidal),(:finalTimeDV => true))
 
 ##################################
 # Define JuMP problem
 ##################################
 # initialize design problem
-mdl = Model(solver = IpoptSolver(max_iter=3000)); #,warm_start_init_point = "yes"
+#mdl = Model(solver = IpoptSolver(max_iter=500)); #,warm_start_init_point = "yes"
 
-n,x,u,c=OCPdef(mdl,n)
+mdl     = Model(solver = IpoptSolver(max_iter=1000,
+                                    tol=0.1,
+                                    dual_inf_tol=2000.,
+                                    constr_viol_tol=1.,
+                                    compl_inf_tol=1.,
+                                    acceptable_tol=.1,
+                                    acceptable_constr_viol_tol=0.01,
+                                    acceptable_dual_inf_tol=1e10,
+                                    acceptable_compl_inf_tol=0.01,
+                                    acceptable_obj_change_tol=1e20,
+                                    diverging_iterates_tol=1e20
+                                    )
+                )
+
+n,x,u,c,tf = OCPdef(mdl,n) # TODO --> pass back everything in a result structure--> or just store it in parameter set
+
 obj = integrate(mdl,n,u[:,1];C=1.0,(:variable=>:control),(:integrand=>:default))
 
 @NLobjective(mdl, Min, obj)
-obj_val = solve(mdl)
+result = solve(mdl)
 
 ##################################
 # Post Processing

@@ -24,13 +24,17 @@ Error vs. Speed --> ex#5
 
 Initial Solve
 --------------
-.. image:: test5a.png
+.. image:: test5a1.png
 
-.. image:: test5a2.png
+.. image:: test5b1.png
 
+.. image:: test5c1.png
 
 Second Solve
 -------------
-.. image:: test5b.png
 
-.. image:: test6b2.png
+.. image:: test5a2.png
+
+.. image:: test5b2.png
+
+.. image:: test5c2.png
