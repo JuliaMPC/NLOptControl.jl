@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>NLP and OCP Functionality -&gt; ex#2 &mdash; NLOptControl 0.0.1-rc1 documentation</title>
+  <title>Bryson-Denham &mdash; NLOptControl 0.0.1-rc1 documentation</title>
   
 
   
@@ -34,9 +34,9 @@
               href="../../genindex.html"/>
         <link rel="search" title="Search" href="../../search.html"/>
     <link rel="top" title="NLOptControl 0.0.1-rc1 documentation" href="../../index.html"/>
-        <link rel="up" title="NLP Problem Initialization" href="NLP2OCP.html"/>
-        <link rel="next" title="Multiple States -&gt; ex#3" href="ex3.html"/>
-        <link rel="prev" title="NLP Problem Initialization" href="NLP2OCP.html"/> 
+        <link rel="up" title="Completed Functionality" href="../../main_code.html"/>
+        <link rel="next" title="Developing Code" href="../../developing_code.html"/>
+        <link rel="prev" title="Multiple States -&gt; ex#3" href="../NLP2OCP/ex3.html"/> 
 
   
   <script src="../../_static/js/modernizr.min.js"></script>
@@ -135,13 +135,11 @@
       
           <li><a href="../../main_code.html">Completed Functionality</a> &raquo;</li>
       
-          <li><a href="NLP2OCP.html">NLP Problem Initialization</a> &raquo;</li>
-      
-    <li>NLP and OCP Functionality -&gt; ex#2</li>
+    <li>Bryson-Denham</li>
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../../_sources/examples/NLP2OCP/ex2.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/examples/OCP/ex6.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -151,43 +149,36 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="nlp-and-ocp-functionality-ex-2">
-<h1>NLP and OCP Functionality -&gt; ex#2<a class="headerlink" href="#nlp-and-ocp-functionality-ex-2" title="Permalink to this headline">¶</a></h1>
-<p>In this example, we are continuing to work on preparing the code for use with optimization by creating higher level functionality. Examine the IJulia notebook to see code.</p>
-<p>Aside from using the new data structures we demonstrate:</p>
-<ul class="simple">
-<li>Using the integration matrix for the first time</li>
-<li>Using the higher level functionality</li>
-</ul>
-<dl class="docutils">
-<dt>where:</dt>
-<dd><div class="first last math">
-\[y(x) = -0.3x^2+3x-0.3\]</div>
-</dd>
-</dl>
-<div class="section" id="single-interval-problem">
-<h2>Single Interval Problem<a class="headerlink" href="#single-interval-problem" title="Permalink to this headline">¶</a></h2>
-<p>with:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">ps</span><span class="p">,</span> <span class="n">nlp</span> <span class="o">=</span> <span class="n">initialize_NLP</span><span class="p">(</span><span class="n">numStates</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">numControls</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">Ni</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">Nck</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">]);</span>
-</pre></div>
+  <div class="section" id="bryson-denham">
+<h1>Bryson-Denham<a class="headerlink" href="#bryson-denham" title="Permalink to this headline">¶</a></h1>
+<p><a class="reference external" href="http://www.gpops2.com/Examples/Bryson-Denham.html">http://www.gpops2.com/Examples/Bryson-Denham.html</a></p>
+<div class="section" id="n-10-ex-6">
+<h2><code class="docutils literal"><span class="pre">N</span> <span class="pre">=</span> <span class="pre">10</span></code> &#8211;&gt; ex#6<a class="headerlink" href="#n-10-ex-6" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="lgr">
+<h3>LGR<a class="headerlink" href="#lgr" title="Permalink to this headline">¶</a></h3>
+<img alt="../../_images/test6a_l.png" src="../../_images/test6a_l.png" />
 </div>
-<img alt="../../_images/test2a3.png" src="../../_images/test2a3.png" />
+<div class="section" id="bkw-euler">
+<h3>Bkw Euler<a class="headerlink" href="#bkw-euler" title="Permalink to this headline">¶</a></h3>
+<img alt="../../_images/test6a_e.png" src="../../_images/test6a_e.png" />
 </div>
-<div class="section" id="multiple-interval-problem-a">
-<h2>Multiple Interval Problem A<a class="headerlink" href="#multiple-interval-problem-a" title="Permalink to this headline">¶</a></h2>
-<p>with:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">ps</span><span class="p">,</span> <span class="n">nlp</span> <span class="o">=</span> <span class="n">initialize_NLP</span><span class="p">(</span><span class="n">numStates</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">numControls</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">Ni</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span><span class="n">Nck</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">]);</span>
-</pre></div>
+<div class="section" id="trapezoidal">
+<h3>Trapezoidal<a class="headerlink" href="#trapezoidal" title="Permalink to this headline">¶</a></h3>
+<img alt="../../_images/test6a_t.png" src="../../_images/test6a_t.png" />
 </div>
-<img alt="../../_images/test2b1.png" src="../../_images/test2b1.png" />
 </div>
-<div class="section" id="multiple-interval-problem-b">
-<h2>Multiple Interval Problem B<a class="headerlink" href="#multiple-interval-problem-b" title="Permalink to this headline">¶</a></h2>
-<p>with:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">ps</span><span class="p">,</span> <span class="n">nlp</span> <span class="o">=</span> <span class="n">initialize_NLP</span><span class="p">(</span><span class="n">numStates</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">numControls</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">Ni</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span><span class="n">Nck</span><span class="o">=</span><span class="p">[</span><span class="mi">200</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">100</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">100</span><span class="p">]);</span>
-</pre></div>
+<div class="section" id="error-vs-speed-ex-5">
+<h2>Error vs. Speed &#8211;&gt; ex#5<a class="headerlink" href="#error-vs-speed-ex-5" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="initial-solve">
+<h3>Initial Solve<a class="headerlink" href="#initial-solve" title="Permalink to this headline">¶</a></h3>
+<img alt="../../_images/test5a.png" src="../../_images/test5a.png" />
+<img alt="../../_images/test5a2.png" src="../../_images/test5a2.png" />
 </div>
-<img alt="../../_images/test2c1.png" src="../../_images/test2c1.png" />
+<div class="section" id="second-solve">
+<h3>Second Solve<a class="headerlink" href="#second-solve" title="Permalink to this headline">¶</a></h3>
+<img alt="../../_images/test5b.png" src="../../_images/test5b.png" />
+<img alt="examples/OCP/test6b2.png" src="examples/OCP/test6b2.png" />
+</div>
 </div>
 </div>
 
@@ -198,10 +189,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="ex3.html" class="btn btn-neutral float-right" title="Multiple States -&gt; ex#3" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="../../developing_code.html" class="btn btn-neutral float-right" title="Developing Code" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="NLP2OCP.html" class="btn btn-neutral" title="NLP Problem Initialization" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="../NLP2OCP/ex3.html" class="btn btn-neutral" title="Multiple States -&gt; ex#3" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

@@ -28,3 +28,4 @@ Optimal Control Problem Formulation
    :maxdepth: 1
 
    examples/NLP2OCP/NLP2OCP
+   examples/OCP/ex6

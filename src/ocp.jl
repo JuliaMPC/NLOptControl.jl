@@ -91,11 +91,11 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt)
     dx = n.stateEquations(n,x,u);
     if n.integrationScheme==:bkwEuler
       for st in 1:n.numStates
-        dyn_con[:,st] = @NLconstraint(mdl, [j in 1:n.N], 0 == x[j+1,st] - x[j,st] - dx[j+1,st]*tf/(n.N) )
+        dyn_con[:,st] = @NLconstraint(mdl, [j in 1:n.N], 0 == x[j+1,st] - x[j,st] - dx[j+1,st]*n.tf/(n.N) ) #TODO make sure that n.tf == tf
       end
     elseif n.integrationScheme==:trapezoidal
       for st in 1:n.numStates
-        dyn_con[:,st] = @NLconstraint(mdl, [j in 1:n.N], 0 == x[j+1,st] - x[j,st] - (dx[j,st] + dx[j+1,st])*tf/(n.N) )
+        dyn_con[:,st] = @NLconstraint(mdl, [j in 1:n.N], 0 == x[j+1,st] - x[j,st] - 0.5*(dx[j,st] + dx[j+1,st])*n.tf/(n.N) )
       end
     end
   end
