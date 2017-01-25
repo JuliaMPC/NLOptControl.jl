@@ -8,80 +8,67 @@ using Plots
 #using VehicleModels
 pyplot()
 
-#TODO
-# 1) why is it failing when we run it again?
-# 4) try implicit method to see if that helps
-# 6) try other linear solvers
-# 9) allow for functions of state constraints of these so we can calculate them on the fly!
-# 11) let the user define the objective function above
-# 12) allow user to select from using the IMatrix or quadrature
-# 13) make a bool to tell the user to restart julia if they change the model significantly -> or do this for them
-# 14) make functionality to easily compare all intergration schemes
 
 ##################################
 # Define NLOptControl problem
 ##################################
-
+n = NLOpt();
 # Moon Lander Problem @ http://www.gpops2.com/Examples/MoonLander.html
 const g = 1.62519; # m/s^2
-# define dynamic constraint equations for constant final time
-function stateEquations(x_int::Array{Any,2},u_int::Array{Any,2},st::Int64)
-  if st==1
-    return x_int[1:end-1,2]      # state eq# 1; v(t)
-  elseif st==2
-    return u_int[:,1] - g        # state eq# 2; u(t)-g
+function MoonLander{T<:Any}(n::NLOpt,x::Array{T,2},u::Array{T,2}) # dynamic constraint equations
+  if n.integrationMethod==:tm
+    L = size(x)[1];
+  else
+    L = size(x)[1]-1;
   end
+  dx = Array(Any,L,n.numStates)
+  dx[:,1] =  @NLexpression(mdl, [j=1:L], x[j,2] );
+  dx[:,2] =  @NLexpression(mdl, [j=1:L], u[j,1] - g);
+  return dx
 end
 
-#X0=[10.0,-2.0]; XF=[0.01,0.]
-#XL=[-0.01,-Inf]; XU=[Inf,Inf];
-#CL=[-Inf]; CU=[Inf];
+n = define(n,stateEquations=MoonLander,numStates=2,numControls=1,X0=[10.,-2],XF=[0.,0.],XL=[-Inf,-Inf],XU=[Inf,Inf],CL=[0.],CU=[3.])
+#n = define(n,stateEquations=MoonLander,numStates=2,numControls=1,X0=[10.,-2],XF=[0.,0.],XL=[-Inf,-Inf],XU=[Inf,Inf],CL=[-Inf],CU=[Inf])
 
-X0=[10.0,-2.0]; XF=[0,0.]
-XL=[-Inf,-Inf]; XU=[Inf,Inf];
-CL=[-Inf]; CU=[Inf];
-
-t0=0.0;tf=4.0;
- ps, nlp = initialize_NLP(numStates=2,
-                          numControls=1,
-                          Ni=1,Nck=[25],
-                          stateEquations=stateEquations,
-                          X0=X0,XF=XF,XL=XL,XU=XU,CL=CL,CU=CU;
-                          (:finalTimeDV => true));
+#n = configure(n,Ni=2,Nck=[15,10];(:integrationMethod => :ps),(:integrationScheme => :lgrExplicit),(:finalTimeDV => false),(:tf => 4.0))
+#n = configure(n,N=10;(:integrationMethod => :tm),(:integrationScheme => :bkwEuler),(:finalTimeDV => false),(:tf => 4.0))
+#n = configure(n,N=10;(:integrationMethod => :tm),(:integrationScheme => :trapezoidal),(:finalTimeDV => false),(:tf => 4.0))
+n = configure(n,Ni=3,Nck=[20,15,10];(:integrationMethod => :ps),(:integrationScheme => :lgrExplicit),(:finalTimeDV =>false),(:tf => 4.0))
+#n = configure(n,N=30;(:integrationMethod => :tm),(:integrationScheme => :bkwEuler),(:finalTimeDV => true))
 
 ##################################
 # Define JuMP problem
 ##################################
 # initialize design problem
 mdl = Model(solver = IpoptSolver(max_iter=3000)); #,warm_start_init_point = "yes"
-#mdl = Model(solver=IpoptSolver(linear_solver = "mumps")) #linear_solver = "ma57"
-d = JuMP.NLPEvaluator(mdl)
-MathProgBase.initialize(d, [:Grad,:Hess, :Jac, :ExprGraph])
 
-@unpack finalTimeDV = nlp
-if finalTimeDV
-  x,u,tf_var,ts_JuMP,ωₛ_JuMP,c = OCPdef(mdl,nlp,ps)
-  obj = integrate(mdl,ps,u[:,1],ωₛ_JuMP;(:variable=>:control))
-else
-  x,u,c = OCPdef(mdl,nlp,ps)
-  obj = integrate(mdl,ps,u[:,1];(:variable=>:control))
-end
+n,x,u,c=OCPdef(mdl,n)
+obj = integrate(mdl,n,u[:,1];C=1.0,(:variable=>:control),(:integrand=>:default))
 
 @NLobjective(mdl, Min, obj)
 obj_val = solve(mdl)
 
-#MathProgBase.constr_expr(d,i) #6
-#MathProgBase.hesslag_structure(d)
-#MathProgBase.jac_structure(d)
-#MathProgBase.obj_expr(d)
 ##################################
 # Post Processing
 ##################################
 include(string(Pkg.dir("NLOptControl"),"/src/check_constraints.jl"))
 
-if finalTimeDV; ts = ts_JuMP; else @unpack ts = ps; end
-t_ctr= [idx for tempM in ts for idx = tempM[1:end-1]];
-t_st = append!(t_ctr,ts[end][end]);
+if n.integrationMethod==:ps #TODO make this internal
+  if n.finalTimeDV
+    t_ctr= [idx for tempM in getvalue(n.ts) for idx = tempM[1:end-1]];
+    t_st = append!(t_ctr,getvalue(n.ts[end][end]));
+  else
+    t_ctr= [idx for tempM in n.ts for idx = tempM[1:end-1]];
+    t_st = append!(t_ctr,n.ts[end][end]);
+  end
+elseif n.integrationMethod==:tm
+  if n.finalTimeDV
+    t_ctr =  append!([0.0],cumsum(getvalue(n.dt)));
+  else
+    t_ctr =  append!([0.0],cumsum(n.dt));
+  end
+  t_st = t_ctr;
+end
 
 lw=8; lw2=3;
 p1=plot(t_st,getvalue(x[:,1]), label = "x interp.",w=lw2)

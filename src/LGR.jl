@@ -43,7 +43,7 @@ function D_matrix(mdl::JuMP.Model,n::NLOpt)
   #D = [Matrix((Nck[int]+1),(Nck[int]+1)) for int in 1:Ni];
   D = polyDiff(mdl,n) # +1 is already appended onto ts
 
-  n.DMatrix = [Matrix((Nck[int]),(Nck[int]+1)) for int in 1:Ni];
+  n.DMatrix = [Matrix((n.Nck[int]),(n.Nck[int]+1)) for int in 1:n.Ni];
 #  DM = [Matrix((Nck[int]),(Nck[int])) for int in 1:Ni];
   for int in 1:n.Ni
       n.DMatrix[int] = D[int][1:end-1,:];   # [Nck]X[Nck+1]

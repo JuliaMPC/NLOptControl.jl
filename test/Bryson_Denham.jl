@@ -22,9 +22,9 @@ function BrysonDenham{T<:Any}(n::NLOpt,x::Array{T,2},u::Array{T,2},st::Int64) # 
 end
 L=1/9;
 n = define(n,stateEquations=BrysonDenham,numStates=2,numControls=1,X0=[0.,1],XF=[0.,-1.],XL=[0.,-Inf],XU=[L,Inf],CL=[-Inf],CU=[Inf])
-n = configure(n::NLOpt,Ni=1,Nck=[10];(:integrationMethod => :ps),(:integrationScheme => :lgrExplicit),(:finalTimeDV => false),(:tf => 1.0))
-#n = configure(n::NLOpt,N=10;(:integrationMethod => :tm),(:integrationScheme => :bkwEuler),(:finalTimeDV => false),(:tf => 1.0))
-#n = configure(n::NLOpt,N=10;(:integrationMethod => :tm),(:integrationScheme => :trapezoidal),(:finalTimeDV => false),(:tf => 1.0))
+#n = configure(n,Ni=1,Nck=[10];(:integrationMethod => :ps),(:integrationScheme => :lgrExplicit),(:finalTimeDV => false),(:tf => 1.0))
+#n = configure(n,N=10;(:integrationMethod => :tm),(:integrationScheme => :bkwEuler),(:finalTimeDV => false),(:tf => 1.0))
+n = configure(n,N=10;(:integrationMethod => :tm),(:integrationScheme => :trapezoidal),(:finalTimeDV => false),(:tf => 1.0))
 
 ##################################
 # Define JuMP problem
@@ -113,7 +113,6 @@ scatter!(t_st,getvalue(x[:,1]), label = "x optimal",marker = (:star8, 15, 0.9, :
 ylabel!("x(t)")
 xlabel!("time (s)")
 
-
 p2=plot(t,v_analytic, label = "v analytic",w=lw)
 plot!(t_st,getvalue(x[:,2]), label = "v interp.",w=lw2)
 scatter!(t_st,getvalue(x[:,2]), label = "v optimal",marker = (:star8, 15, 0.9, :green))
@@ -126,8 +125,7 @@ scatter!(t_ctr,getvalue(u[:,1]), label = "u optimal",marker = (:star8, 15, 0.9, 
 ylabel!("u(t)")
 xlabel!("time (s)")
 
-
 plot(p1,p2,p3,layout=(1,3),background_color_subplot=RGB(0.2,0.2,0.2), background_color_legend=RGB(1,1,1))
 
 plot!(foreground_color_grid=RGB(1,1,1))
-title!(string(n.integrationScheme))
+title!(string(n.integrationScheme, " error = ",abs(getvalue(obj) - 4/(9*L))))

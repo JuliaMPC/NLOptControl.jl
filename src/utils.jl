@@ -4,7 +4,7 @@ Expr = integrate(mdl,n,u;(:mode=>:control))
 Expr = integrate(mdl,n,u,idx=1;C=0.5,(:variable=>:control),(:integrand=>:squared))
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/2/2017, Last Modified: 1/23/2017 \n
+Date Create: 1/2/2017, Last Modified: 1/24/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function integrate(mdl::JuMP.Model,n::NLOpt,V::Array{JuMP.Variable,1}, args...; C::Float64=1.0, kwargs...)
@@ -15,15 +15,15 @@ function integrate(mdl::JuMP.Model,n::NLOpt,V::Array{JuMP.Variable,1}, args...; 
   if n.integrationMethod==:tm #TODO investigate differences in control and state variables
     if integrand == :default      # integrate V
       if n.integrationScheme==:bkwEuler
-        Expr =  @NLexpression(mdl, C*sum(V[j+1]*n.dt[j] for j = 1:n.N));
+        Expr =  @NLexpression(mdl, C*sum(V[j+1]*n.tf/(n.N) for j = 1:n.N));  #TODO fix this it is controlling the system for free on the first time step
       elseif n.integrationScheme==:trapezoidal
-        Expr =  @NLexpression(mdl, C*sum(0.5*(V[j]+V[j+1])*n.dt[j] for j = 1:n.N));
+        Expr =  @NLexpression(mdl, C*sum(0.5*(V[j]+V[j+1])*n.tf/(n.N) for j = 1:n.N));
       end
     elseif integrand == :squared # integrate V^2
       if n.integrationScheme==:bkwEuler
-        Expr =  @NLexpression(mdl, C*sum(V[j+1]^2*n.dt[j] for j = 1:n.N));
+        Expr =  @NLexpression(mdl, C*sum((V[j+1]^2)*n.tf/(n.N) for j = 1:n.N));
       elseif n.integrationScheme==:trapezoidal
-        Expr =  @NLexpression(mdl, C*sum(0.5*(V[j]^2+V[j+1]^2)*n.dt[j] for j = 1:n.N));
+        Expr =  @NLexpression(mdl, C*sum(0.5*(V[j]^2+V[j+1]^2)*n.tf/(n.N) for j = 1:n.N));
       end
     else
       error("\n Check :integrand \n")
@@ -90,7 +90,7 @@ function create_intervals(mdl::JuMP.Model,n::NLOpt)
   # go through each mesh interval creating time intervals; [t(i-1),t(i)] --> [-1,1]
   n.ts = [Array(Any,n.Nck[int]+1,) for int in 1:n.Ni];
   n.ωₛ = [Array(Any,n.Nck[int],) for int in 1:n.Ni];
-  for int in 1:Ni
+  for int in 1:n.Ni
     n.ts[int][1:end-1]=@NLexpression(mdl,[j=1:n.Nck[int]], (tm[int+1]-tm[int])/2*n.τ[int][j] +  (tm[int+1]+tm[int])/2);
     n.ts[int][end]=@NLexpression(mdl, n.tf/n.Ni*int) # append +1 at end of each interval
     n.ωₛ[int]=@NLexpression(mdl, [j=1:n.Nck[int]], (tm[int+1]-tm[int])/2*n.ω[int][j])
@@ -209,7 +209,7 @@ function polyDiff(mdl::JuMP.Model,n::NLOpt)
   Z = [Array(Any,n.Nck[int]+1,n.Nck[int]+1) for int in 1:n.Ni];
   Y = [Array(Any,n.Nck[int]+1,n.Nck[int]+1) for int in 1:n.Ni];
   X2 = [Array(Any,n.Nck[int]+1,n.Nck[int]+1) for int in 1:n.Ni];
-  n.DMatrix = [Array(Any,n.Nck[int]+1,n.Nck[int]+1) for int in 1:n.Ni];
+  D = [Array(Any,n.Nck[int]+1,n.Nck[int]+1) for int in 1:n.Ni];
   EPS = 10*eps(); #TODO make this a constant
 
   B_given = false; malpha = 1; #TODO get ride of B stuff
@@ -281,14 +281,14 @@ function polyDiff(mdl::JuMP.Model,n::NLOpt)
     end
     #D   = ell*Z.*(C.*repmat(diag(D),1,N) - D);   # Off-diagonals
     D_temp = repmat(diag(D1),1,N);
-    n.DMatrix[int] = @NLexpression(mdl, [i in 1:N, j in 1:N], Z[int][i,j]*(C[int][i,j]*D_temp[i,j] - D1[i,j]) )
-    n.DMatrix[int][L] = Y[int][N,:];
+    D[int] = @NLexpression(mdl, [i in 1:N, j in 1:N], Z[int][i,j]*(C[int][i,j]*D_temp[i,j] - D1[i,j]) )
+    D[int][L] = Y[int][N,:];
   #  D[L]   = Y[N,:];                                # Correct the diagonal
   #  DM[:,:,ell] = D;                                     # Store the current D
 
   #  end
   end
-  return n
+  return D
 end  #TODO compare the speed of this to direct automatic differention
 
 function poldif(x, malpha, B...)

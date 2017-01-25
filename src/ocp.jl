@@ -45,10 +45,7 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt)
   if n.integrationMethod==:ps
     dyn_con  = [Array(Any,n.Nck[int],n.numStates) for int in 1:n.Ni];
     Nck_st  = [0;cumsum(n.Nck+1)]; Nck_ctr = [0;cumsum(n.Nck)];
-    dx = [Array(Any,n.Nck[int],n.numStates) for int in 1:n.Ni];
-    if n.finalTimeDV
-      dynamics_expr  = [Array(Any,n.Nck[int],n.numStates) for int in 1:n.Ni];
-    end
+    dynamics_expr  = [Array(Any,n.Nck[int],n.numStates) for int in 1:n.Ni];
 
     for int in 1:n.Ni
       # states
@@ -62,58 +59,43 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt)
         u_int[:,ctr] = u[Nck_ctr[int]+1:Nck_ctr[int+1],ctr];
       end
       # dynamics
-      if n.finalTimeDV
-        @variable(mdl, 0.01 <= n.tf <= Inf) #TODO allow user to pass ranges
-        n.ts, n.ωₛ = create_intervals(mdl,n);
-        n.DMatrix = D_matrix(mdl,n);
-        for int in 1:n.Ni
-          for st in 1:n.numStates
-            dx[int][:,st] = @NLexpression(mdl, [j=1:n.Nck[int]], n.stateEquations(n,[Nck_ctr[int]+1:Nck_ctr[int+1]+1,:][j],u[Nck_ctr[int]+1:Nck_ctr[int+1],:][j],st) );
-          end
+      if int==1
+        if n.finalTimeDV
+          @variable(mdl, 0.01 <= tf <= Inf) #TODO allow user to pass ranges
+          n.tf = tf;
+          n = create_intervals(mdl,n);
+          n = D_matrix(mdl,n);
+        else
+          n = LGR_matrices(n);
         end
-        for st in 1:n.numStates
-          if integrationScheme==:lgrExplicit
-            dynamics_expr[int][:,st] = @NLexpression(mdl, [j in 1:n.Nck[int]], sum(DMatrix[int][j,i]*x_int[i,st] -dx[int][i,st]  for i in 1:n.Nck[int]))
-          end
-          for j in 1:n.Nck[int]
-            dyn_con[int][j,st] = @NLconstraint(mdl, 0 == dynamics_expr[int][j,st])
-          end
+      end
+      dx = n.stateEquations(n,x_int,u_int);
+      for st in 1:n.numStates
+        if n.integrationScheme==:lgrExplicit
+          dynamics_expr[int][:,st] = @NLexpression(mdl, [j in 1:n.Nck[int]], sum(n.DMatrix[int][j,i]*x_int[i,st] for i in 1:n.Nck[int]+1) - dx[j,st]  )
         end
-      else
-        # redo every interval
-        n=LGR_matrices(n);       # calculate LGR matrices
-        dx = [n.stateEquations(n,x_int,u_int,st) for st in 1:n.numStates];
-        dynamics = Array(Any,length(Nck_ctr[int]+1:Nck_ctr[int+1]),n.numStates);
-        for st in 1:n.numStates
-          dynamics[:,st] = n.DMatrix[int]*x_int[:,st] - dx[st]; #TODO current issue is number of controls is different than num states for ps methods but same for tm methods
-          for j in 1:n.Nck[int] # add dynamics constraints
-            dyn_con[int][j,st] = @constraint(mdl, 0 == dynamics[j,st])
-          end
+        for j in 1:n.Nck[int]
+          dyn_con[int][j,st] = @NLconstraint(mdl, 0 == dynamics_expr[int][j,st])
         end
       end
 
     end
   elseif n.integrationMethod==:tm
     dyn_con  = Array(Any,n.N,n.numStates);
-    dx = Array(Any,n.N+1,n.numStates)
-
     if n.finalTimeDV
      #@variable( mdl, 0.00001 <= dt[1:n.N] <= 0.2) #TODO allow for an varaible array of dts
-     @variable(mdl, 0.01 <= n.tf <= Inf) #TODO allow user to pass ranges
+     @variable(mdl, 0.01 <= tf <= Inf) #TODO allow user to pass ranges
+     n.tf = tf;
     end
     n.dt = n.tf/n.N*ones(n.N,);
-
-    for st in 1:n.numStates
-      dx[:,st] = @NLexpression(mdl, [j=1:n.N+1], n.stateEquations(n,x,u,st)[j] );
-    end
-
+    dx = n.stateEquations(n,x,u);
     if n.integrationScheme==:bkwEuler
       for st in 1:n.numStates
-        dyn_con[:,st] = @NLconstraint(mdl, [j in 1:n.N], 0 == x[j+1,st] - x[j,st] - dx[j+1,st]*n.dt[j] )
+        dyn_con[:,st] = @NLconstraint(mdl, [j in 1:n.N], 0 == x[j+1,st] - x[j,st] - dx[j+1,st]*tf/(n.N) )
       end
     elseif n.integrationScheme==:trapezoidal
       for st in 1:n.numStates
-        dyn_con[:,st] = @NLconstraint(mdl, [j in 1:n.N], 0 == x[j+1,st] - x[j,st] - (dx[j,st] + dx[j+1,st])*n.dt[j]/2 )
+        dyn_con[:,st] = @NLconstraint(mdl, [j in 1:n.N], 0 == x[j+1,st] - x[j,st] - (dx[j,st] + dx[j+1,st])*tf/(n.N) )
       end
     end
   end
