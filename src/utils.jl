@@ -285,6 +285,6 @@ function polyDiff(x)  #TODO get ride of B stuff
   temp = reshape(B[1,:],1,N)
   Y   = cumsum([temp; Y[1:N-1,:].*X]);     # Diagonals
   D   = Z.*(C.*repmat(diag(D),1,N) - D);   # Off-diagonals
-  D[L]   = Y[N,:];                             # Correct the diagonal
+  D[L]   = Y[N,:];                         # Correct the diagonal
   return D
 end

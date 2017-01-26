@@ -43,3 +43,16 @@ All Examples can be:
       using IJulia
       notebook(dir=Pkg.dir("NLOptControl/examples/"))
       ```
+
+## Citation
+
+If you find this package useful, please cite this paper (accepted but not yet released to public)
+
+```
+@Conference{Febbo2017,
+  author    = {Huckleberry Febbo, Jiechao Liu, Paramsothy Jayakumar, Jeffrey L. Stein, Tulga Ersal},
+  title     = {Moving Obstacle Avoidance for Large, High-Speed Autonomous Ground Vehicles},
+  year      = {2017},
+  publisher = {2017 American Control Conference},
+}
+```
