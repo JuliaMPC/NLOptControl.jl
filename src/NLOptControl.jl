@@ -21,6 +21,7 @@ type NLOpt <: AbstractNLOpt
   numPoints::Array{Int64,1} # number of dv discretization within each interval
   lengthDV::Int64           # total number of dv discretizations per variables
   tf::Any                   # final time
+  t0::Any                   # initial time
 
   # boundary constraits
   X0::Array{Float64,1}      # initial state conditions
@@ -58,6 +59,7 @@ NLOpt(Any,                # state equations
       Int[],              # number of dv discretization within each interval
       0,                  # total number of dv discretizations per variables
       Any,                # final time
+      Any,                # initial time
       Float64[],          # initial state conditions
       Float64[],          # final state conditions
       Float64[],          # XL

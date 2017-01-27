@@ -102,7 +102,7 @@ end
 L = lagrange_basis_poly(x,x_data,Nc,j)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 12/26/2016, Last Modified: 12/28/2016
+Date Create: 12/26/2016, Last Modified: 1/25/2016
 Citations: This function was influenced by the lagrange() function [located here](https://github.com/pjabardo/Jacobi.jl/blob/master/src/gauss_quad.jl)
 --------------------------------------------------------------------------------------\n
 # Input Arguments
@@ -129,7 +129,7 @@ end
 
 function lagrange_basis_poly!{T<:Number}(x::AbstractArray{T},x_data,Nc,L::AbstractArray{T})
    if Nc > length(x_data) -1
-      error("Maximum N value = length(x_data)-1")
+      error("Maximum Nc value = length(x_data)-1")
     end
     ns = length(x);
     L = zeros(Float64,Nc+1,ns);

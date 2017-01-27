@@ -53,6 +53,6 @@ If you find this package useful, please cite this paper (accepted but not yet re
   author    = {Huckleberry Febbo, Jiechao Liu, Paramsothy Jayakumar, Jeffrey L. Stein, Tulga Ersal},
   title     = {Moving Obstacle Avoidance for Large, High-Speed Autonomous Ground Vehicles},
   year      = {2017},
-  publisher = {2017 American Control Conference},
+  publisher = {IEEE},
 }
 ```

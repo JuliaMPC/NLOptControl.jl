@@ -77,6 +77,11 @@ Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/26
 function configure(n::NLOpt, args...; kwargs... )
   kw = Dict(kwargs);
 
+  # intial time
+  if !haskey(kw,:t0); kw_ = Dict(:t0 => 0); n.t0 = get(kw_,:t0,0);
+  else; n.t0 = get(kw,:t0,0);
+  end
+
   # final time
   if !haskey(kw,:finalTimeDV); kw_ = Dict(:finalTimeDV => false); n.finalTimeDV = get(kw_,:finalTimeDV,0);
   else; n.finalTimeDV  = get(kw,:finalTimeDV,0);
@@ -88,7 +93,7 @@ function configure(n::NLOpt, args...; kwargs... )
   elseif haskey(kw,:tf) && !n.finalTimeDV
     n.tf = get(kw,:tf,0);
   elseif n.finalTimeDV
-    n.tf = NaN;
+    n.tf = Any;
   end
 
   # integration method
