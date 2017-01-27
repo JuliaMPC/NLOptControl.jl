@@ -9,21 +9,21 @@ pyplot()
 # Define NLOptControl problem
 ##################################
 n = NLOpt();
-function BrysonDenham{T<:Any}(n::NLOpt,x::Array{T,2},u::Array{T,2},st::Int64) # dynamic constraint equations
+function BrysonDenham{T<:Any}(n::NLOpt,x::Array{T,2},u::Array{T,2}) # dynamic constraint equations
   if n.integrationMethod==:tm
-    if st==1      x[:,2];       # state eq# 1; v(t)
-    elseif st==2  u[:,1];       # state eq# 2; u(t)
-    end
-  else   # number of controls is different than num states for ps methods but same for tm methods
-    if st==1      x[1:end-1,2];
-    elseif st==2  u[:,1];
-    end
+    L = size(x)[1];
+  else
+    L = size(x)[1]-1;
   end
+  dx = Array(Any,L,n.numStates)
+  dx[:,1] =  @NLexpression(mdl, [j=1:L], x[j,2] );
+  dx[:,2] =  @NLexpression(mdl, [j=1:L], u[j,1] );
+  return dx
 end
 L=1/9;
 n = define(n,stateEquations=BrysonDenham,numStates=2,numControls=1,X0=[0.,1],XF=[0.,-1.],XL=[0.,-Inf],XU=[L,Inf],CL=[-Inf],CU=[Inf])
-#n = configure(n,Ni=1,Nck=[10];(:integrationMethod => :ps),(:integrationScheme => :lgrExplicit),(:finalTimeDV => false),(:tf => 1.0))
-n = configure(n,N=100;(:integrationMethod => :tm),(:integrationScheme => :bkwEuler),(:finalTimeDV => false),(:tf => 1.0))
+n = configure(n,Ni=1,Nck=[10];(:integrationMethod => :ps),(:integrationScheme => :lgrExplicit),(:finalTimeDV => false),(:tf => 1.0))
+#n = configure(n,N=100;(:integrationMethod => :tm),(:integrationScheme => :bkwEuler),(:finalTimeDV => false),(:tf => 1.0))
 #n = configure(n,N=10;(:integrationMethod => :tm),(:integrationScheme => :trapezoidal),(:finalTimeDV => false),(:tf => 1.0))
 
 ##################################
@@ -97,31 +97,26 @@ end
 ##################################
 # Post Processing
 ##################################
+r=postProcess(n,Result())
 # visualize solution
 lw=8; lw2=3;
-if n.integrationMethod==:ps #TODO make this internal
-  t_ctr= [idx for tempM in n.ts for idx = tempM[1:end-1]];
-  t_st = append!(t_ctr,n.ts[end][end]);
-elseif n.integrationMethod==:tm
-  t_ctr =  append!([0.0],cumsum(n.dt));
-  t_st = t_ctr;
-end
+
 
 p1=plot(t,x_analytic, label = "x analytic",w=lw)
-plot!(t_st,getvalue(x[:,1]), label = "x interp.",w=lw2)
-scatter!(t_st,getvalue(x[:,1]), label = "x optimal",marker = (:star8, 15, 0.9, :green))
+plot!(r.t_st,getvalue(x[:,1]), label = "x interp.",w=lw2)
+scatter!(r.t_st,getvalue(x[:,1]), label = "x optimal",marker = (:star8, 15, 0.9, :green))
 ylabel!("x(t)")
 xlabel!("time (s)")
 
 p2=plot(t,v_analytic, label = "v analytic",w=lw)
-plot!(t_st,getvalue(x[:,2]), label = "v interp.",w=lw2)
-scatter!(t_st,getvalue(x[:,2]), label = "v optimal",marker = (:star8, 15, 0.9, :green))
+plot!(r.t_st,getvalue(x[:,2]), label = "v interp.",w=lw2)
+scatter!(r.t_st,getvalue(x[:,2]), label = "v optimal",marker = (:star8, 15, 0.9, :green))
 ylabel!("v(t)")
 xlabel!("time (s)")
 
 p3=plot(t,u_analytic, label = "u analytic",w=lw)
-plot!(t_ctr,getvalue(u[:,1]), label = "u interp.",w=lw2)
-scatter!(t_ctr,getvalue(u[:,1]), label = "u optimal",marker = (:star8, 15, 0.9, :green))
+plot!(r.t_ctr,getvalue(u[:,1]), label = "u interp.",w=lw2)
+scatter!(r.t_ctr,getvalue(u[:,1]), label = "u optimal",marker = (:star8, 15, 0.9, :green))
 ylabel!("u(t)")
 xlabel!("time (s)")
 

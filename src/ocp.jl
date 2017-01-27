@@ -2,7 +2,7 @@
 n,x,u,c=OCPdef(mdl,n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/14/2017, Last Modified: 1/23/2017 \n
+Date Create: 1/14/2017, Last Modified: 1/25/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function OCPdef(mdl::JuMP.Model,n::NLOpt)
@@ -47,6 +47,11 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt)
     Nck_st  = [0;cumsum(n.Nck+1)]; Nck_ctr = [0;cumsum(n.Nck)];
     dynamics_expr  = [Array(Any,n.Nck[int],n.numStates) for int in 1:n.Ni];
 
+    if n.finalTimeDV
+      @variable(mdl, 0.5 <= tf <= Inf) #TODO allow user to pass ranges
+      n.tf = tf;
+    end
+
     for int in 1:n.Ni
       # states
       x_int = Array(Any,length(Nck_st[int]+1:Nck_st[int+1]),n.numStates);
@@ -59,20 +64,10 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt)
         u_int[:,ctr] = u[Nck_ctr[int]+1:Nck_ctr[int+1],ctr];
       end
       # dynamics
-      if int==1
-        if n.finalTimeDV
-          @variable(mdl, 0.5 <= tf <= Inf) #TODO allow user to pass ranges TODO for some reason  things work well unless the numbers are lower than .15 and it really diverges after that
-          n.tf = tf;
-          n = create_intervals(mdl,n,tf);
-          n = D_matrix(mdl,n);
-        else
-          n = LGR_matrices(n);
-        end
-      end
       dx = n.stateEquations(n,x_int,u_int);
       for st in 1:n.numStates
         if n.integrationScheme==:lgrExplicit
-          dynamics_expr[int][:,st] = @NLexpression(mdl, [j in 1:n.Nck[int]], sum(n.DMatrix[int][j,i]*x_int[i,st] for i in 1:n.Nck[int]+1) - dx[j,st]  )
+          dynamics_expr[int][:,st] = @NLexpression(mdl, [j in 1:n.Nck[int]], sum(n.DMatrix[int][j,i]*x_int[i,st] for i in 1:n.Nck[int]+1) - ((n.tf-n.t0)/2)*dx[j,st]  )
         end
         for j in 1:n.Nck[int]
           dyn_con[int][j,st] = @NLconstraint(mdl, 0 == dynamics_expr[int][j,st])
@@ -100,11 +95,6 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt)
     end
   end
   c = [x0_con, xf_con, dyn_con];  # pack up all constraints
-  return n,x,u,c,tf #TODO fix for other cases
+#  n.x=x; n.u=u;
+  return n, x, u, c
 end
-
-#= old
-#JuMP.register(mdl, :create_intervals_JuMP, 1, create_intervals_JuMP, autodiff=true)
-#JuMP.register(mdl, :poldif_JuMP, 1, poldif_JuMP, autodiff=true)
-#JuMP.register(mdl, :D_matrix_JuMP, 1, D_matrix_JuMP, autodiff=true)
-=#

@@ -4,3 +4,4 @@ Plots
 FastGaussQuadrature
 Ipopt
 JuMP
+SymPy  # used for validation

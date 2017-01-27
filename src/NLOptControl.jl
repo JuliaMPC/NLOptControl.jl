@@ -1,7 +1,6 @@
 module NLOptControl
 
-using Media, Dierckx, Parameters, Interpolations, FastGaussQuadrature, Polynomials, JuMP
-
+using Media, Dierckx, Parameters, Interpolations, FastGaussQuadrature, Polynomials, JuMP, SymPy
 # To copy a particular piece of code (or function) in some location
 macro def(name, definition)
   return quote
@@ -41,6 +40,8 @@ type NLOpt <: AbstractNLOpt
   ω::Array{Array{Float64,1},1}  # weights
   ωₛ::Array{Array{Any,1},1}     # scaled weights
   DMatrix::Array{Array{Any,2},1}# differention matrix
+  IMatrix::Array{Array{Any,2},1}# integration matrix
+
   # tm method data
   N::Int64                      # number of points in discretization
   dt::Array{Any,1}              # array of dts
@@ -73,6 +74,7 @@ NLOpt(Any,                # state equations
       Vector{Float64}[],  # weights
       Vector{Any}[],      # scaled weights
       Matrix{Any}[],      # DMatrix
+      Matrix{Any}[],      # IMatrix
       0,                  # number of points in discretization
       Any[],              # array of dts
       false,              # finalTimeDV
@@ -81,11 +83,29 @@ NLOpt(Any,                # state equations
     );
 end
 
+# Result Class
+abstract AbstractNLOpt
+type Result <: AbstractNLOpt
+  # time
+  t_ctr  # time vector for control
+  t_st   # time vector for state
+
+  # options -> plotting etc.
+end
+
+# Default Constructor
+function Result()
+Result(Vector{Any}[], # time vector for control
+       Vector{Any}[]  # time vector for state
+      );
+end
+
 # scripts
 include("utils.jl");
 include("setup.jl")
-include("LGR.jl");
+include("ps.jl");
 include("ocp.jl")
+include("post_processing.jl")
 
        # Functions
 export
@@ -94,16 +114,19 @@ export
        OCPdef,
 
        # ps functions
-       LGR, lgr_diff, LGR_matrices,
-       scale_tau, scale_w, create_intervals,
+       LGR_matrices,
+       scale_tau, scale_w, createIntervals,
        lagrange_basis_poly, interpolate_lagrange,
        polyDiff,
        D_matrix,
-       lepoly, poldif,
 
        # math functions
        integrate,
 
+       # data processing
+       postProcess,
+
        # Objects
-       NLOpt
+       NLOpt,
+       Result
 end

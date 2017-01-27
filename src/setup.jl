@@ -133,11 +133,8 @@ function configure(n::NLOpt, args...; kwargs... )
     end
     n.τ = [taus_and_weights[int][1] for int in 1:n.Ni];
     n.ω = [taus_and_weights[int][2] for int in 1:n.Ni];
-    if n.finalTimeDV   # initialize scaled variables as zeros
-      n.ts = 0*n.τ; n.ωₛ = 0*n.ω;
-    else
-      n.ts, n.ωₛ = create_intervals(0.0,n.tf,n.Ni,n.Nck,n.τ,n.ω);
-    end
+    n = createIntervals(n);
+    n = DMatrix(n);
 
   elseif n.integrationMethod==:tm
     if haskey(kw,:Nck) || haskey(kw,:Ni)
@@ -152,70 +149,4 @@ function configure(n::NLOpt, args...; kwargs... )
   end
 
   return n
-end
-"""
-nlp2ocp(n);
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/2/2017, Last Modified: 1/4/2017 \n
---------------------------------------------------------------------------------------\n
-"""
-# to do, pack decisionVector into nlp
-function nlp2ocp(n::NLOpt) #TODO fix this
-    @unpack t0, tf, stateMatrix, controlMatrix, Ni, Nck = ps
-    @unpack stateIdx_all, controlIdx_all, timeStartIdx, timeStopIdx = nlp
-    @unpack stateIdx, controlIdx = nlp
-    @unpack numStates, numControls, lengthDecVector = nlp
-    @unpack decisionVector = nlp
-
-    if length(decisionVector)!=lengthDecVector
-      error(string("\n",
-                    "-------------------------------------", "\n",
-                    "There is an error with the indecies!!", "\n",
-                    "-------------------------------------", "\n",
-                    "The following variables should be equal:", "\n",
-                    "length(decisionVector) = ",length(decisionVector),"\n",
-                    "lengthDecVector = ",lengthDecVector,"\n"
-                    )
-            )
-    end
-    # update parameters
-    t0 = decisionVector[timeStartIdx];
-    tf = decisionVector[timeStopIdx];
-
-    # the state matrix is sized according to eq. (40) in the GPOPS II article
-    # n is the total number of states -> the individual states are columns
-    # V[int]      = [X11               X21      ...      Xn1;
-    #                X12               X22      ...      Xn2;
-    #                .                  .                 .
-    #                .                  .                 .
-    #                .                  .                 .
-    #         X1_{Nck[int]+1}    X2_{Nck[int]+1}   Xn_{Nck[int]+1}
-
-    stateMatrix = [zeros(Nck[int]+1, numStates) for int in 1:Ni];
-    idx = 1;
-    for int in 1:Ni
-        for st in 1:numStates
-            if numStates > 1
-              stateMatrix[int][:,st] = decisionVector[stateIdx_all[idx][1]:stateIdx_all[idx][2]]
-            else # use indexing for single state variable
-              stateMatrix[int][:,st] = decisionVector[stateIdx[idx][1]:stateIdx[idx][2]]
-           end
-          idx+=1;
-        end
-    end
-
-    controlMatrix = [zeros(Nck[int], numControls) for int in 1:Ni];
-    idx = 1;
-    for int in 1:Ni
-        for ctr in 1:numControls
-            if numControls > 1
-              controlMatrix[int][:,ctr] = decisionVector[controlIdx_all[idx][1]:controlIdx_all[idx][2]];
-            else
-              controlMatrix[int][:,ctr] = decisionVector[controlIdx[idx][1]:controlIdx[idx][2]];
-            end
-            idx+=1;
-        end
-    end
-    @pack ps = t0, tf, stateMatrix, controlMatrix
 end
