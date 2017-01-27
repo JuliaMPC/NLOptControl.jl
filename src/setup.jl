@@ -126,6 +126,8 @@ function configure(n::NLOpt, args...; kwargs... )
       error("\n Ni must be > 0 \n");
     end
      n.numPoints = [n.Nck[int] for int in 1:n.Ni];  # number of design variables per interval
+     n.numStatePoints = sum(n.Nck)+1;
+     n.numControlPoints = sum(n.Nck);
 
     # initialize node data
     if n.integrationScheme==:lgrExplicit
@@ -146,6 +148,8 @@ function configure(n::NLOpt, args...; kwargs... )
     if !haskey(kw,:integrationScheme); kw_ = Dict(:integrationScheme => :bkwEuler);  n.integrationScheme=get(kw_,:integrationScheme,0); # default
     else;  n.integrationScheme=get(kw,:integrationScheme,0);
     end
+    n.numStatePoints = n.N+1;
+    n.numControlPoints = n.N+1;
   end
 
   return n

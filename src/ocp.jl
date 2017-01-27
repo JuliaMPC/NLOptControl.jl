@@ -2,42 +2,27 @@
 n,x,u,c=OCPdef(mdl,n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/14/2017, Last Modified: 1/25/2017 \n
+Date Create: 1/14/2017, Last Modified: 1/27/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function OCPdef(mdl::JuMP.Model,n::NLOpt)
 
-  if n.integrationMethod==:ps
-    @variable(mdl, x[1:sum(n.numPoints)+1,1:n.numStates]); # +1 for the last interval
-    for st in 1:n.numStates
-      for j in 1:sum(n.numPoints-1)
-        setlowerbound(x[j,st], n.XL[st])
-        setupperbound(x[j,st], n.XU[st])
-      end
-    end
-    @variable(mdl, u[1:sum(n.numPoints),1:n.numControls]);  #TODO make sure that there are not too many controls
-    for ctr in 1:n.numControls
-      for j in 1:sum(n.numPoints)
-        setlowerbound(u[j,ctr], n.CL[ctr])
-        setupperbound(u[j,ctr], n.CU[ctr])
-      end
-    end
-  elseif n.integrationMethod==:tm
-    @variable(mdl, x[1:n.N+1,1:n.numStates]); # +1 for the last interval
-    for st in 1:n.numStates
-      for j in 1:n.N+1
-        setlowerbound(x[j,st], n.XL[st])
-        setupperbound(x[j,st], n.XU[st])
-      end
-    end
-    @variable(mdl, u[1:n.N+1,1:n.numControls]);  #TODO make sure that there are not too many controls
-    for ctr in 1:n.numControls
-      for j in 1:n.N+1
-        setlowerbound(u[j,ctr], n.CL[ctr])
-        setupperbound(u[j,ctr], n.CU[ctr])
-      end
+  # state and control variables
+  @variable(mdl, x[1:n.numStatePoints,1:n.numStates]); # +1 for the last interval
+  for st in 1:n.numStates
+    for j in 1:n.numStatePoints
+      setlowerbound(x[j,st], n.XL[st])
+      setupperbound(x[j,st], n.XU[st])
     end
   end
+  @variable(mdl, u[1:n.numControlPoints,1:n.numControls]);  #TODO make sure that there are not too many controls
+  for ctr in 1:n.numControls
+    for j in 1:n.numControlPoints
+      setlowerbound(u[j,ctr], n.CL[ctr])
+      setupperbound(u[j,ctr], n.CU[ctr])
+    end
+  end
+
   # boundary constraints
   x0_con = @constraint(mdl, [st in 1:n.numStates], x[1,st]  == n.X0[st]);
   xf_con = @constraint(mdl, [st in 1:n.numStates], x[end,st] == n.XF[st]);
@@ -48,7 +33,7 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt)
     dynamics_expr  = [Array(Any,n.Nck[int],n.numStates) for int in 1:n.Ni];
 
     if n.finalTimeDV
-      @variable(mdl, 0.5 <= tf <= Inf) #TODO allow user to pass ranges
+      @variable(mdl, 0.1 <= tf <= Inf) #TODO allow user to pass ranges
       n.tf = tf;
     end
 
@@ -86,7 +71,7 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt)
     dx = n.stateEquations(n,x,u);
     if n.integrationScheme==:bkwEuler
       for st in 1:n.numStates
-        dyn_con[:,st] = @NLconstraint(mdl, [j in 1:n.N], 0 == x[j+1,st] - x[j,st] - dx[j+1,st]*n.tf/(n.N) ) #TODO make sure that n.tf == tf
+        dyn_con[:,st] = @NLconstraint(mdl, [j in 1:n.N], 0 == x[j+1,st] - x[j,st] - dx[j+1,st]*n.tf/(n.N) );
       end
     elseif n.integrationScheme==:trapezoidal
       for st in 1:n.numStates
@@ -94,7 +79,9 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt)
       end
     end
   end
-  c = [x0_con, xf_con, dyn_con];  # pack up all constraints
-#  n.x=x; n.u=u;
-  return n, x, u, c
+  # store results
+  r = Result();
+  r.c = [x0_con, xf_con, dyn_con];  # pack up all constraints
+  r.x=x; r.u=u;
+  return n, r
 end

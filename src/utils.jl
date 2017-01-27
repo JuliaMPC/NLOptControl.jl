@@ -4,7 +4,7 @@ Expr = integrate(mdl,n,u;(:mode=>:control))
 Expr = integrate(mdl,n,u,idx=1;C=0.5,(:variable=>:control),(:integrand=>:squared))
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/2/2017, Last Modified: 1/24/2017 \n
+Date Create: 1/2/2017, Last Modified: 1/27/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function integrate(mdl::JuMP.Model,n::NLOpt,V::Array{JuMP.Variable,1}, args...; C::Float64=1.0, kwargs...)

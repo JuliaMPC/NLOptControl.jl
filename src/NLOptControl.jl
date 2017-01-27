@@ -18,6 +18,8 @@ type NLOpt <: AbstractNLOpt
   numStates::Int64          # number of states
   numControls::Int64        # number of controls
   numPoints::Array{Int64,1} # number of dv discretization within each interval
+  numStatePoints::Int64     # number of dvs per state
+  numControlPoints::Int64   # numer of dvs per control
   lengthDV::Int64           # total number of dv discretizations per variables
   tf::Any                   # final time
   t0::Any                   # initial time
@@ -58,6 +60,8 @@ NLOpt(Any,                # state equations
       0,                  # number of states
       0,                  # number of controls
       Int[],              # number of dv discretization within each interval
+      0,                  # number of dvs per state
+      0,                  # number of dvs per control
       0,                  # total number of dv discretizations per variables
       Any,                # final time
       Any,                # initial time
@@ -89,15 +93,38 @@ type Result <: AbstractNLOpt
   # time
   t_ctr  # time vector for control
   t_st   # time vector for state
-
-  # options -> plotting etc.
+  x      # JuMP states
+  u      # JuMP controls
+  X      # states
+  U      # controls
+  c      # constraint handels
 end
 
 # Default Constructor
 function Result()
-Result(Vector{Any}[], # time vector for control
-       Vector{Any}[]  # time vector for state
+Result( Vector{Any}[], # time vector for control
+        Vector{Any}[], # time vector for state
+        Matrix{Any}[], # JuMP states
+        Matrix{Any}[], # JuMP controls
+        Matrix{Any}[], # states
+        Matrix{Any}[], # controls
+        Matrix{Any}[]  # constraint handels
       );
+end
+
+# Settings Class
+abstract AbstractNLOpt
+type Settings <: AbstractNLOpt
+  # plotting
+  lw1::Float64 # line width 1
+  lw2::Float64 # line width 2
+end
+
+# Default Constructor
+function Settings()
+Settings(8, # line width 1
+         3  # line width 2
+        );
 end
 
 # scripts
@@ -128,5 +155,6 @@ export
 
        # Objects
        NLOpt,
-       Result
+       Result,
+       Settings
 end
