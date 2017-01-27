@@ -13,5 +13,6 @@ Table of Contents
    :maxdepth: 2
 
    background_info
+   examples
    functionality
    bibliography
