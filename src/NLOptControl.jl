@@ -1,6 +1,6 @@
 module NLOptControl
 
-using Media, Dierckx, Parameters, Interpolations, FastGaussQuadrature, Polynomials, JuMP, SymPy
+using Media, Dierckx, Parameters, Interpolations, FastGaussQuadrature, Polynomials, JuMP, SymPy, VehicleModels
 # To copy a particular piece of code (or function) in some location
 macro def(name, definition)
   return quote
@@ -97,7 +97,8 @@ type Result <: AbstractNLOpt
   u      # JuMP controls
   X      # states
   U      # controls
-  c      # constraint handels
+  x0_con # x0 constraint handels
+  xf_con # xf constraint handels
 end
 
 # Default Constructor
@@ -108,7 +109,8 @@ Result( Vector{Any}[], # time vector for control
         Matrix{Any}[], # JuMP controls
         Matrix{Any}[], # states
         Matrix{Any}[], # controls
-        Matrix{Any}[]  # constraint handels
+        nothing,       # x0 constraint handels
+        nothing       # xf constraint handels
       );
 end
 

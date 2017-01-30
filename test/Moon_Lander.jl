@@ -11,7 +11,7 @@ pyplot()
 n = NLOpt();
 # Moon Lander Problem @ http://www.gpops2.com/Examples/MoonLander.html
 const g = 1.62519; # m/s^2
-function MoonLander{T<:Any}(n::NLOpt,x::Array{T,2},u::Array{T,2}) # dynamic constraint equations
+function MoonLander{T<:Any}(mdl::JuMP.Model,n::NLOpt,x::Array{T,2},u::Array{T,2}) # dynamic constraint equations
   if n.integrationMethod==:tm
     L = size(x)[1];
   else

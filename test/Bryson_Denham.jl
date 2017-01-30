@@ -9,7 +9,7 @@ pyplot()
 # Define NLOptControl problem
 ##################################
 n = NLOpt();
-function BrysonDenham{T<:Any}(n::NLOpt,x::Array{T,2},u::Array{T,2}) # dynamic constraint equations
+function BrysonDenham{T<:Any}(mdl::JuMP.Model,n::NLOpt,x::Array{T,2},u::Array{T,2}) # dynamic constraint equations
   if n.integrationMethod==:tm
     L = size(x)[1];
   else
@@ -30,10 +30,10 @@ n = configure(n,Ni=1,Nck=[10];(:integrationMethod => :ps),(:integrationScheme =>
 # Define JuMP problem
 ##################################
 mdl = Model(solver = IpoptSolver());
-n,x,u,c=OCPdef(mdl,n)
+n,r=OCPdef(mdl,n)
 obj = integrate(mdl,n,u[:,1];C=0.5,(:variable=>:control),(:integrand=>:squared))
 @NLobjective(mdl, Min, obj)
-obj_val = solve(mdl)
+result = solve(mdl)
 ####################################
 ## analytic soltion when 0<=L<=1/6
 ###################################
