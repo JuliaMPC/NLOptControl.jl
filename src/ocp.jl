@@ -6,7 +6,7 @@ Date Create: 1/14/2017, Last Modified: 1/30/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function OCPdef(mdl::JuMP.Model,n::NLOpt, args...)
-  if length(args)==1; params=args[1]; end
+  if length(args)==1; params=args[1]; paramsON=true; else paramsON=false; end
 
   # state and control variables
   @variable(mdl, x[1:n.numStatePoints,1:n.numStates]); # +1 for the last interval
@@ -69,7 +69,11 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt, args...)
         u_int[:,ctr] = u[Nck_ctr[int]+1:Nck_ctr[int+1],ctr];
       end
       # dynamics
-      dx = n.stateEquations(mdl,n,x_int,u_int,params);
+      if paramsON
+        dx = n.stateEquations(mdl,n,x_int,u_int,params);
+      else
+        dx = n.stateEquations(mdl,n,x_int,u_int);
+      end
       for st in 1:n.numStates
         if n.integrationScheme==:lgrExplicit
           dynamics_expr[int][:,st] = @NLexpression(mdl, [j in 1:n.Nck[int]], sum(n.DMatrix[int][j,i]*x_int[i,st] for i in 1:n.Nck[int]+1) - ((n.tf-n.t0)/2)*dx[j,st]  )
@@ -88,7 +92,11 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt, args...)
      n.tf = tf;
     end
     n.dt = n.tf/n.N*ones(n.N,);
-    dx = n.stateEquations(mdl,n,x,u,parms);
+    if paramsON
+      dx = n.stateEquations(mdl,n,x,u,parms);
+    else
+      dx = n.stateEquations(mdl,n,x,u);
+    end
     if n.integrationScheme==:bkwEuler
       for st in 1:n.numStates
         dyn_con[:,st] = @NLconstraint(mdl, [j in 1:n.N], 0 == x[j+1,st] - x[j,st] - dx[j+1,st]*n.tf/(n.N) );

@@ -1,10 +1,5 @@
-using NLOptControl
-using JuMP
-using Ipopt
-using Parameters
-using Plots
+using NLOptControl, JuMP, Ipopt, Parameters, Plots
 pyplot()
-
 ##################################
 # Define NLOptControl problem
 ##################################
@@ -31,7 +26,7 @@ n = configure(n,Ni=1,Nck=[10];(:integrationMethod => :ps),(:integrationScheme =>
 ##################################
 mdl = Model(solver = IpoptSolver());
 n,r=OCPdef(mdl,n)
-obj = integrate(mdl,n,u[:,1];C=0.5,(:variable=>:control),(:integrand=>:squared))
+obj = integrate(mdl,n,r.u[:,1];C=0.5,(:variable=>:control),(:integrand=>:squared))
 @NLobjective(mdl, Min, obj)
 result = solve(mdl)
 ####################################
@@ -97,26 +92,23 @@ end
 ##################################
 # Post Processing
 ##################################
-r=postProcess(n,Result())
-# visualize solution
-lw=8; lw2=3;
-
+r=postProcess(n,r); s=Settings();
 
 p1=plot(t,x_analytic, label = "x analytic",w=lw)
-plot!(r.t_st,getvalue(x[:,1]), label = "x interp.",w=lw2)
-scatter!(r.t_st,getvalue(x[:,1]), label = "x optimal",marker = (:star8, 15, 0.9, :green))
+plot!(r.t_st,r.X[:,1], label = "x interp.",w=lw2)
+scatter!(r.t_st,r.X[:,1], label = "x optimal",marker = (:star8, 15, 0.9, :green))
 ylabel!("x(t)")
 xlabel!("time (s)")
 
 p2=plot(t,v_analytic, label = "v analytic",w=lw)
-plot!(r.t_st,getvalue(x[:,2]), label = "v interp.",w=lw2)
-scatter!(r.t_st,getvalue(x[:,2]), label = "v optimal",marker = (:star8, 15, 0.9, :green))
+plot!(r.t_st,r.X[:,2], label = "v interp.",w=lw2)
+scatter!(r.t_st,r.X[:,2], label = "v optimal",marker = (:star8, 15, 0.9, :green))
 ylabel!("v(t)")
 xlabel!("time (s)")
 
 p3=plot(t,u_analytic, label = "u analytic",w=lw)
-plot!(r.t_ctr,getvalue(u[:,1]), label = "u interp.",w=lw2)
-scatter!(r.t_ctr,getvalue(u[:,1]), label = "u optimal",marker = (:star8, 15, 0.9, :green))
+plot!(r.t_ctr,r.U[:,1], label = "u interp.",w=lw2)
+scatter!(r.t_ctr,r.U[:,1], label = "u optimal",marker = (:star8, 15, 0.9, :green))
 ylabel!("u(t)")
 xlabel!("time (s)")
 

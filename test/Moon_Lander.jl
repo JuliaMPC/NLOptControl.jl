@@ -1,8 +1,4 @@
-using NLOptControl
-using JuMP
-using Ipopt
-using Parameters
-using Plots
+using NLOptControl, JuMP, Ipopt, Parameters, Plots
 pyplot()
 
 ##################################
@@ -12,11 +8,7 @@ n = NLOpt();
 # Moon Lander Problem @ http://www.gpops2.com/Examples/MoonLander.html
 const g = 1.62519; # m/s^2
 function MoonLander{T<:Any}(mdl::JuMP.Model,n::NLOpt,x::Array{T,2},u::Array{T,2}) # dynamic constraint equations
-  if n.integrationMethod==:tm
-    L = size(x)[1];
-  else
-    L = size(x)[1]-1;
-  end
+  if n.integrationMethod==:tm; L=size(x)[1]; else L=size(x)[1]-1; end
   dx = Array(Any,L,n.numStates)
   dx[:,1] =  @NLexpression(mdl, [j=1:L], x[j,2] );
   dx[:,2] =  @NLexpression(mdl, [j=1:L], u[j,1] - g);
@@ -36,9 +28,8 @@ n = configure(n,N=30;(:integrationMethod => :tm),(:integrationScheme => :trapezo
 ##################################
 # Define JuMP problem
 ##################################
-# initialize design problem
 mdl = Model(solver = IpoptSolver(max_iter=500));
-n,r = OCPdef(mdl,n) # TODO store x,u, c in r
+n,r = OCPdef(mdl,n)
 obj = integrate(mdl,n,r.u[:,1];C=1.0,(:variable=>:control),(:integrand=>:default))
 @NLobjective(mdl, Min, obj)
 result = solve(mdl)
