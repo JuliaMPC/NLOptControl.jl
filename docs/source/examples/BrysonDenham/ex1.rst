@@ -3,20 +3,20 @@ Bryson-Denham
 ****************
 http://www.gpops2.com/Examples/Bryson-Denham.html
 
-``N = 10`` --> ex#6
+``N = 10`` --> ex#1
 ######################
 
 LGR
 ---
-.. image:: test6a_l.png
+.. image:: ex1_p.png
 
 Bkw Euler
 ----------
-.. image:: test6a_e.png
+.. image:: ex1_e.png
 
 Trapezoidal
 -----------
-.. image:: test6a_t.png
+.. image:: ex1_t.png
 
 
 Error vs. Speed --> ex#5
