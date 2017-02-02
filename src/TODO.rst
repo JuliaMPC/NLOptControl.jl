@@ -7,6 +7,7 @@
 # 12) allow user to select from using the IMatrix or quadrature
 # 13) make a bool to tell the user to restart julia if they change the model significantly -> or do this for them
 # 14) make functionality to easily compare all intergration schemes
+# 15) implement method with variable time steps for :tm methods, that is how it was before!
 try to register functions with JuMP
 
 #mdl = Model(solver=IpoptSolver(linear_solver = "mumps")) #linear_solver = "ma57"

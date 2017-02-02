@@ -18,7 +18,8 @@ function define(n::NLOpt;
                 XL::Array{Float64,1}=zeros(Float64,numStates,1),
                 XU::Array{Float64,1}=zeros(Float64,numStates,1),
                 CL::Array{Float64,1}=zeros(Float64,numControls,1),
-                CU::Array{Float64,1}=zeros(Float64,numControls,1)
+                CU::Array{Float64,1}=zeros(Float64,numControls,1),
+                tf_max::Float64=40.0
                 )
 
   # validate input
@@ -60,6 +61,7 @@ function define(n::NLOpt;
   n.XU = XU;
   n.CL = CL;
   n.CU = CU;
+  n.tf_max = tf_max;
   return n
 end
 
@@ -68,10 +70,6 @@ n = configure(n::NLOpt,Ni=4,Nck=[3, 3, 7, 2];(:integrationMethod => :ps),(:integ
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 1/1/2017, Last Modified: 1/23/2017 \n
-Citations: \n
-----------\n
-Initially Influenced by: S. Hughes.  steven.p.hughes@nasa.gov
-Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/264a12acad195e6a2467cfdc68abdcee801f73fc/tree/prototype/OptimalControl/LowThrust/@DecisionVector/)
 -------------------------------------------------------------------------------------\n
 """
 function configure(n::NLOpt, args...; kwargs... )

@@ -23,6 +23,7 @@ type NLOpt <: AbstractNLOpt
   lengthDV::Int64           # total number of dv discretizations per variables
   tf::Any                   # final time
   t0::Any                   # initial time
+  tf_max::Any               # maximum final time
 
   # boundary constraits
   X0::Array{Float64,1}      # initial state conditions
@@ -65,6 +66,7 @@ NLOpt(Any,                # state equations
       0,                  # total number of dv discretizations per variables
       Any,                # final time
       Any,                # initial time
+      Any,                # maximum final time
       Float64[],          # initial state conditions
       Float64[],          # final state conditions
       Float64[],          # XL
@@ -90,7 +92,6 @@ end
 # Result Class
 abstract AbstractNLOpt
 type Result <: AbstractNLOpt
-  # time
   t_ctr  # time vector for control
   t_st   # time vector for state
   x      # JuMP states
@@ -110,7 +111,7 @@ Result( Vector{Any}[], # time vector for control
         Matrix{Any}[], # states
         Matrix{Any}[], # controls
         nothing,       # x0 constraint handels
-        nothing       # xf constraint handels
+        nothing        # xf constraint handels
       );
 end
 

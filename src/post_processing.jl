@@ -2,7 +2,7 @@
 r=postProcess(n,r)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/27/2017, Last Modified: 1/31/2016 \n
+Date Create: 1/27/2017, Last Modified: 1/31/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function postProcess(n::NLOpt,r::Result)
