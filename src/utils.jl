@@ -103,3 +103,20 @@ function integrate(mdl::JuMP.Model,n::NLOpt,V::Array{JuMP.Variable,1}, args...; 
   end
   return Expr
 end
+
+"""
+optimize(mdl,n,r)
+# solves JuMP model and saves optimization data
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 2/6/2017, Last Modified: 2/6/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+function optimize(mdl::JuMP.Model, n::NLOpt, r::Result)
+  t1 = time(); status = JuMP.solve(mdl); t2 = time();
+  push!(r.status,status);
+  push!(r.t_solve,(t2 - t1));
+  push!(r.obj_val, getobjectivevalue(mdl));
+  r.eval_num=length(r.status);
+  postProcess(n,r);
+end

@@ -100,6 +100,10 @@ type Result <: AbstractNLOpt
   U      # controls
   x0_con # x0 constraint handels
   xf_con # xf constraint handels
+  eval_num::Int64 # number of times optimization has been run
+  status::Vector{Symbol} # optimization status
+  t_solve::Vector{Float64} # solve time for optimization
+  obj_val::Vector{Float64} # objective function value
 end
 
 # Default Constructor
@@ -111,7 +115,11 @@ Result( Vector{Any}[], # time vector for control
         Matrix{Any}[], # states
         Matrix{Any}[], # controls
         nothing,       # x0 constraint handels
-        nothing        # xf constraint handels
+        nothing,       # xf constraint handels
+        0, # number of times optimization has been run
+        Symbol[], # optimization status
+        Float64[], # solve time for optimization
+        Float64[]  # objective function value
       );
 end
 
@@ -152,6 +160,9 @@ export
 
        # math functions
        integrate,
+
+       # optimization functions
+       optimize,
 
        # data processing
        postProcess,
