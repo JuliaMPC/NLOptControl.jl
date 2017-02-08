@@ -16,7 +16,9 @@ type NLOpt <: AbstractNLOpt
   # general properties
   stateEquations
   numStates::Int64          # number of states
+  state
   numControls::Int64        # number of controls
+  control
   numPoints::Array{Int64,1} # number of dv discretization within each interval
   numStatePoints::Int64     # number of dvs per state
   numControlPoints::Int64   # numer of dvs per control
@@ -59,7 +61,9 @@ end
 function NLOpt()
 NLOpt(Any,                # state equations
       0,                  # number of states
+      Symbol[],
       0,                  # number of controls
+      Symbol[],
       Int[],              # number of dv discretization within each interval
       0,                  # number of dvs per state
       0,                  # number of dvs per control
@@ -98,8 +102,10 @@ type Result <: AbstractNLOpt
   u      # JuMP controls
   X      # states
   U      # controls
-  x0_con # x0 constraint handels
-  xf_con # xf constraint handels
+  x0_con # handle for intial state constraints
+  xf_con # handle for final state constraints
+  dyn_con # dynamics constraints
+  constraint  # constraint handels and data
   eval_num::Int64 # number of times optimization has been run
   status::Vector{Symbol} # optimization status
   t_solve::Vector{Float64} # solve time for optimization
@@ -114,8 +120,10 @@ Result( Vector{Any}[], # time vector for control
         Matrix{Any}[], # JuMP controls
         Matrix{Any}[], # states
         Matrix{Any}[], # controls
-        nothing,       # x0 constraint handels
-        nothing,       # xf constraint handels
+        nothing,       # handle for intial state constraints
+        nothing,       # handle for final state constraints
+        nothing,       # dynamics constraint
+        nothing,       # constraint data
         0, # number of times optimization has been run
         Symbol[], # optimization status
         Float64[], # solve time for optimization
@@ -166,6 +174,10 @@ export
 
        # data processing
        postProcess,
+       newConstraintData,
+       evalConstraints,
+       stateNames,
+       controlNames,
 
        # Objects
        NLOpt,

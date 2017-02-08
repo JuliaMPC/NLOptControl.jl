@@ -25,6 +25,9 @@ n = define(n,stateEquations=MoonLander,numStates=2,numControls=1,X0=[10.,-2],XF=
 #n = configure(n,N=30;(:integrationMethod => :tm),(:integrationScheme => :bkwEuler),(:finalTimeDV => true))
 n = configure(n,N=30;(:integrationMethod => :tm),(:integrationScheme => :trapezoidal),(:finalTimeDV => true))
 
+names = [:h,:v];
+descriptions = ["h(t)","v(t)"];
+stateNames(n,names,descriptions)
 ##################################
 # Define JuMP problem
 ##################################

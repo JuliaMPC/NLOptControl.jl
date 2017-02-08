@@ -120,3 +120,126 @@ function optimize(mdl::JuMP.Model, n::NLOpt, r::Result)
   r.eval_num=length(r.status);
   postProcess(n,r);
 end
+
+
+"""
+# funtionality to save constraint data
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 2/7/2017, Last Modified: 2/7/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+type Constraint
+  name::Vector{Any}
+  handle::Vector{Any}
+  value::Vector{Any}
+end
+
+function Constraint()
+  Constraint([],
+             [],
+             []);
+end
+
+function newConstraint(r::Result,handle,name::Symbol)
+  initConstraint(r)
+  constraint::Constraint = r.constraint
+  push!(r.constraint.handle,handle)
+  push!(r.constraint.name,name)
+end
+
+function initConstraint(r::Result)
+  if r.constraint == nothing
+    r.constraint = Constraint()
+  end
+end
+
+
+function evalConstraints(r::Result)
+  r.constraint.value=[];   # reset values
+  for i = 1:length(r.constraint.handle)
+    try
+      A,B=size(r.constraint.handle[i]); # will fail if it is not an array
+      dfs=Vector{DataFrame}(B);
+      con=DataFrame(step=1);
+      for j = 1:B
+        dfs[j]=DataFrame(step=1:A;Dict(r.constraint.name[i] => getdual(r.constraint.handle[i][1:A,j])[:])...);
+        if j==2
+          con=join(dfs[j-1],dfs[j],on=:step)
+        elseif j>2
+          con=join(con,dfs[j],on=:step)
+        end
+      end
+      push!(r.constraint.value,con)
+    catch
+      con = DataFrame(step=1:length(r.constraint.handle[i]);Dict(r.constraint.name[i] => getdual(r.constraint.handle[i]))...);
+      push!(r.constraint.value,con)
+    end
+  end
+end
+
+"""
+# funtionality for state data
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 2/7/2017, Last Modified: 2/7/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+type State #TODO correlate these with JuMP variables
+  name::Vector{Any}
+  description::Vector{Any}
+end
+
+function State()
+  State([],
+        []);
+end
+
+function initStateNames(n::NLOpt)
+  State([Symbol("x$i") for i in 1:n.numStates],
+        [String("x$i") for i in 1:n.numStates]);
+end
+
+function stateNames(n::NLOpt,names,descriptions)
+  n.state::State = State() # reset
+  if length(names)!=n.numStates || length(descriptions)!=n.numStates
+    error("\n Check sizes of names and descriptions \n")
+  end
+  for i in 1:n.numStates
+    push!(n.state.name,names[i])
+    push!(n.state.description,descriptions[i])
+  end
+end
+
+"""
+# funtionality for control data
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 2/7/2017, Last Modified: 2/7/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+type Control #TODO correlate these with JuMP variables
+  name::Vector{Any}
+  description::Vector{Any}
+end
+
+function Control()
+  Control([],
+        []);
+end
+
+function initControlNames(n::NLOpt)
+  Control([Symbol("u$i") for i in 1:n.numControls],
+          [String("u$i") for i in 1:n.numControls]);
+end
+
+function controlNames(n::NLOpt,names,descriptions)
+  n.control::Control = Control() # reset
+  if length(names)!=n.numControls || length(descriptions)!=n.numControls
+    error("\n Check sizes of names and descriptions \n")
+  end
+  for i in 1:n.numControls
+    push!(n.control.name,names[i])
+    push!(n.control.description,descriptions[i])
+  end
+end

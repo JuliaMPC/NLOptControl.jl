@@ -109,6 +109,9 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt, args...)
   end
   # store results
   r = Result();
-  r.x=x; r.u=u; r.x0_con=x0_con; r.xf_con=xf_con;
+  r.x=x; r.u=u; r.x0_con=x0_con; r.xf_con=xf_con; r.dyn_con=dyn_con;
+  newConstraint(r,x0_con,:x0_con); #TODO consider getting ride of redundancy
+  newConstraint(r,xf_con,:xf_con);
+  newConstraint(r,dyn_con,:dyn_con);
   return n, r
 end

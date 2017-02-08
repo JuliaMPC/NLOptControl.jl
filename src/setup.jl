@@ -55,6 +55,8 @@ function define(n::NLOpt;
   n.stateEquations = stateEquations;
   n.numStates = numStates;
   n.numControls = numControls;
+  n.state=initStateNames(n);
+  n.control=initControlNames(n);
   n.X0 = X0;
   n.XF = XF;
   n.XL = XL;
@@ -151,4 +153,23 @@ function configure(n::NLOpt, args...; kwargs... )
   end
 
   return n
+end
+
+"""
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 2/7/2017, Last Modified: 2/7/2017 \n
+-------------------------------------------------------------------------------------\n
+"""
+function stateNames(;)
+
+end
+"""
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 2/7/2017, Last Modified: 2/7/2017 \n
+-------------------------------------------------------------------------------------\n
+"""
+function controlNames(;)
+
 end
