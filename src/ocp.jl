@@ -38,17 +38,27 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt, args...)
   end
 
   # boundary constraints
-  x0_con=[];xf_con=[];
+  xf_con=[]; # currently modifying the final state constraint (with tolerance) is not needed, can easily ad this functionlity though
+  if any(!isnan(n.X0_tol)) # create handles for constraining the enire initial state
+    x0_con = Array(Any,n.numStates,2); # this is so they can be easily reference when doing MPC
+  else
+    x0_con=[];
+  end
+
   for st in 1:n.numStates
-    if !isnan(n.X0[st])
-       x0_con = [x0_con; @constraint(mdl, x[1,st]==n.X0[st])]
+    if !isnan(n.X0[st]) # could have a bool for this
+      if any(!isnan(n.X0_tol)) #NOTE in JuMP: Modifying range constraints is currently unsupported.
+        x0_con[st,1]=@constraint(mdl, x[1,st] <=  (n.X0[st]+n.X0_tol[st]));
+        x0_con[st,2]=@constraint(mdl,-x[1,st] <= -(n.X0[st]-n.X0_tol[st]));
+      else
+        x0_con = [x0_con; @constraint(mdl, x[1,st]==n.X0[st])]
+      end
     end
     if !isnan(n.XF[st])
       if isnan(n.XF_tol[st])
         xf_con = [xf_con; @constraint(mdl, x[end,st]==n.XF[st])];
-      else
-        xf_con = [xf_con; @constraint(mdl, x[end,st]<=n.XF[st]+n.XF_tol[st])];
-        xf_con = [xf_con; @constraint(mdl, n.XF[st]-n.XF_tol[st] <= x[end,st])];
+      else #TODO fix this as well
+        xf_con = [xf_con; @constraint(mdl, n.XF[st]-n.XF_tol[st] <= x[end,st] <= n.XF[st]+n.XF_tol[st])];
       end
     end
   end

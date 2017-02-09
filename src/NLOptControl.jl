@@ -29,6 +29,7 @@ type NLOpt <: AbstractNLOpt
 
   # boundary constraits
   X0::Array{Float64,1}      # initial state conditions
+  X0_tol::Array{Float64,1}  # initial state tolerance
   XF::Array{Float64,1}      # final state conditions
   XF_tol::Array{Float64,1}  # final state tolerance
 
@@ -73,6 +74,7 @@ NLOpt(Any,                # state equations
       Any,                # initial time
       Any,                # maximum final time
       Float64[],          # initial state conditions
+      Float64[],          # tolerances on inital state constraint
       Float64[],          # final state conditions
       Float64[],          # tolerances on final state constraint
       Float64[],          # XL
