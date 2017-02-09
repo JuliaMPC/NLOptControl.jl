@@ -170,3 +170,14 @@ function defineTolerances(n::NLOpt;
   n.X0_tol=X0_tol;
   n.XF_tol=XF_tol;
 end
+"""
+defineSolver(n; solver=:KNITRO)
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 2/9/2017, Last Modified: 2/9/2017 \n
+-------------------------------------------------------------------------------------\n
+"""
+function defineSolver(n::NLOpt;
+                      solver::Symbol=:IPOPT)
+  n.solver=solver;
+end

@@ -1,6 +1,6 @@
 module NLOptControl
 
-using Media, Dierckx, Parameters, Interpolations, FastGaussQuadrature, Polynomials, JuMP, SymPy, VehicleModels, DataFrames
+using Media, Dierckx, Parameters, Interpolations, FastGaussQuadrature, Polynomials, JuMP, SymPy, VehicleModels, DataFrames, KNITRO
 # To copy a particular piece of code (or function) in some location
 macro def(name, definition)
   return quote
@@ -57,6 +57,7 @@ type NLOpt <: AbstractNLOpt
   finalTimeDV::Bool
   integrationMethod::Symbol
   integrationScheme::Symbol
+  solver::Symbol              # solver
 end
 
 # Default Constructor
@@ -93,7 +94,8 @@ NLOpt(Any,                # state equations
       Any[],              # array of dts
       false,              # finalTimeDV
       :ts,                # integrtionMethod
-      :bkwEuler           # integrationScheme
+      :bkwEuler,          # integrationScheme
+      :IPOPT              # default solver
     );
 end
 
@@ -176,6 +178,8 @@ export
        # optimization related functions
        optimize,
        defineTolerances,
+       defineSolver,
+       build,
 
        # data processing
        postProcess,

@@ -1,6 +1,5 @@
-using NLOptControl, JuMP, Ipopt, Parameters, Plots
+using NLOptControl, JuMP, Parameters, Plots
 pyplot()
-
 ##################################
 # Define NLOptControl problem
 ##################################
@@ -24,13 +23,13 @@ n = define(n,stateEquations=MoonLander,numStates=2,numControls=1,X0=[10.,-2],XF=
 n = configure(n,Ni=4,Nck=[5,5,4,6];(:integrationMethod => :ps),(:integrationScheme => :lgrExplicit),(:finalTimeDV =>true))
 #n = configure(n,N=30;(:integrationMethod => :tm),(:integrationScheme => :bkwEuler),(:finalTimeDV => true))
 #n = configure(n,N=30;(:integrationMethod => :tm),(:integrationScheme => :trapezoidal),(:finalTimeDV => true))
-
+defineSolver(n,solver=:KNITRO)
 names = [:h,:v]; descriptions = ["h(t)","v(t)"]; stateNames(n,names,descriptions);
-XF_tol = [NaN, 0.1]; X0_tol = [NaN, 0.1]; defineTolerances(n;X0_tol=X0_tol,XF_tol=XF_tol);
+XF_tol = [0.1, 0.1]; X0_tol = [0.1, 0.1]; defineTolerances(n;X0_tol=X0_tol,XF_tol=XF_tol);
 ##################################
 # Define JuMP problem
 ##################################
-mdl = Model(solver = IpoptSolver(max_iter=500));
+mdl = build(n);
 n,r = OCPdef(mdl,n)
 obj = integrate(mdl,n,r.u[:,1];C=1.0,(:variable=>:control),(:integrand=>:default))
 @NLobjective(mdl, Min, obj)

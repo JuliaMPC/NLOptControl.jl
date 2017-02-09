@@ -105,6 +105,23 @@ function integrate(mdl::JuMP.Model,n::NLOpt,V::Array{JuMP.Variable,1}, args...; 
 end
 
 """
+mdl=build(n)
+# build JuMP model
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 2/9/2017, Last Modified: 2/9/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+function build(n::NLOpt) #TODO allow user to pass solver options
+  if n.solver==:IPOPT
+    mdl=Model(solver=IpoptSolver());
+  else n.solver==:KNITRO
+    mdl=Model(solver=KnitroSolver());
+  end
+  return mdl
+end
+
+"""
 optimize(mdl,n,r)
 # solves JuMP model and saves optimization data
 --------------------------------------------------------------------------------------\n
