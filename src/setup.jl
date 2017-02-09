@@ -154,22 +154,3 @@ function configure(n::NLOpt, args...; kwargs... )
 
   return n
 end
-
-"""
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/7/2017, Last Modified: 2/7/2017 \n
--------------------------------------------------------------------------------------\n
-"""
-function stateNames(;)
-
-end
-"""
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/7/2017, Last Modified: 2/7/2017 \n
--------------------------------------------------------------------------------------\n
-"""
-function controlNames(;)
-
-end

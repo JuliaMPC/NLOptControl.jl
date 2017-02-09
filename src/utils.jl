@@ -126,7 +126,7 @@ end
 # funtionality to save constraint data
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/7/2017, Last Modified: 2/7/2017 \n
+Date Create: 2/7/2017, Last Modified: 2/8/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 type Constraint
@@ -154,27 +154,26 @@ function initConstraint(r::Result)
   end
 end
 
-
-function evalConstraints(r::Result)
+function evalConstraints(n::NLOpt, r::Result)
   r.constraint.value=[];   # reset values
   for i = 1:length(r.constraint.handle)
-    try
-      A,B=size(r.constraint.handle[i]); # will fail if it is not an array
-      dfs=Vector{DataFrame}(B);
+    if r.constraint.name[i]==:dyn_con  # state constraits
+      dfs=Vector{DataFrame}(n.numStates);
       con=DataFrame(step=1);
-      for j = 1:B
-        dfs[j]=DataFrame(step=1:A;Dict(r.constraint.name[i] => getdual(r.constraint.handle[i][1:A,j])[:])...);
-        if j==2
-          con=join(dfs[j-1],dfs[j],on=:step)
-        elseif j>2
-          con=join(con,dfs[j],on=:step)
+      for st in 1:n.numStates
+        if n.integrationMethod==:ps
+          temp=[getdual(r.constraint.handle[i][int][:,st]) for int in 1:n.Ni];
+          vals=[idx for tempM in temp for idx=tempM];
+          dfs[st]=DataFrame(step=1:sum(n.Nck);Dict(n.state.name[st] => vals)...);
+        else
+          dfs[st]=DataFrame(step=1:n.N;Dict(n.state.name[st] => getdual(r.constraint.handle[i][:,st]))...);
         end
+        if st==1; con=dfs[st]; else; con=join(con,dfs[st],on=:step); end
       end
-      push!(r.constraint.value,con)
-    catch
+    else
       con = DataFrame(step=1:length(r.constraint.handle[i]);Dict(r.constraint.name[i] => getdual(r.constraint.handle[i]))...);
-      push!(r.constraint.value,con)
     end
+    push!(r.constraint.value,con)
   end
 end
 

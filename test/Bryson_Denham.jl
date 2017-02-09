@@ -17,7 +17,7 @@ function BrysonDenham{T<:Any}(mdl::JuMP.Model,n::NLOpt,x::Array{T,2},u::Array{T,
 end
 L=1/9;
 n = define(n,stateEquations=BrysonDenham,numStates=2,numControls=1,X0=[0.,1],XF=[0.,-1.],XL=[0.,-Inf],XU=[L,Inf],CL=[-Inf],CU=[Inf])
-n = configure(n,Ni=1,Nck=[10];(:integrationMethod => :ps),(:integrationScheme => :lgrExplicit),(:finalTimeDV => false),(:tf => 1.0))
+n = configure(n,Ni=2,Nck=[10,5];(:integrationMethod => :ps),(:integrationScheme => :lgrExplicit),(:finalTimeDV => false),(:tf => 1.0))
 #n = configure(n,N=100;(:integrationMethod => :tm),(:integrationScheme => :bkwEuler),(:finalTimeDV => false),(:tf => 1.0))
 #n = configure(n,N=10;(:integrationMethod => :tm),(:integrationScheme => :trapezoidal),(:finalTimeDV => false),(:tf => 1.0))
 
@@ -94,20 +94,20 @@ end
 ##################################
 r=postProcess(n,r); s=Settings();
 
-p1=plot(t,x_analytic, label = "x analytic",w=lw)
-plot!(r.t_st,r.X[:,1], label = "x interp.",w=lw2)
+p1=plot(t,x_analytic, label = "x analytic",w=s.lw1)
+plot!(r.t_st,r.X[:,1], label = "x interp.",w=s.lw2)
 scatter!(r.t_st,r.X[:,1], label = "x optimal",marker = (:star8, 15, 0.9, :green))
 ylabel!("x(t)")
 xlabel!("time (s)")
 
-p2=plot(t,v_analytic, label = "v analytic",w=lw)
-plot!(r.t_st,r.X[:,2], label = "v interp.",w=lw2)
+p2=plot(t,v_analytic, label = "v analytic",w=s.lw1)
+plot!(r.t_st,r.X[:,2], label = "v interp.",w=s.lw2)
 scatter!(r.t_st,r.X[:,2], label = "v optimal",marker = (:star8, 15, 0.9, :green))
 ylabel!("v(t)")
 xlabel!("time (s)")
 
-p3=plot(t,u_analytic, label = "u analytic",w=lw)
-plot!(r.t_ctr,r.U[:,1], label = "u interp.",w=lw2)
+p3=plot(t,u_analytic, label = "u analytic",w=s.lw1)
+plot!(r.t_ctr,r.U[:,1], label = "u interp.",w=s.lw2)
 scatter!(r.t_ctr,r.U[:,1], label = "u optimal",marker = (:star8, 15, 0.9, :green))
 ylabel!("u(t)")
 xlabel!("time (s)")

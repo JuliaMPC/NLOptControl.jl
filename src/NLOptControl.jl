@@ -1,6 +1,6 @@
 module NLOptControl
 
-using Media, Dierckx, Parameters, Interpolations, FastGaussQuadrature, Polynomials, JuMP, SymPy, VehicleModels
+using Media, Dierckx, Parameters, Interpolations, FastGaussQuadrature, Polynomials, JuMP, SymPy, VehicleModels, DataFrames
 # To copy a particular piece of code (or function) in some location
 macro def(name, definition)
   return quote
