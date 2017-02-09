@@ -59,6 +59,7 @@ function define(n::NLOpt;
   n.control=initControlNames(n);
   n.X0 = X0;
   n.XF = XF;
+  n.XF_tol = NaN*XF;
   n.XL = XL;
   n.XU = XU;
   n.CL = CL;
@@ -153,4 +154,15 @@ function configure(n::NLOpt, args...; kwargs... )
   end
 
   return n
+end
+
+"""
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 2/8/2017, Last Modified: 2/8/2017 \n
+-------------------------------------------------------------------------------------\n
+"""
+function defineTolerances(n::NLOpt;
+                          XF_tol::Array{Float64,1}=0.05*ones(Float64,numStates,1))
+  n.XF_tol=XF_tol;
 end

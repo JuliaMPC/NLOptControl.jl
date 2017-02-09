@@ -30,6 +30,7 @@ type NLOpt <: AbstractNLOpt
   # boundary constraits
   X0::Array{Float64,1}      # initial state conditions
   XF::Array{Float64,1}      # final state conditions
+  XF_tol::Array{Float64,1}  # final state tolerance
 
   # linear bounds on variables
   XL::Array{Float64,1}
@@ -61,9 +62,9 @@ end
 function NLOpt()
 NLOpt(Any,                # state equations
       0,                  # number of states
-      Symbol[],
+      Symbol[],           # states
       0,                  # number of controls
-      Symbol[],
+      Symbol[],           # controls
       Int[],              # number of dv discretization within each interval
       0,                  # number of dvs per state
       0,                  # number of dvs per control
@@ -73,6 +74,7 @@ NLOpt(Any,                # state equations
       Any,                # maximum final time
       Float64[],          # initial state conditions
       Float64[],          # final state conditions
+      Float64[],          # tolerances on final state constraint
       Float64[],          # XL
       Float64[],          # XU
       Float64[],          # CL
@@ -169,8 +171,9 @@ export
        # math functions
        integrate,
 
-       # optimization functions
+       # optimization related functions
        optimize,
+       defineTolerances,
 
        # data processing
        postProcess,

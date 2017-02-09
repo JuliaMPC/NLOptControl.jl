@@ -25,9 +25,8 @@ n = configure(n,Ni=4,Nck=[5,5,4,6];(:integrationMethod => :ps),(:integrationSche
 #n = configure(n,N=30;(:integrationMethod => :tm),(:integrationScheme => :bkwEuler),(:finalTimeDV => true))
 #n = configure(n,N=30;(:integrationMethod => :tm),(:integrationScheme => :trapezoidal),(:finalTimeDV => true))
 
-names = [:h,:v];
-descriptions = ["h(t)","v(t)"];
-stateNames(n,names,descriptions)
+names = [:h,:v]; descriptions = ["h(t)","v(t)"]; stateNames(n,names,descriptions);
+XF_tol = [0.1, 0.1]; defineTolerances(n;XF_tol=XF_tol);
 ##################################
 # Define JuMP problem
 ##################################

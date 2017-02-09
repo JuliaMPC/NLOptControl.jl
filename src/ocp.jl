@@ -2,7 +2,7 @@
 n,r=OCPdef(mdl,n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/14/2017, Last Modified: 1/30/2017 \n
+Date Create: 1/14/2017, Last Modified: 2/8/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function OCPdef(mdl::JuMP.Model,n::NLOpt, args...)
@@ -44,7 +44,12 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt, args...)
        x0_con = [x0_con; @constraint(mdl, x[1,st]==n.X0[st])]
     end
     if !isnan(n.XF[st])
-      xf_con = [xf_con; @constraint(mdl, x[end,st]==n.XF[st])];
+      if isnan(n.XF_tol[st])
+        xf_con = [xf_con; @constraint(mdl, x[end,st]==n.XF[st])];
+      else
+        xf_con = [xf_con; @constraint(mdl, x[end,st]<=n.XF[st]+n.XF_tol[st])];
+        xf_con = [xf_con; @constraint(mdl, n.XF[st]-n.XF_tol[st] <= x[end,st])];
+      end
     end
   end
 
