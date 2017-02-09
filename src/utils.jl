@@ -171,7 +171,17 @@ function evalConstraints(n::NLOpt, r::Result)
         if st==1; con=dfs[st]; else; con=join(con,dfs[st],on=:step); end
       end
     else
-      con = DataFrame(step=1:length(r.constraint.handle[i]);Dict(r.constraint.name[i] => getdual(r.constraint.handle[i]))...);
+      S=JuMP.size(r.constraint.handle[i])
+      if length(S)==1
+        con = DataFrame(step=1:length(r.constraint.handle[i]);Dict(r.constraint.name[i] => getdual(r.constraint.handle[i][:]))...);
+      elseif length(S)==2
+        dfs=Vector{DataFrame}(S[1]);
+        con=DataFrame(step=1);
+        for idx in 1:S[1]
+          dfs[idx] = DataFrame(step=1:S[2];Dict(r.constraint.name[i] => getdual(r.constraint.handle[i][idx,:]))...);
+          if idx==1; con=dfs[idx]; else; con=join(con,dfs[idx],on=:step); end
+        end
+      end
     end
     push!(r.constraint.value,con)
   end

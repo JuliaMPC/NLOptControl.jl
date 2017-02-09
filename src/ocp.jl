@@ -7,6 +7,7 @@ Date Create: 1/14/2017, Last Modified: 1/30/2017 \n
 """
 function OCPdef(mdl::JuMP.Model,n::NLOpt, args...)
   if length(args)==1; params=args[1]; paramsON=true; else paramsON=false; end
+  r = Result();
 
   # state and control variables
   @variable(mdl, x[1:n.numStatePoints,1:n.numStates]); # +1 for the last interval
@@ -70,9 +71,9 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt, args...)
       end
       # dynamics
       if paramsON
-        dx = n.stateEquations(mdl,n,x_int,u_int,params);
+        dx = n.stateEquations(mdl,n,r,x_int,u_int,params);
       else
-        dx = n.stateEquations(mdl,n,x_int,u_int);
+        dx = n.stateEquations(mdl,n,r,x_int,u_int);
       end
       for st in 1:n.numStates
         if n.integrationScheme==:lgrExplicit
@@ -93,9 +94,9 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt, args...)
     end
     n.dt = n.tf/n.N*ones(n.N,);
     if paramsON
-      dx = n.stateEquations(mdl,n,x,u,params);
+      dx = n.stateEquations(mdl,n,r,x,u,params);
     else
-      dx = n.stateEquations(mdl,n,x,u);
+      dx = n.stateEquations(mdl,n,r,x,u);
     end
     if n.integrationScheme==:bkwEuler
       for st in 1:n.numStates
@@ -108,7 +109,6 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt, args...)
     end
   end
   # store results
-  r = Result();
   r.x=x; r.u=u; r.x0_con=x0_con; r.xf_con=xf_con; r.dyn_con=dyn_con;
   newConstraint(r,x0_con,:x0_con); #TODO consider getting ride of redundancy
   newConstraint(r,xf_con,:xf_con);

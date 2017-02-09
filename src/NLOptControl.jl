@@ -174,7 +174,7 @@ export
 
        # data processing
        postProcess,
-       newConstraintData,
+       newConstraint,
        evalConstraints,
        stateNames,
        controlNames,

@@ -4,7 +4,7 @@ pyplot()
 # Define NLOptControl problem
 ##################################
 n = NLOpt();
-function BrysonDenham{T<:Any}(mdl::JuMP.Model,n::NLOpt,x::Array{T,2},u::Array{T,2}) # dynamic constraint equations
+function BrysonDenham{T<:Any}(mdl::JuMP.Model,n::NLOpt,r::Result,x::Array{T,2},u::Array{T,2}) # dynamic constraint equations
   if n.integrationMethod==:tm
     L = size(x)[1];
   else
