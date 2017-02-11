@@ -66,6 +66,7 @@ function define(n::NLOpt;
   n.CL = CL;
   n.CU = CU;
   n.tf_max = tf_max;
+  n.define = true;
   return n
 end
 

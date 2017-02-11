@@ -1,8 +1,6 @@
-using NLOptControl, JuMP, Ipopt, Parameters, Plots
-pyplot()
-##################################
-# Define NLOptControl problem
-##################################
+using NLOptControl, JuMP, Parameters, Plots
+
+# initialize
 n = NLOpt();
 function BrysonDenham{T<:Any}(mdl::JuMP.Model,n::NLOpt,r::Result,x::Array{T,2},u::Array{T,2}) # dynamic constraint equations
   if n.integrationMethod==:tm

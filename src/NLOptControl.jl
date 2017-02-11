@@ -53,6 +53,9 @@ type NLOpt <: AbstractNLOpt
   N::Int64                      # number of points in discretization
   dt::Array{Any,1}              # array of dts
 
+  # bools
+  define::Bool
+
   # options
   finalTimeDV::Bool
   integrationMethod::Symbol
@@ -92,6 +95,7 @@ NLOpt(Any,                # state equations
       Matrix{Any}[],      # IMatrix
       0,                  # number of points in discretization
       Any[],              # array of dts
+      false,              # bool to indicate if problem has been defined
       false,              # finalTimeDV
       :ts,                # integrtionMethod
       :bkwEuler,          # integrationScheme
@@ -116,6 +120,8 @@ type Result <: AbstractNLOpt
   status::Vector{Symbol} # optimization status
   t_solve::Vector{Float64} # solve time for optimization
   obj_val::Vector{Float64} # objective function value
+  dfs # results in DataFrame for plotting
+  dfs_opt # optimization information in DataFrame for plotting
 end
 
 # Default Constructor
@@ -133,7 +139,9 @@ Result( Vector{Any}[], # time vector for control
         0, # number of times optimization has been run
         Symbol[], # optimization status
         Float64[], # solve time for optimization
-        Float64[]  # objective function value
+        Float64[],  # objective function value
+        [], # results in DataFrame for plotting
+        [] # optimization information in DataFrame for plotting
       );
 end
 
@@ -143,12 +151,22 @@ type Settings <: AbstractNLOpt
   # plotting
   lw1::Float64 # line width 1
   lw2::Float64 # line width 2
+  s1::Int64    # size of figure
+  s2::Int64    # size of figure
+  simulate::Bool # bool for simulation
+  L::Int64     # length for plotting points
+  format::Symbol # format for output plots
 end
 
 # Default Constructor
-function Settings()
-Settings(8, # line width 1
-         3  # line width 2
+function Settings(;format::Symbol=:png)  # consider moving these plotting settings to PrettyPlots.jl
+Settings(5, # line width 1
+         4, # line width 2
+         700,    # size of figure
+         1000,   # size of figure
+         false,  # bool for simulations
+         100,    # length for plotting points
+         format  # format for output plots
         );
 end
 
@@ -187,6 +205,8 @@ export
        evalConstraints,
        stateNames,
        controlNames,
+       dvs2dfs,
+       opt2dfs,
 
        # Objects
        NLOpt,

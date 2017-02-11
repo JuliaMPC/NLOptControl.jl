@@ -227,10 +227,13 @@ function initStateNames(n::NLOpt)
 end
 
 function stateNames(n::NLOpt,names,descriptions)
-  n.state::State = State() # reset
+  if !n.define
+    error("\n call define() before calling controlNames() \n")
+  end
   if length(names)!=n.numStates || length(descriptions)!=n.numStates
     error("\n Check sizes of names and descriptions \n")
   end
+  n.state::State = State() # reset
   for i in 1:n.numStates
     push!(n.state.name,names[i])
     push!(n.state.description,descriptions[i])
@@ -260,12 +263,60 @@ function initControlNames(n::NLOpt)
 end
 
 function controlNames(n::NLOpt,names,descriptions)
-  n.control::Control = Control() # reset
+  if !n.define
+    error("\n call define() before calling controlNames() \n")
+  end
   if length(names)!=n.numControls || length(descriptions)!=n.numControls
     error("\n Check sizes of names and descriptions \n")
   end
+  n.control::Control = Control() # reset
   for i in 1:n.numControls
     push!(n.control.name,names[i])
     push!(n.control.description,descriptions[i])
   end
+end
+
+"""
+dvs2dfs(n,r)
+
+# funtionality to save state and control data
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 2/10/2017, Last Modified: 2/10/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+function dvs2dfs(n::NLOpt,r::Result)
+  dfs=DataFrame()
+  dfs[:t]=r.t_st;
+  for i in 1:n.numStates
+    dfs[n.state.name[i]]=r.X[:,i];
+  end
+  for i in 1:n.numControls
+    if n.integrationMethod==:ts
+      dfs[n.control.name[i]]=r.U[:,i];
+    else
+      dfs[n.control.name[i]]=[r.U[:,i];0];
+    end
+  end
+  return dfs
+end
+
+"""
+opt2dfs(r)
+
+# funtionality to save optimization data
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 2/10/2017, Last Modified: 2/10/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+function opt2dfs(r::Result)
+  id = find(r.t_solve)
+  idx = id[end]
+  dfs_opt=DataFrame()
+  dfs_opt[:t_solve]=r.t_solve[1:idx]
+  dfs_opt[:obj_val]=r.obj_val[1:idx]
+  dfs_opt[:status]=r.status[1:idx]
+  #dfs_opt[:eval_num]=r.eval_num
+  return dfs_opt
 end

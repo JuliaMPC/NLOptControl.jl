@@ -2,7 +2,7 @@
 r=postProcess(n,r)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/27/2017, Last Modified: 2/8/2017 \n
+Date Create: 1/27/2017, Last Modified: 2/10/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function postProcess(n::NLOpt,r::Result)
@@ -30,6 +30,10 @@ function postProcess(n::NLOpt,r::Result)
   for ctr in 1:n.numControls
     r.U[:,ctr] = getvalue(r.u[:,ctr]);
   end
-  evalConstraints(n,r); # TODO make an MPC option -> i.e. there are certain things that do not need to be done
+
+  # TODO make an MPC option -> i.e. there are certain things that do not need to be done
+  evalConstraints(n,r);
+  push!(r.dfs_opt,opt2dfs(r));
+  push!(r.dfs,dvs2dfs(n,r));
   return r
 end
