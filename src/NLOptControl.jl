@@ -122,6 +122,7 @@ type Result <: AbstractNLOpt
   obj_val::Vector{Float64} # objective function value
   dfs # results in DataFrame for plotting
   dfs_opt # optimization information in DataFrame for plotting
+  dfs_plant # plant data
 end
 
 # Default Constructor
@@ -136,12 +137,13 @@ Result( Vector{Any}[], # time vector for control
         nothing,       # handle for final state constraints
         nothing,       # dynamics constraint
         nothing,       # constraint data
-        0, # number of times optimization has been run
-        Symbol[], # optimization status
-        Float64[], # solve time for optimization
-        Float64[],  # objective function value
-        [], # results in DataFrame for plotting
-        [] # optimization information in DataFrame for plotting
+        0,             # number of times optimization has been run
+        Symbol[],      # optimization status
+        Float64[],     # solve time for optimization
+        Float64[],     # objective function value
+        [],            # results in DataFrame for plotting
+        [],            # optimization information in DataFrame for plotting
+        []             # plant data
       );
 end
 
@@ -149,24 +151,26 @@ end
 abstract AbstractNLOpt
 type Settings <: AbstractNLOpt
   # plotting
-  lw1::Float64 # line width 1
-  lw2::Float64 # line width 2
-  s1::Int64    # size of figure
-  s2::Int64    # size of figure
+  lw1::Float64   # line width 1
+  lw2::Float64   # line width 2
+  s1::Int64      # size of figure
+  s2::Int64      # size of figure
   simulate::Bool # bool for simulation
-  L::Int64     # length for plotting points
+  L::Int64       # length for plotting points
   format::Symbol # format for output plots
+  MPC::Bool      # bool for doing MPC
 end
 
 # Default Constructor
-function Settings(;format::Symbol=:png)  # consider moving these plotting settings to PrettyPlots.jl
-Settings(5, # line width 1
-         4, # line width 2
+function Settings(;format::Symbol=:png,MPC::Bool=false)  # consider moving these plotting settings to PrettyPlots.jl
+Settings(5.5,    # line width 1
+         3,      # line width 2
          700,    # size of figure
          1000,   # size of figure
          false,  # bool for simulations
          100,    # length for plotting points
-         format  # format for output plots
+         format, # format for output plots
+         MPC     # bool for doing MPC
         );
 end
 
@@ -203,10 +207,15 @@ export
        postProcess,
        newConstraint,
        evalConstraints,
+       evalMaxDualInf,
        stateNames,
        controlNames,
        dvs2dfs,
+       plant2dfs,
        opt2dfs,
+
+       # MPC
+       simPlant,
 
        # Objects
        NLOpt,

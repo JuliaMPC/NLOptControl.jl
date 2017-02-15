@@ -1,4 +1,17 @@
 """
+r=simPlant(n,r)
+# for simulating the plant model given commands
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 2/14/2017, Last Modified: 2/14/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+function simPlant(n::NLOpt,r::Result;plantModel::Function=[])
+  #push!(r.dfs,dvs2dfs(n,r));
+#TODO finish
+end
+
+"""
 # integrating JuMP variables
 Expr = integrate(mdl,n,u;(:mode=>:control))
 Expr = integrate(mdl,n,u,idx=1;C=0.5,(:variable=>:control),(:integrand=>:squared))
@@ -143,7 +156,7 @@ end
 # funtionality to save constraint data
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/7/2017, Last Modified: 2/8/2017 \n
+Date Create: 2/7/2017, Last Modified: 2/13/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 type Constraint
@@ -202,6 +215,48 @@ function evalConstraints(n::NLOpt, r::Result)
     end
     push!(r.constraint.value,con)
   end
+end
+
+"""
+maxDualInf = evalMaxDualInf(n,r)
+# funtionality to evaluate maximum dual infeasibility of problem
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 2/13/2017, Last Modified: 2/13/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+function evalMaxDualInf(n::NLOpt, r::Result)
+  num=length(r.constraint.handle); dual_con_temp =zeros(num);
+  for i = 1:length(r.constraint.handle)
+    if !isempty(r.constraint.handle[i])
+      if r.constraint.name[i]==:dyn_con  # state constraits
+        temp1=zeros(n.numStates);
+        for st in 1:n.numStates
+          if n.integrationMethod==:ps
+            temp=[getdual(r.constraint.handle[i][int][:,st]) for int in 1:n.Ni];
+            vals=[idx for tempM in temp for idx=tempM];
+            temp1[st]=maximum(vals);
+          else
+            temp1[st] = maximum(getdual(r.constraint.handle[i][:,st]));
+          end
+        end
+        dual_con_temp[i]=maximum(temp1);
+      else
+        S=JuMP.size(r.constraint.handle[i])
+        if length(S)==1
+          dual_con_temp[i]=maximum(getdual(r.constraint.handle[i][:]));
+        elseif length(S)==2
+          temp1=zeros(S[1]);
+          for idx in 1:S[1]
+            temp1[idx] = maximum(getdual(r.constraint.handle[i][idx,:]));
+          end
+          dual_con_temp[i]=maximum(temp1);
+        end
+      end
+    end
+  end
+
+  return maximum(maximum(maximum(dual_con_temp)))
 end
 
 """
@@ -279,7 +334,7 @@ end
 """
 dvs2dfs(n,r)
 
-# funtionality to save state and control data
+# funtionality to save state and control data from optimization
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/10/2017, Last Modified: 2/10/2017 \n
@@ -300,6 +355,33 @@ function dvs2dfs(n::NLOpt,r::Result)
   end
   return dfs
 end
+
+"""
+plant2dfs(n,u,sol)
+
+# funtionality to save state and control data from plant model
+
+# TODO: sometimes plant control models have different states and controls - > take this into account
+# TODO: allow for more general input than output from DifferentialEquations.jl
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 2/14/2017, Last Modified: 2/14/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+function plant2dfs(n::NLOpt,r::Result,u,sol)
+  pts=n.numStatePoints; # can be different
+  dfs_plant=DataFrame();
+  T=linspace(sol.t[1],sol.t[end],pts);
+  dfs_plant[:t]=T;
+  for st in 1:n.numStates
+    dfs_plant[n.state.name[st]]=[sol(t)[st] for t in T];
+  end
+  for ctr in 1:n.numControls
+    dfs_plant[n.control.name[ctr]]= u[ctr];
+  end
+  push!(r.dfs_plant,dfs_plant);
+end
+
 
 """
 opt2dfs(r)
