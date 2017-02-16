@@ -2,7 +2,7 @@ using NLOptControl, JuMP, Parameters, PrettyPlots, Plots
 pgfplots(); main_dir=pwd();
 
 # initialize
-n = NLOpt();
+n = NLOpt(); s=Settings();
 
 # Moon Lander Problem @ http://www.gpops2.com/Examples/MoonLander.html
 const g = 1.62519; # m/s^2
@@ -40,7 +40,7 @@ obj = integrate(mdl,n,r.u[:,1];C=1.0,(:variable=>:control),(:integrand=>:default
 @NLobjective(mdl, Min, obj);
 
 # solve
-optimize(mdl,n,r)
+optimize(mdl,n,r,s)
 
 # post process
 s=Settings(;format=:svg);

@@ -1,6 +1,6 @@
 module NLOptControl
 
-using Media, Dierckx, Parameters, Interpolations, FastGaussQuadrature, Polynomials, JuMP, SymPy, VehicleModels, DataFrames, KNITRO
+using Media, Dierckx, Parameters, Interpolations, FastGaussQuadrature, Polynomials, JuMP, SymPy, VehicleModels, DataFrames, KNITRO, Ipopt
 # To copy a particular piece of code (or function) in some location
 macro def(name, definition)
   return quote
@@ -164,7 +164,7 @@ type Settings <: AbstractNLOpt
 end
 
 # Default Constructor
-function Settings(;format::Symbol=:png,MPC::Bool=true,save::Bool=true,reset::Bool=false)  # consider moving these plotting settings to PrettyPlots.jl
+function Settings(;format::Symbol=:png,MPC::Bool=false,save::Bool=true,reset::Bool=false)  # consider moving these plotting settings to PrettyPlots.jl
 Settings(5.5,    # line width 1
          3,      # line width 2
          700,    # size of figure

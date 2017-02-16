@@ -2,8 +2,7 @@ using NLOptControl, JuMP, Parameters, Plots, VehicleModels, PrettyPlots
 pyplot(); main_dir=pwd();
 
 # initialize
-n = NLOpt();
-
+n = NLOpt(); s = Settings();
 # define
 pa = VparaKB(x0_=0.);  @unpack_VparaKB pa # vehicle parameters
 X0 = [x0_,y0_,psi0_,u0_];
@@ -16,7 +15,7 @@ n = define(n,stateEquations=KinematicBicycle,numStates=4,numControls=2,X0=X0,XF=
 
 # build
 n = configure(n,Ni=2,Nck=[15,10];(:integrationMethod => :ps),(:integrationScheme => :lgrExplicit),(:finalTimeDV => false),(:tf => 4.0))
-defineSolver(n,solver=:KNITRO)
+defineSolver(n,solver=:IPOPT)
 mdl = build(n);
 
 # addtional information
@@ -34,9 +33,9 @@ x_ref = 10; y_ref = 100; # define target
 @NLobjective(mdl, Min, (r.x[end,1]-x_ref)^2 + (r.x[end,2]-y_ref)^2);
 
 # solve
-optimize(mdl,n,r)
+optimize(mdl,n,r,s)
 
 # post process
 cd("results/")
-allPlots(n,r,Settings(),1)
+allPlots(n,r,s,1)
 cd(main_dir)

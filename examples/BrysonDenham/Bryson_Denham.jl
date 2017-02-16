@@ -1,7 +1,7 @@
-using NLOptControl, JuMP, Parameters, Plots
+using NLOptControl, JuMP, Parameters, Plots, Ipopt
 
-# initialize
-n = NLOpt();
+n = NLOpt(); # initialize
+
 function BrysonDenham{T<:Any}(mdl::JuMP.Model,n::NLOpt,r::Result,x::Array{T,2},u::Array{T,2}) # dynamic constraint equations
   if n.integrationMethod==:tm
     L = size(x)[1];
@@ -22,16 +22,19 @@ n = configure(n,Ni=2,Nck=[10,5];(:integrationMethod => :ps),(:integrationScheme 
 ##################################
 # Define JuMP problem
 ##################################
-mdl = Model(solver = IpoptSolver());
-n,r=OCPdef(mdl,n)
+defineSolver(n,solver=:IPOPT)
+mdl = build(n);
+n,r=OCPdef(mdl,n);
 obj = integrate(mdl,n,r.u[:,1];C=0.5,(:variable=>:control),(:integrand=>:squared))
-@NLobjective(mdl, Min, obj)
-result = solve(mdl)
+@NLobjective(mdl, Min, obj);
+s=Settings();
+optimize(mdl,n,r,s);
+
 ####################################
 ## analytic soltion when 0<=L<=1/6
 ###################################
 tol = 10e-3;
-if abs(getvalue(obj) - 4/(9*L)) < tol
+if abs(r.obj_val[1] - 4/(9*L)) < tol
   print("\n Solution is correct to tolerance specs.!! \n \n")
 else
   print(string("\n",
@@ -40,7 +43,7 @@ else
                 "-------------------------------------", "\n",
                 "The following values should be equal:", "\n",
                 "4/(9*L)= ",4/(9*L),"\n",
-                "getvalue(obj) = ",getvalue(obj),"\n"
+                "getvalue(obj) = ",r.obj_val[1],"\n"
                 )
         )
 end
@@ -67,30 +70,30 @@ v_analytic = zeros(Float64,pts,);
 u_analytic = zeros(Float64,pts,);
 
 for i in 1:pts
-if L > 1/6
-  warn("\n analytical solution only valid for L < 1/6!! \n")
-end
-if t[i] < 3*L
-  u_analytic[i]=u1(t[i]);
-  v_analytic[i]=v1(t[i]);
-  x_analytic[i]=x1(t[i]);
-elseif ((3*L <= t[i]) && (t[i] <= (1-3*L)))
-  u_analytic[i]=u2(t[i]);
-  v_analytic[i]=v2(t[i]);
-  x_analytic[i]=x2(t[i]);
-elseif (((1-3*L) <= t[i]) && (t[i] <= 1))
-  u_analytic[i]=u3(t[i]);
-  v_analytic[i]=v3(t[i]);
-  x_analytic[i]=x3(t[i]);
-else
-  error(" \n Not setup for outside of this range \n
-              TRY: t0 = 0. and tf = 1. \n")
-end
+  if L > 1/6
+    warn("\n analytical solution only valid for L < 1/6!! \n")
+  end
+  if t[i] < 3*L
+    u_analytic[i]=u1(t[i]);
+    v_analytic[i]=v1(t[i]);
+    x_analytic[i]=x1(t[i]);
+  elseif ((3*L <= t[i]) && (t[i] <= (1-3*L)))
+    u_analytic[i]=u2(t[i]);
+    v_analytic[i]=v2(t[i]);
+    x_analytic[i]=x2(t[i]);
+  elseif (((1-3*L) <= t[i]) && (t[i] <= 1))
+    u_analytic[i]=u3(t[i]);
+    v_analytic[i]=v3(t[i]);
+    x_analytic[i]=x3(t[i]);
+  else
+    error(" \n Not setup for outside of this range \n
+                TRY: t0 = 0. and tf = 1. \n")
+  end
 end
 ##################################
 # Post Processing
 ##################################
-r=postProcess(n,r); s=Settings();
+postProcess(n,r,s);
 
 p1=plot(t,x_analytic, label = "x analytic",w=s.lw1)
 plot!(r.t_st,r.X[:,1], label = "x interp.",w=s.lw2)
