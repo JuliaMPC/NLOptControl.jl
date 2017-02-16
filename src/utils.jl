@@ -135,38 +135,41 @@ function build(n::NLOpt) #TODO allow user to pass solver options
 end
 
 """
-optimize(mdl,n,r)
+optimize(mdl,n,r,s)
 # solves JuMP model and saves optimization data
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/6/2017, Last Modified: 2/6/2017 \n
+Date Create: 2/6/2017, Last Modified: 2/15/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function optimize(mdl::JuMP.Model, n::NLOpt, r::Result)
+function optimize(mdl::JuMP.Model, n::NLOpt, r::Result, s::Settings)
   t1 = time(); status = JuMP.solve(mdl); t2 = time();
-  push!(r.status,status);
-  push!(r.t_solve,(t2 - t1));
-  push!(r.obj_val, getobjectivevalue(mdl));
-  r.eval_num=length(r.status);
-  postProcess(n,r);
+  if s.save
+    push!(r.status,status);
+    push!(r.t_solve,(t2 - t1));
+    push!(r.obj_val, getobjectivevalue(mdl));
+    r.eval_num=length(r.status);
+  end
+  postProcess(n,r,s);
 end
-
 
 """
 # funtionality to save constraint data
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/7/2017, Last Modified: 2/13/2017 \n
+Date Create: 2/7/2017, Last Modified: 2/15/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 type Constraint
   name::Vector{Any}
   handle::Vector{Any}
   value::Vector{Any}
+  nums  # range of indecies in g(x)
 end
 
 function Constraint()
   Constraint([],
+             [],
              [],
              []);
 end
@@ -186,17 +189,21 @@ end
 
 function evalConstraints(n::NLOpt, r::Result)
   r.constraint.value=[];   # reset values
+  r.constraint.nums=[]; s=1;
   for i = 1:length(r.constraint.handle)
     if r.constraint.name[i]==:dyn_con  # state constraits
       dfs=Vector{DataFrame}(n.numStates);
       con=DataFrame(step=1);
+      l=0;
       for st in 1:n.numStates
         if n.integrationMethod==:ps
           temp=[getdual(r.constraint.handle[i][int][:,st]) for int in 1:n.Ni];
           vals=[idx for tempM in temp for idx=tempM];
           dfs[st]=DataFrame(step=1:sum(n.Nck);Dict(n.state.name[st] => vals)...);
+          l=l+length(vals);
         else
           dfs[st]=DataFrame(step=1:n.N;Dict(n.state.name[st] => getdual(r.constraint.handle[i][:,st]))...);
+          l=l+length(r.constraint.handle[i][:,st]);
         end
         if st==1; con=dfs[st]; else; con=join(con,dfs[st],on=:step); end
       end
@@ -204,6 +211,7 @@ function evalConstraints(n::NLOpt, r::Result)
       S=JuMP.size(r.constraint.handle[i])
       if length(S)==1
         con = DataFrame(step=1:length(r.constraint.handle[i]);Dict(r.constraint.name[i] => getdual(r.constraint.handle[i][:]))...);
+        l=S[1];
       elseif length(S)==2
         dfs=Vector{DataFrame}(S[1]);
         con=DataFrame(step=1);
@@ -211,9 +219,14 @@ function evalConstraints(n::NLOpt, r::Result)
           dfs[idx] = DataFrame(step=1:S[2];Dict(r.constraint.name[i] => getdual(r.constraint.handle[i][idx,:]))...);
           if idx==1; con=dfs[idx]; else; con=join(con,dfs[idx],on=:step); end
         end
+        l=S[1]*S[2];
       end
     end
+    f=s+l-1;
+    num=(i,r.constraint.name[i],@sprintf("length = %0.0f",l),string("indecies in g(x) = "),(s,f));
+    push!(r.constraint.nums,num);
     push!(r.constraint.value,con)
+    s=f+1;
   end
 end
 
@@ -226,7 +239,7 @@ Date Create: 2/13/2017, Last Modified: 2/13/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function evalMaxDualInf(n::NLOpt, r::Result)
-  num=length(r.constraint.handle); dual_con_temp =zeros(num);
+  num=length(r.constraint.handle); dual_con_temp=zeros(num);
   for i = 1:length(r.constraint.handle)
     if !isempty(r.constraint.handle[i])
       if r.constraint.name[i]==:dyn_con  # state constraits
@@ -255,7 +268,6 @@ function evalMaxDualInf(n::NLOpt, r::Result)
       end
     end
   end
-
   return maximum(maximum(maximum(dual_con_temp)))
 end
 
@@ -357,7 +369,7 @@ function dvs2dfs(n::NLOpt,r::Result)
 end
 
 """
-plant2dfs(n,u,sol)
+plant2dfs(n,r,s,u,sol)
 
 # funtionality to save state and control data from plant model
 
@@ -365,23 +377,25 @@ plant2dfs(n,u,sol)
 # TODO: allow for more general input than output from DifferentialEquations.jl
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/14/2017, Last Modified: 2/14/2017 \n
+Date Create: 2/14/2017, Last Modified: 2/15/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function plant2dfs(n::NLOpt,r::Result,u,sol)
+function plant2dfs(n::NLOpt,r::Result,s::Settings,u,sol)
   pts=n.numStatePoints; # can be different
   dfs_plant=DataFrame();
-  T=linspace(sol.t[1],sol.t[end],pts);
-  dfs_plant[:t]=T;
+  dfs_plant[:t]=r.t_st;
   for st in 1:n.numStates
-    dfs_plant[n.state.name[st]]=[sol(t)[st] for t in T];
+    dfs_plant[n.state.name[st]]=[sol(t)[st] for t in r.t_st];
   end
   for ctr in 1:n.numControls
     dfs_plant[n.control.name[ctr]]= u[ctr];
   end
-  push!(r.dfs_plant,dfs_plant);
+  if s.reset
+    r.dfs_plant=[dfs_plant];
+  else
+    push!(r.dfs_plant,dfs_plant);
+  end
 end
-
 
 """
 opt2dfs(r)

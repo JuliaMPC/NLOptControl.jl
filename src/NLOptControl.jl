@@ -159,10 +159,12 @@ type Settings <: AbstractNLOpt
   L::Int64       # length for plotting points
   format::Symbol # format for output plots
   MPC::Bool      # bool for doing MPC
+  save::Bool     # bool for saving data
+  reset::Bool    # bool for reseting data
 end
 
 # Default Constructor
-function Settings(;format::Symbol=:png,MPC::Bool=false)  # consider moving these plotting settings to PrettyPlots.jl
+function Settings(;format::Symbol=:png,MPC::Bool=true,save::Bool=true,reset::Bool=false)  # consider moving these plotting settings to PrettyPlots.jl
 Settings(5.5,    # line width 1
          3,      # line width 2
          700,    # size of figure
@@ -170,7 +172,9 @@ Settings(5.5,    # line width 1
          false,  # bool for simulations
          100,    # length for plotting points
          format, # format for output plots
-         MPC     # bool for doing MPC
+         MPC,    # bool for doing MPC
+         save,   # bool for saving data
+         reset   # bool for reseting data
         );
 end
 
