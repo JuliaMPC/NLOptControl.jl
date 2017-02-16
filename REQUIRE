@@ -6,3 +6,5 @@ Ipopt
 JuMP
 SymPy  # used for validation
 DataFrames
+PrettyPlots
+VehicleModels
