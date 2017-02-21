@@ -1,6 +1,6 @@
 module NLOptControl
 
-using Media, Dierckx, Parameters, Interpolations, FastGaussQuadrature, Polynomials, JuMP, SymPy, VehicleModels, DataFrames, Ipopt
+using Media, Dierckx, Parameters, Interpolations, FastGaussQuadrature, Polynomials, JuMP, SymPy, VehicleModels, DataFrames, Ipopt, KNITRO
 # To copy a particular piece of code (or function) in some location
 macro def(name, definition)
   return quote
@@ -60,7 +60,7 @@ type NLOpt <: AbstractNLOpt
   finalTimeDV::Bool
   integrationMethod::Symbol
   integrationScheme::Symbol
-  solver::Symbol              # solver
+  solver::Symbol                 # solver
 end
 
 # Default Constructor
@@ -106,23 +106,25 @@ end
 # Result Class
 abstract AbstractNLOpt
 type Result <: AbstractNLOpt
-  t_ctr  # time vector for control
-  t_st   # time vector for state
-  x      # JuMP states
-  u      # JuMP controls
-  X      # states
-  U      # controls
-  x0_con # handle for intial state constraints
-  xf_con # handle for final state constraints
-  dyn_con # dynamics constraints
-  constraint  # constraint handels and data
-  eval_num::Int64 # number of times optimization has been run
-  status::Vector{Symbol} # optimization status
-  t_solve::Vector{Float64} # solve time for optimization
-  obj_val::Vector{Float64} # objective function value
-  dfs # results in DataFrame for plotting
-  dfs_opt # optimization information in DataFrame for plotting
-  dfs_plant # plant data
+  t_ctr                       # time vector for control
+  t_st                        # time vector for state
+  x                           # JuMP states
+  u                           # JuMP controls
+  X                           # states
+  U                           # controls
+  x0_con                      # handle for intial state constraints
+  xf_con                      # handle for final state constraints
+  dyn_con                     # dynamics constraints
+  constraint                  # constraint handels and data
+  eval_num::Int64             # number of times optimization has been run
+  iter_nums::Vector{Any}      # mics. data, perhaps an iteration number for a higher level algorithm
+  status::Vector{Symbol}      # optimization status
+  t_solve::Vector{Float64}    # solve time for optimization
+  obj_val::Vector{Float64}    # objective function value
+  dfs                         # results in DataFrame for plotting
+  dfs_opt                     # optimization information in DataFrame for plotting
+  dfs_plant                   # plant data
+  dfs_con                     # constraint data
 end
 
 # Default Constructor
@@ -138,12 +140,14 @@ Result( Vector{Any}[], # time vector for control
         nothing,       # dynamics constraint
         nothing,       # constraint data
         0,             # number of times optimization has been run
+        [],            # mics. data, perhaps an iteration number for a higher level algorithm
         Symbol[],      # optimization status
         Float64[],     # solve time for optimization
         Float64[],     # objective function value
         [],            # results in DataFrame for plotting
         [],            # optimization information in DataFrame for plotting
-        []             # plant data
+        [],            # plant data
+        []             # constraint data
       );
 end
 

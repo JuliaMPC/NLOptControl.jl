@@ -125,10 +125,12 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/9/2017, Last Modified: 2/15/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function build(n::NLOpt) #TODO allow user to pass solver options
+#TODO allow user to pass solver options
+function build(n::NLOpt)
   if n.solver==:IPOPT
     mdl=Model(solver=IpoptSolver());
   else n.solver==:KNITRO
+    using KNITRO
     mdl=Model(solver=KnitroSolver());
   end
   return mdl
@@ -136,21 +138,24 @@ end
 
 """
 optimize(mdl,n,r,s)
+
 # solves JuMP model and saves optimization data
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/6/2017, Last Modified: 2/15/2017 \n
+Date Create: 2/6/2017, Last Modified: 2/20/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function optimize(mdl::JuMP.Model, n::NLOpt, r::Result, s::Settings)
+function optimize(mdl::JuMP.Model, n::NLOpt, r::Result, s::Settings;Iter::Int64=0)
   t1 = time(); status = JuMP.solve(mdl); t2 = time();
   if s.save
     push!(r.status,status);
     push!(r.t_solve,(t2 - t1));
     push!(r.obj_val, getobjectivevalue(mdl));
+    push!(r.iter_nums,Iter); # iteration number for a higher level algorithm
     r.eval_num=length(r.status);
   end
   postProcess(n,r,s);
+  return status
 end
 
 """
@@ -225,7 +230,7 @@ function evalConstraints(n::NLOpt, r::Result)
     f=s+l-1;
     num=(i,r.constraint.name[i],@sprintf("length = %0.0f",l),string("indecies in g(x) = "),(s,f));
     push!(r.constraint.nums,num);
-    push!(r.constraint.value,con)
+    push!(r.constraint.value,con);
     s=f+1;
   end
 end
@@ -403,7 +408,7 @@ opt2dfs(r)
 # funtionality to save optimization data
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/10/2017, Last Modified: 2/10/2017 \n
+Date Create: 2/10/2017, Last Modified: 2/20/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function opt2dfs(r::Result)
@@ -413,6 +418,21 @@ function opt2dfs(r::Result)
   dfs_opt[:t_solve]=r.t_solve[1:idx]
   dfs_opt[:obj_val]=r.obj_val[1:idx]
   dfs_opt[:status]=r.status[1:idx]
-  #dfs_opt[:eval_num]=r.eval_num
+  dfs_opt[:iter_num]=r.iter_nums[idx];
   return dfs_opt
+end
+
+"""
+con2dfs(r)
+
+# funtionality to save constraint data
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 2/20/2017, Last Modified: 2/20/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+function con2dfs(r::Result)
+  dfs_con=DataFrame()
+  dfs_con[:con_val]=r.constraint.value;
+  return dfs_con
 end
