@@ -10,15 +10,76 @@ macro def(name, definition)
   end
 end
 
+################################################################################
+# Basic Types
+################################################################################
+############################### control ########################################
+type Control #TODO correlate these with JuMP variables
+  name::Vector{Any}
+  description::Vector{Any}
+end
+function Control()
+  Control([],
+          []);
+end
+
+# ############################# state  ##########################################
+type State #TODO correlate these with JuMP variables
+  # constants
+  name::Vector{Any}
+  description::Vector{Any}
+end
+function State()
+  State([],
+        []);
+end
+
+############################## constraint ######################################
+type Constraint
+  name::Vector{Any}
+  handle::Vector{Any}
+  value::Vector{Any}
+  nums  # range of indecies in g(x)
+end
+function Constraint()
+  Constraint([],
+             [],
+             [],
+             []);
+end
+
+############################## mpc #############################################
+type MPC
+  # constants
+  tp::Float64          # predication time (if finalTimeDV == true -> this is not known before optimization)
+  tex::Float64         # execution horizon time
+  max_iter::Int64      # maximum number of iterations
+
+  # variables
+  goal_reached::Bool   # flag  to indicate that goal has been reached
+  t0::Float64          # inital time
+  tf::Float64          # final time
+end
+function MPC()
+  MPC(0.0,
+      0.0,
+      0,
+      false,
+      0.0,
+      0.0);
+end
+
+################################################################################
 # Model Class
+################################################################################
 abstract AbstractNLOpt
 type NLOpt <: AbstractNLOpt
   # general properties
   stateEquations
   numStates::Int64          # number of states
-  state
+  state::State              # state data
   numControls::Int64        # number of controls
-  control
+  control::Control          # control data
   numPoints::Array{Int64,1} # number of dv discretization within each interval
   numStatePoints::Int64     # number of dvs per state
   numControlPoints::Int64   # numer of dvs per control
@@ -33,7 +94,7 @@ type NLOpt <: AbstractNLOpt
   XF::Array{Float64,1}      # final state conditions
   XF_tol::Array{Float64,1}  # final state tolerance
 
-  # linear bounds on variables
+  # linear bounds on variables 
   XL::Array{Float64,1}
   XU::Array{Float64,1}
   CL::Array{Float64,1}
@@ -56,6 +117,9 @@ type NLOpt <: AbstractNLOpt
   # bools
   define::Bool
 
+  # mpc data
+  mpc::MPC
+
   # options
   finalTimeDV::Bool
   integrationMethod::Symbol
@@ -67,9 +131,9 @@ end
 function NLOpt()
 NLOpt(Any,                # state equations
       0,                  # number of states
-      Symbol[],           # states
+      State(),            # state data
       0,                  # number of controls
-      Symbol[],           # controls
+      Control(),          # control data
       Int[],              # number of dv discretization within each interval
       0,                  # number of dvs per state
       0,                  # number of dvs per control
@@ -96,6 +160,7 @@ NLOpt(Any,                # state equations
       0,                  # number of points in discretization
       Any[],              # array of dts
       false,              # bool to indicate if problem has been defined
+      MPC(),              # mpc data
       false,              # finalTimeDV
       :ts,                # integrtionMethod
       :bkwEuler,          # integrationScheme
@@ -115,7 +180,7 @@ type Result <: AbstractNLOpt
   x0_con                      # handle for intial state constraints
   xf_con                      # handle for final state constraints
   dyn_con                     # dynamics constraints
-  constraint                  # constraint handels and data
+  constraint::Constraint      # constraint handels and data
   eval_num::Int64             # number of times optimization has been run
   iter_nums::Vector{Any}      # mics. data, perhaps an iteration number for a higher level algorithm
   status::Vector{Symbol}      # optimization status
@@ -138,7 +203,7 @@ Result( Vector{Any}[], # time vector for control
         nothing,       # handle for intial state constraints
         nothing,       # handle for final state constraints
         nothing,       # dynamics constraint
-        nothing,       # constraint data
+        Constraint(),  # constraint data  TODO consider moving this
         0,             # number of times optimization has been run
         [],            # mics. data, perhaps an iteration number for a higher level algorithm
         Symbol[],      # optimization status
@@ -224,6 +289,9 @@ export
 
        # MPC
        simPlant,
+       mpcParams,
+       mpcUpdate,
+       updateX0,
 
        # Objects
        NLOpt,

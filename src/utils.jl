@@ -158,30 +158,19 @@ function optimize(mdl::JuMP.Model, n::NLOpt, r::Result, s::Settings;Iter::Int64=
   return status
 end
 
+########################################################################################
+# constraint data functions
+########################################################################################
 """
 # funtionality to save constraint data
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/7/2017, Last Modified: 2/15/2017 \n
+Date Create: 2/7/2017, Last Modified: 3/6/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-type Constraint
-  name::Vector{Any}
-  handle::Vector{Any}
-  value::Vector{Any}
-  nums  # range of indecies in g(x)
-end
-
-function Constraint()
-  Constraint([],
-             [],
-             [],
-             []);
-end
-
 function newConstraint(r::Result,handle,name::Symbol)
   initConstraint(r)
-  constraint::Constraint = r.constraint
+  r.constraint::Constraint = r.constraint
   push!(r.constraint.handle,handle)
   push!(r.constraint.name,name)
 end
@@ -276,26 +265,21 @@ function evalMaxDualInf(n::NLOpt, r::Result)
   return maximum(maximum(maximum(dual_con_temp)))
 end
 
+########################################################################################
+# state data functions
+########################################################################################
 """
-# funtionality for state data
+# initialize state names
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/7/2017, Last Modified: 2/7/2017 \n
+Date Create: 2/7/2017, Last Modified: 3/6/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-type State #TODO correlate these with JuMP variables
-  name::Vector{Any}
-  description::Vector{Any}
-end
-
-function State()
-  State([],
-        []);
-end
 
 function initStateNames(n::NLOpt)
   State([Symbol("x$i") for i in 1:n.numStates],
-        [String("x$i") for i in 1:n.numStates]);
+        [String("x$i") for i in 1:n.numStates],
+       );
 end
 
 function stateNames(n::NLOpt,names,descriptions)
@@ -313,22 +297,44 @@ function stateNames(n::NLOpt,names,descriptions)
 end
 
 """
-# funtionality for control data
+updateX0(n,r)                           # uses solution from current plant data
+updateX0(n,r;X0=X0,(:userUpdate=>true)) # user defined update of X0
+# updates intial states
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/7/2017, Last Modified: 2/7/2017 \n
+Date Create: 3/6/2017, Last Modified: 3/6/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-type Control #TODO correlate these with JuMP variables
-  name::Vector{Any}
-  description::Vector{Any}
+function updateX0(n::NLOpt,r::Result;X0::Array{Float64,1}=zeros(Float64,n.numStates,1),kwargs...)
+  kw = Dict(kwargs);
+  # check to see how the intial states are being updated
+  if !haskey(kw,:userUpdate); kw_ = Dict(:userUpdate => false); userUpdate = get(kw_,:userUpdate,0);
+  else; userUpdate = get(kw,:userUpdate,0);
+  end
+
+  if userUpdate
+    if length(X0) != n.numStates
+      error(string("\n Length of X0 must match number of states \n"));
+    end
+    n.X0 = X0;
+  else # update using current location of plant
+    for st in 1:n.numStates
+      n.X0[st] = r.dfs_plant[n.state.name[st]][end];
+    end
+  end
+
 end
 
-function Control()
-  Control([],
-        []);
-end
-
+########################################################################################
+# control data functions
+########################################################################################
+"""
+# initialize control names
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 2/7/2017, Last Modified: 3/6/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
 function initControlNames(n::NLOpt)
   Control([Symbol("u$i") for i in 1:n.numControls],
           [String("u$i") for i in 1:n.numControls]);
@@ -348,6 +354,35 @@ function controlNames(n::NLOpt,names,descriptions)
   end
 end
 
+########################################################################################
+# mpc functions
+########################################################################################
+"""
+# initialize mpc parameter settings
+# this function is designed to be called once
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 3/6/2017, Last Modified: 3/6/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+function mpcParams(n::NLOpt;tp::Float64=0.0,tex::Float64=0.0,max_iter::Int64=10)
+  n.mpc::MPC = MPC(); # reset
+  n.mpc.tp = tp;
+  n.mpc.tex = tex;
+  n.mpc.max_iter = max_iter;
+end
+
+function mpcUpdate(n::NLOpt,r::Result;goal_reached::Bool=false)
+  n.mpc.goal_reached = goal_reached;
+  if !n.mpc.goal_reached
+    n.mpc.t0 = n.mpc.tex*r.eval_num;
+    n.mpc.tf = n.mpc.tex*(r.eval_num+1);
+  end
+end
+
+########################################################################################
+# data saving functions
+########################################################################################
 """
 dvs2dfs(n,r)
 
@@ -382,19 +417,23 @@ plant2dfs(n,r,s,u,sol)
 # TODO: allow for more general input than output from DifferentialEquations.jl
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/14/2017, Last Modified: 2/15/2017 \n
+Date Create: 2/14/2017, Last Modified: 3/6/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function plant2dfs(n::NLOpt,r::Result,s::Settings,u,sol)
-  pts=n.numStatePoints; # can be different
+
+  t_sample=linspace(sol.t[1],sol.t[end],length(u[1]));
   dfs_plant=DataFrame();
-  dfs_plant[:t]=r.t_st;
+  dfs_plant[:t]=t_sample;
+
   for st in 1:n.numStates
-    dfs_plant[n.state.name[st]]=[sol(t)[st] for t in r.t_st];
+    dfs_plant[n.state.name[st]]=[sol(t)[st] for t in t_sample];
   end
+
   for ctr in 1:n.numControls
     dfs_plant[n.control.name[ctr]]= u[ctr];
   end
+
   if s.reset
     r.dfs_plant=[dfs_plant];
   else
