@@ -1,8 +1,7 @@
 using NLOptControl, JuMP, Parameters, PrettyPlots, Plots
-pgfplots(); main_dir=pwd();
+gr(); main_dir=pwd();s=Settings();
 
-# initialize
-n = NLOpt(); s=Settings();
+n = NLOpt(); # initialize
 
 # Moon Lander Problem @ http://www.gpops2.com/Examples/MoonLander.html
 const g = 1.62519; # m/s^2
@@ -29,7 +28,7 @@ n = configure(n,Ni=4,Nck=[5,5,4,6];(:integrationMethod => :ps),(:integrationSche
 #n = configure(n,N=30;(:integrationMethod => :tm),(:integrationScheme => :trapezoidal),(:finalTimeDV => true))
 
 # addtional information
-defineSolver(n,solver=:KNITRO)
+#defineSolver(n,solver=:KNITRO)
 XF_tol = [0.1, 0.1]; X0_tol = [0.1, 0.1]; defineTolerances(n;X0_tol=X0_tol,XF_tol=XF_tol);
 names = [:h,:v]; descriptions = ["h(t)","v(t)"]; stateNames(n,names,descriptions);
 

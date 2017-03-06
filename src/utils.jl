@@ -122,7 +122,7 @@ mdl=build(n)
 # build JuMP model
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/9/2017, Last Modified: 2/15/2017 \n
+Date Create: 2/9/2017, Last Modified: 2/22/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 #TODO allow user to pass solver options
@@ -130,7 +130,6 @@ function build(n::NLOpt)
   if n.solver==:IPOPT
     mdl=Model(solver=IpoptSolver());
   else n.solver==:KNITRO
-    using KNITRO
     mdl=Model(solver=KnitroSolver());
   end
   return mdl
