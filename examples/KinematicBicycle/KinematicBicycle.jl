@@ -1,4 +1,4 @@
-using NLOptControl, JuMP, Parameters, Plots, VehicleModels, PrettyPlots
+using NLOptControl, JuMP, Parameters, Plots, VehicleModels
 pyplot(); main_dir=pwd();
 
 # initialize

@@ -1,4 +1,4 @@
-using NLOptControl, JuMP, Parameters, PrettyPlots, Plots
+using NLOptControl, JuMP, Parameters, Plots
 gr(); main_dir=pwd();s=Settings();
 
 n = NLOpt(); # initialize
@@ -42,7 +42,7 @@ obj = integrate(mdl,n,r.u[:,1];C=1.0,(:variable=>:control),(:integrand=>:default
 optimize(mdl,n,r,s)
 
 # post process
-s=Settings(;format=:svg);
+s=Settings(;format=:png);
 cd("results/")
 allPlots(n,r,s,1)
 cd(main_dir)

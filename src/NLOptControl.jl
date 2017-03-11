@@ -1,6 +1,6 @@
 module NLOptControl
 
-using Media, Dierckx, Parameters, Interpolations, FastGaussQuadrature, Polynomials, JuMP, SymPy, VehicleModels, DataFrames, Ipopt, KNITRO
+using Media, Plots, VehicleModels, Dierckx, Parameters, Interpolations, FastGaussQuadrature, Polynomials, JuMP, SymPy, VehicleModels, DataFrames, Ipopt, KNITRO
 # To copy a particular piece of code (or function) in some location
 macro def(name, definition)
   return quote
@@ -94,7 +94,7 @@ type NLOpt <: AbstractNLOpt
   XF::Array{Float64,1}      # final state conditions
   XF_tol::Array{Float64,1}  # final state tolerance
 
-  # linear bounds on variables 
+  # linear bounds on variables
   XL::Array{Float64,1}
   XU::Array{Float64,1}
   CL::Array{Float64,1}
@@ -190,6 +190,7 @@ type Result <: AbstractNLOpt
   dfs_opt                     # optimization information in DataFrame for plotting
   dfs_plant                   # plant data
   dfs_con                     # constraint data
+  results_dir                 # string that defines results folder
 end
 
 # Default Constructor
@@ -212,7 +213,8 @@ Result( Vector{Any}[], # time vector for control
         [],            # results in DataFrame for plotting
         [],            # optimization information in DataFrame for plotting
         [],            # plant data
-        []             # constraint data
+        [],            # constraint data
+        "",            # string that defines results folder
       );
 end
 
@@ -222,6 +224,8 @@ type Settings <: AbstractNLOpt
   # plotting
   lw1::Float64   # line width 1
   lw2::Float64   # line width 2
+  ms1::Float64   # marker size 1
+  ms2::Float64   # marker size 2
   s1::Int64      # size of figure
   s2::Int64      # size of figure
   simulate::Bool # bool for simulation
@@ -233,12 +237,14 @@ type Settings <: AbstractNLOpt
 end
 
 # Default Constructor
-function Settings(;format::Symbol=:png,MPC::Bool=false,save::Bool=true,reset::Bool=false)  # consider moving these plotting settings to PrettyPlots.jl
+function Settings(;format::Symbol=:png,MPC::Bool=false,save::Bool=true,reset::Bool=false,simulate::Bool=false)  # consider moving these plotting settings to PrettyPlots.jl
 Settings(5.5,    # line width 1
-         3,      # line width 2
+         3.,     # line width 2
+         1.0,    # marker size 1
+         5.0,    # marker size 2
          700,    # size of figure
          1000,   # size of figure
-         false,  # bool for simulations
+         simulate,  # bool for simulations
          100,    # length for plotting points
          format, # format for output plots
          MPC,    # bool for doing MPC
@@ -253,7 +259,7 @@ include("setup.jl")
 include("ps.jl");
 include("ocp.jl")
 include("post_processing.jl")
-
+include("PrettyPlots.jl")
        # Functions
 export
        # setup functions
@@ -296,5 +302,12 @@ export
        # Objects
        NLOpt,
        Result,
-       Settings
+       Settings,
+
+       # Plotting
+       adjust_axis,
+       resultsDir,
+       statePlot,
+       controlPlot,
+       allPlots
 end

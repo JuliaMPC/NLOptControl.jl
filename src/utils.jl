@@ -297,28 +297,28 @@ end
 
 """
 updateX0(n,r)                           # uses solution from current plant data
-updateX0(n,r;X0=X0,(:userUpdate=>true)) # user defined update of X0
+updateX0(n,r,X0;(:userUpdate=>true))    # user defined update of X0
 # updates intial states
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 3/6/2017, Last Modified: 3/6/2017 \n
+Date Create: 3/6/2017, Last Modified: 3/10/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function updateX0(n::NLOpt,r::Result;X0::Array{Float64,1}=zeros(Float64,n.numStates,1),kwargs...)
+function updateX0(n::NLOpt,r::Result,args...;kwargs...)
   kw = Dict(kwargs);
   # check to see how the intial states are being updated
   if !haskey(kw,:userUpdate); kw_ = Dict(:userUpdate => false); userUpdate = get(kw_,:userUpdate,0);
   else; userUpdate = get(kw,:userUpdate,0);
   end
-
   if userUpdate
+    X0=args[1];
     if length(X0) != n.numStates
       error(string("\n Length of X0 must match number of states \n"));
     end
-    n.X0 = X0;
+    n.X0=X0;
   else # update using current location of plant
     for st in 1:n.numStates
-      n.X0[st] = r.dfs_plant[n.state.name[st]][end];
+      n.X0[st]=r.dfs_plant[end][n.state.name[st]][end];
     end
   end
 
@@ -374,8 +374,8 @@ end
 function mpcUpdate(n::NLOpt,r::Result;goal_reached::Bool=false)
   n.mpc.goal_reached = goal_reached;
   if !n.mpc.goal_reached
-    n.mpc.t0 = n.mpc.tex*r.eval_num;
-    n.mpc.tf = n.mpc.tex*(r.eval_num+1);
+    n.mpc.t0 = n.mpc.tex*(r.eval_num-1);
+    n.mpc.tf = n.mpc.tex*r.eval_num;
   end
 end
 
@@ -393,7 +393,7 @@ Date Create: 2/10/2017, Last Modified: 2/10/2017 \n
 """
 function dvs2dfs(n::NLOpt,r::Result)
   dfs=DataFrame()
-  dfs[:t]=r.t_st;
+  dfs[:t]=r.t_st + n.mpc.t0;
   for i in 1:n.numStates
     dfs[n.state.name[i]]=r.X[:,i];
   end

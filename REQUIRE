@@ -13,7 +13,7 @@ KNITRO
 Plots
 GR
 PGFPlots
-PrettyPlots
+ImageMagick  # TODO consider moving plotting things to PrettyPlots
 WinRPM
 Sundials
 MbedTLS

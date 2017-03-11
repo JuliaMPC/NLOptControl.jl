@@ -1,4 +1,4 @@
-using NLOptControl, JuMP, Parameters, PrettyPlots, Plots, KNITRO
+using NLOptControl, JuMP, Parameters, Plots, KNITRO
 gr(); main_dir=pwd();
 n = NLOpt(); s=Settings(); # initialize
 
