@@ -6,7 +6,6 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/10/2017, Last Modified: 2/17/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-
 function resultsDir(results_dir::String)
 	if isdir(results_dir)
 		rm(results_dir; recursive=true)
@@ -60,7 +59,11 @@ function statePlot(n::NLOpt,r::Result,s::Settings,idx::Int64,st::Int64,args...;k
   else; legend_string = get(kw,:legend,0);
   end
 
-  t_vec = linspace(r.dfs[1][:t][1],round(r.dfs[end][:t][end]/10)*10,s.L);
+	if !s.MPC && !isnan(r.dfs[idx])
+  	t_vec=linspace(r.dfs[1][:t][1],round(r.dfs[end][:t][end]/10)*10,s.L);
+	else
+		t_vec=linspace(r.dfs_plant[1][:t][1],round(r.dfs_plant[end][:t][end]/10)*10,s.L);
+	end
 
   # plot the limits
   if lims
@@ -69,7 +72,9 @@ function statePlot(n::NLOpt,r::Result,s::Settings,idx::Int64,st::Int64,args...;k
   end
 
   # plot the values
-  plot!(r.dfs[idx][:t],r.dfs[idx][n.state.name[st]],w=s.lw1,label=string(legend_string,"mpc"));
+	if r.dfs[idx]!=nothing
+  	plot!(r.dfs[idx][:t],r.dfs[idx][n.state.name[st]],w=s.lw1,label=string(legend_string,"mpc"));
+	end
   if s.MPC
 		# values
 		temp = [r.dfs_plant[jj][n.state.name[st]] for jj in 1:idx];
@@ -82,8 +87,7 @@ function statePlot(n::NLOpt,r::Result,s::Settings,idx::Int64,st::Int64,args...;k
     plot!(time,vals,w=s.lw2,label=string(legend_string,"plant"));
   end
   adjust_axis(xlims(),ylims());
-	xlims!(r.dfs[1][:t][1],round(r.dfs[end][:t][end]/10)*10)
-
+	xlims!(t_vec[1],t_vec[end]);
   plot!(size=(s.s1,s.s1));
   yaxis!(n.state.description[st]); xaxis!("time (s)");
   if !s.simulate; savefig(string(r.results_dir,n.state.name[st],".",s.format)); end
@@ -129,7 +133,10 @@ function statePlot(n::NLOpt,r::Result,s::Settings,idx::Int64,st1::Int64,st2::Int
   end
 
   # plot the values
-  plot!(r.dfs[idx][n.state.name[st1]],r.dfs[idx][n.state.name[st2]],w=s.lw1,label=string(legend_string,"mpc"));
+	if r.dfs[idx]!=nothing
+		plot!(r.dfs[idx][n.state.name[st1]],r.dfs[idx][n.state.name[st2]],w=s.lw1,label=string(legend_string,"mpc"));
+	end
+
   if s.MPC
 		# values
 		temp = [r.dfs_plant[jj][n.state.name[st1]] for jj in 1:idx];
@@ -140,7 +147,6 @@ function statePlot(n::NLOpt,r::Result,s::Settings,idx::Int64,st1::Int64,st2::Int
 		vals2=[idx for tempM in temp for idx=tempM];
 
 		plot!(vals1,vals2,w=s.lw2,label=string(legend_string,"plant"));
-    #plot!(r.dfs_plant[idx][n.state.name[st1]],r.dfs_plant[idx][n.state.name[st2]],w=s.lw2,label=string(legend_string,"plant"));
   end
   adjust_axis(xlims(),ylims());
   plot!(size=(s.s1,s.s1));
@@ -177,7 +183,12 @@ function controlPlot(n::NLOpt,r::Result,s::Settings,idx::Int64,ctr::Int64,args..
   if !haskey(kw,:legend); kw_ = Dict(:legend => ""); legend_string = get(kw_,:legend,0);
   else; legend_string = get(kw,:legend,0);
   end
-	t_vec = linspace(r.dfs[1][:t][1],round(r.dfs[end][:t][end]/10)*10,s.L);
+
+	if !s.MPC && r.dfs[idx]!=nothing
+  	t_vec=linspace(r.dfs[1][:t][1],round(r.dfs[end][:t][end]/10)*10,s.L);
+	else
+		t_vec=linspace(r.dfs_plant[1][:t][1],round(r.dfs_plant[end][:t][end]/10)*10,s.L);
+	end
 
   # plot the limits
   if lims
@@ -186,7 +197,9 @@ function controlPlot(n::NLOpt,r::Result,s::Settings,idx::Int64,ctr::Int64,args..
   end
 
   # plot the values
-  plot!(r.dfs[idx][:t],r.dfs[idx][n.control.name[ctr]],w=s.lw1,label=string(legend_string,"mpc"));
+	if r.dfs[idx]!=nothing
+  	plot!(r.dfs[idx][:t],r.dfs[idx][n.control.name[ctr]],w=s.lw1,label=string(legend_string,"mpc"));
+	end
   if s.MPC
 		# values
 		temp = [r.dfs_plant[jj][n.state.name[st]] for jj in 1:idx];
@@ -197,10 +210,9 @@ function controlPlot(n::NLOpt,r::Result,s::Settings,idx::Int64,ctr::Int64,args..
 		time=[idx for tempM in temp for idx=tempM];
 
 		plot!(time,vals,w=s.lw2,label=string(legend_string,"plant"));
-    #plot!(r.dfs_plant[idx][:t],r.dfs_plant[idx][n.control.name[ctr]],w=s.lw2,label=string(legend_string,"plant"));
   end
   adjust_axis(xlims(),ylims());
-	xlims!(r.dfs[1][:t][1],round(r.dfs[end][:t][end]/10)*10);
+	xlims!(t_vec[1],t_vec[end]);
   plot!(size=(s.s1,s.s1));
   yaxis!(n.control.description[ctr]);	xaxis!("time (s)");
 	if !s.simulate savefig(string(r.results_dir,n.control.name[ctr],".",s.format)) end

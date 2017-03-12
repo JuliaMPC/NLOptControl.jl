@@ -321,7 +321,6 @@ function updateX0(n::NLOpt,r::Result,args...;kwargs...)
       n.X0[st]=r.dfs_plant[end][n.state.name[st]][end];
     end
   end
-
 end
 
 ########################################################################################
