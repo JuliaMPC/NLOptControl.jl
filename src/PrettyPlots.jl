@@ -62,7 +62,7 @@ function statePlot(n::NLOpt,r::Result,s::Settings,idx::Int64,st::Int64,args...;k
 	if !s.MPC && !isnan(r.dfs[idx])
   	t_vec=linspace(r.dfs[1][:t][1],round(r.dfs[end][:t][end]/10)*10,s.L);
 	else
-		t_vec=linspace(r.dfs_plant[1][:t][1],round(r.dfs_plant[end][:t][end]/10)*10,s.L);
+		t_vec=linspace(r.dfs_plant[1][:t][1],max(5,round(r.dfs_plant[end][:t][end]/5)*5),s.L);
 	end
 
   # plot the limits
@@ -187,7 +187,7 @@ function controlPlot(n::NLOpt,r::Result,s::Settings,idx::Int64,ctr::Int64,args..
 	if !s.MPC && r.dfs[idx]!=nothing
   	t_vec=linspace(r.dfs[1][:t][1],round(r.dfs[end][:t][end]/10)*10,s.L);
 	else
-		t_vec=linspace(r.dfs_plant[1][:t][1],round(r.dfs_plant[end][:t][end]/10)*10,s.L);
+		t_vec=linspace(r.dfs_plant[1][:t][1],max(5,round(r.dfs_plant[end][:t][end]/5)*5),s.L);
 	end
 
   # plot the limits

@@ -448,14 +448,36 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/10/2017, Last Modified: 2/20/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function opt2dfs(r::Result)
-  id = find(r.t_solve)
-  idx = id[end]
+function opt2dfs(r::Result;kwargs...)
+
+  kw = Dict(kwargs);
+  # check to see if the user is initializing while compensating for control delay
+  if !haskey(kw,:Init); kw_ = Dict(:Init => false); Init = get(kw_,:Init,0);
+  else; Init = get(kw,:Init,0);
+  end
+
   dfs_opt=DataFrame()
-  dfs_opt[:t_solve]=r.t_solve[1:idx]
-  dfs_opt[:obj_val]=r.obj_val[1:idx]
-  dfs_opt[:status]=r.status[1:idx]
-  dfs_opt[:iter_num]=r.iter_nums[idx];
+
+  if !Init
+    id = find(r.t_solve)
+    idx = id[end]
+    dfs_opt[:t_solve]=r.t_solve[1:idx]
+    dfs_opt[:obj_val]=r.obj_val[1:idx]
+    dfs_opt[:status]=r.status[1:idx]
+    dfs_opt[:iter_num]=r.iter_nums[idx];
+  else
+    # find a better spot for this TODO consider eliminating altogether
+    push!(r.t_solve,0.0);
+    push!(r.obj_val,0.0);
+    push!(r.status,:Init);
+    push!(r.iter_nums,0);
+
+    dfs_opt[:t_solve]=r.t_solve[1]
+    dfs_opt[:obj_val]=r.obj_val[1]
+    dfs_opt[:status]=r.status[1]
+    dfs_opt[:iter_num]=r.iter_nums[1];
+  end
+
   return dfs_opt
 end
 

@@ -56,11 +56,13 @@ type MPC
   max_iter::Int64      # maximum number of iterations
 
   # variables
-  goal_reached::Bool     # flag  to indicate that goal has been reached
-  t0::Float64            # inital time
-  tf::Float64            # final time
-  X0p::Array{Float64,1}  # predicted initial states
+  goal_reached::Bool           # flag  to indicate that goal has been reached
+  t0::Float64                  # inital time
+  tf::Float64                  # final time
+  X0p::Array{Float64,1}        # predicted initial states
+  u::Array{Array{Float64,1},1} # all control signals 
 end
+
 function MPC()
   MPC(0.0,
       0.0,
@@ -68,8 +70,8 @@ function MPC()
       false,
       0.0,
       0.0,
-      Float64[]  # predicted intial state conditions
-      );
+      Float64[],          # predicted intial state conditions
+      Vector{Float64}[]);
 end
 
 ################################################################################
