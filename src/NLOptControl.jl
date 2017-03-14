@@ -60,7 +60,7 @@ type MPC
   t0::Float64                  # inital time
   tf::Float64                  # final time
   X0p::Array{Float64,1}        # predicted initial states
-  u::Array{Array{Float64,1},1} # all control signals 
+  u::Array{Array{Float64,1},1} # all control signals
 end
 
 function MPC()
@@ -219,7 +219,7 @@ Result( Vector{Any}[], # time vector for control
         [],            # optimization information in DataFrame for plotting
         [],            # plant data
         [],            # constraint data
-        "",            # string that defines results folder
+        "/results/",   # string that defines results folder
       );
 end
 
