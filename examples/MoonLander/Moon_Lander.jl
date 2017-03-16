@@ -29,7 +29,7 @@ n = configure(n,Ni=4,Nck=[5,5,4,6];(:integrationMethod => :ps),(:integrationSche
 
 # addtional information
 #defineSolver(n,solver=:KNITRO)
-XF_tol = [0.1, 0.1]; X0_tol = [0.1, 0.1]; defineTolerances(n;X0_tol=X0_tol,XF_tol=XF_tol);
+XF_tol = [0.001, 0.001]; X0_tol = [0.001, 0.001]; defineTolerances(n;X0_tol=X0_tol,XF_tol=XF_tol);
 names = [:h,:v]; descriptions = ["h(t)","v(t)"]; stateNames(n,names,descriptions);
 
 # setup OCP
@@ -43,6 +43,4 @@ optimize(mdl,n,r,s)
 
 # post process
 s=Settings(;format=:png);
-cd("results/")
 allPlots(n,r,s,1)
-cd(main_dir)

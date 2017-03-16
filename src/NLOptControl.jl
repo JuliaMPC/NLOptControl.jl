@@ -219,7 +219,7 @@ Result( Vector{Any}[], # time vector for control
         [],            # optimization information in DataFrame for plotting
         [],            # plant data
         [],            # constraint data
-        "/results/",   # string that defines results folder
+        "./results/",   # string that defines results folder
       );
 end
 

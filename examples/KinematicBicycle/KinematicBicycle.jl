@@ -1,5 +1,5 @@
 using NLOptControl, JuMP, Parameters, Plots, VehicleModels
-pyplot(); main_dir=pwd();
+gr(); main_dir=pwd();
 
 # initialize
 n = NLOpt(); s = Settings();
@@ -36,6 +36,4 @@ x_ref = 10; y_ref = 100; # define target
 optimize(mdl,n,r,s)
 
 # post process
-cd("results/")
 allPlots(n,r,s,1)
-cd(main_dir)

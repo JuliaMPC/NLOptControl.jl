@@ -60,7 +60,7 @@ function statePlot(n::NLOpt,r::Result,s::Settings,idx::Int64,st::Int64,args...;k
   end
 
 	if !s.MPC && r.dfs[idx]!=nothing
-  	t_vec=linspace(r.dfs[1][:t][1],round(r.dfs[end][:t][end]/10)*10,s.L);
+  	t_vec=linspace(r.dfs[1][:t][1],max(5,round(r.dfs[end][:t][end]/5)*5),s.L);
 	else
 		t_vec=linspace(r.dfs_plant[1][:t][1],max(5,round(r.dfs_plant[end][:t][end]/5)*5),s.L);
 	end
@@ -93,6 +93,7 @@ function statePlot(n::NLOpt,r::Result,s::Settings,idx::Int64,st::Int64,args...;k
   if !s.simulate; savefig(string(r.results_dir,n.state.name[st],".",s.format)); end
   return stp
 end
+
 """
 stp=statePlot(n,r,s,idx,st1,st2);
 stp=statePlot(n,r,s,idx,st1,st2;(:legend=>"test1"));
@@ -185,7 +186,7 @@ function controlPlot(n::NLOpt,r::Result,s::Settings,idx::Int64,ctr::Int64,args..
   end
 
 	if !s.MPC && r.dfs[idx]!=nothing
-  	t_vec=linspace(r.dfs[1][:t][1],round(r.dfs[end][:t][end]/10)*10,s.L);
+		t_vec=linspace(r.dfs[1][:t][1],max(5,round(r.dfs[end][:t][end]/5)*5),s.L);
 	else
 		t_vec=linspace(r.dfs_plant[1][:t][1],max(5,round(r.dfs_plant[end][:t][end]/5)*5),s.L);
 	end
