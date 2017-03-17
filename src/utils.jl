@@ -1,3 +1,49 @@
+
+"""
+n = create_tV(mdl,n)
+# define a time vector (n.tV) for use with time varying constraints when (finalTimeDV=>true)
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 3/17/2017, Last Modified: 3/17/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+function create_tV(mdl::JuMP.Model,n::NLOpt)
+
+  if n.integrationMethod==:ps
+    if n.finalTimeDV
+      # create mesh points, interval size = tf_var/Ni
+      tm = @NLexpression(mdl, [idx=1:n.Ni+1], (idx-1)*n.tf/n.Ni);
+      # go through each mesh interval creating time intervals; [t(i-1),t(i)] --> [-1,1]
+      ts = [Array(Any,n.Nck[int]+1,) for int in 1:n.Ni];
+      for int in 1:n.Ni
+      ts[int][1:end-1]=@NLexpression(mdl,[j=1:n.Nck[int]], (tm[int+1]-tm[int])/2*n.τ[int][j] +  (tm[int+1]+tm[int])/2);
+      ts[int][end]=@NLexpression(mdl, n.tf/n.Ni*int) # append +1 at end of each interval
+      end
+
+      tt1 = [idx for tempM in ts for idx = tempM[1:end-1]];
+      tmp = [tt1;ts[end][end]];
+      n.tV = @NLexpression(mdl,[j=1:n.numStatePoints], n.t0 + tmp[j]);
+    else
+      error("finish this")
+    end
+  else
+    error("finish this")
+
+    if n.finalTimeDV
+      # vector with the design variable in it
+      t = Array(Any,n.N+1,1);
+      tmp = [0;cumsum(n.dt)];
+      n.tV = @NLexpression(mdl,[j=1:n.numStatePoints], n.t0 + tmp[j]);
+    else
+
+    end
+  end
+
+  return n
+end
+
+
+
 """
 r=simPlant(n,r)
 # for simulating the plant model given commands
@@ -375,6 +421,7 @@ function mpcUpdate(n::NLOpt,r::Result;goal_reached::Bool=false)
   if !n.mpc.goal_reached
     n.mpc.t0 = n.mpc.tex*(r.eval_num-1);
     n.mpc.tf = n.mpc.tex*r.eval_num;
+    setvalue(n.mpc.t0_param,n.mpc.t0);
   end
 end
 

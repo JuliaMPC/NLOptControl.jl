@@ -59,6 +59,7 @@ type MPC
   goal_reached::Bool           # flag  to indicate that goal has been reached
   t0::Float64                  # inital time
   tf::Float64                  # final time
+  t0_param::Any                # parameter for t0
   X0p::Array{Float64,1}        # predicted initial states
   u::Array{Array{Float64,1},1} # all control signals
 end
@@ -70,6 +71,7 @@ function MPC()
       false,
       0.0,
       0.0,
+      Any,
       Float64[],          # predicted intial state conditions
       Vector{Float64}[]);
 end
@@ -92,6 +94,7 @@ type NLOpt <: AbstractNLOpt
   tf::Any                   # final time
   t0::Any                   # initial time
   tf_max::Any               # maximum final time
+  tV::Any                   # vector for use with time varying constraints
 
   # boundary constraits
   X0::Array{Float64,1}      # initial state conditions
@@ -109,7 +112,7 @@ type NLOpt <: AbstractNLOpt
   Nck::Array{Int64,1}           # number of collocation points per interval
   Ni::Int64                     # number of intervals
   τ::Array{Array{Float64,1},1}  # Node points ---> Nc increasing and distinct numbers ∈ [-1,1]
-  ts::Array{Array{Any,1},1}     # time scaled based off of τ
+  ts::Array{Array{Float64,1},1}     # time scaled based off of τ
   ω::Array{Array{Float64,1},1}  # weights
   ωₛ::Array{Array{Any,1},1}     # scaled weights
   DMatrix::Array{Array{Any,2},1}# differention matrix
@@ -146,6 +149,7 @@ NLOpt(Any,                # state equations
       Any,                # final time
       Any,                # initial time
       Any,                # maximum final time
+      Any,                # optional vector for use with time varying constraints
       Float64[],          # initial state conditions
       Float64[],          # tolerances on inital state constraint
       Float64[],          # final state conditions

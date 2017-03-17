@@ -63,6 +63,13 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt, args...)
     end
   end
 
+  # initial time, t0 TODO consider only defining this if the user is doing mpc
+  @variable( mdl, t0); n.t0 = t0;
+  t01_con=[@constraint(mdl, t0>= 0.0)]; # to add constraints to output they must be arrays
+  @NLparameter(mdl, t0_param == 0.0);   # for now we just start at zero
+  n.mpc.t0_param=t0_param;
+  t0_con=[@NLconstraint(mdl, t0==t0_param)];
+
   if n.integrationMethod==:ps
     dyn_con  = [Array(Any,n.Nck[int],n.numStates) for int in 1:n.Ni];
     Nck_st  = [0;cumsum(n.Nck+1)]; Nck_ctr = [0;cumsum(n.Nck)];
@@ -71,6 +78,7 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt, args...)
     if n.finalTimeDV
       @variable(mdl, 0.1 <= tf <=  n.tf_max)
       n.tf = tf;
+      create_tV(mdl,n) # make a time vector
     end
 
     for int in 1:n.Ni
@@ -92,7 +100,7 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt, args...)
       end
       for st in 1:n.numStates
         if n.integrationScheme==:lgrExplicit
-          dynamics_expr[int][:,st] = @NLexpression(mdl, [j in 1:n.Nck[int]], sum(n.DMatrix[int][j,i]*x_int[i,st] for i in 1:n.Nck[int]+1) - ((n.tf-n.t0)/2)*dx[j,st]  )
+          dynamics_expr[int][:,st] = @NLexpression(mdl, [j in 1:n.Nck[int]], sum(n.DMatrix[int][j,i]*x_int[i,st] for i in 1:n.Nck[int]+1) - ((n.tf)/2)*dx[j,st]  )
         end
         for j in 1:n.Nck[int]
           dyn_con[int][j,st] = @NLconstraint(mdl, 0 == dynamics_expr[int][j,st])
@@ -108,6 +116,7 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt, args...)
      n.tf = tf;
     end
     n.dt = n.tf/n.N*ones(n.N,);
+
     if paramsON
       dx = n.stateEquations(mdl,n,r,x,u,params);
     else
@@ -123,8 +132,13 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt, args...)
       end
     end
   end
+
+
   # store results
   r.x=x; r.u=u; r.x0_con=x0_con; r.xf_con=xf_con; r.dyn_con=dyn_con;
+
+  newConstraint(r,t01_con,:t01_con);
+  newConstraint(r,t0_con,:t0_con);
   newConstraint(r,x0_con,:x0_con); #TODO consider getting ride of redundancy
   newConstraint(r,xf_con,:xf_con);
   newConstraint(r,dyn_con,:dyn_con);

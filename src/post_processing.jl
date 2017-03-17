@@ -16,12 +16,13 @@ function postProcess(n::NLOpt,r::Result,s::Settings;kwargs...)
   if !Init
     if n.integrationMethod==:ps
       if n.finalTimeDV
-        t = [scale_tau(n.ts[int],n.t0,getvalue(n.tf)) for int in 1:n.Ni];     # scale time from [-1,1] to [t0,tf]
+        t = [scale_tau(n.ts[int],0.0,getvalue(n.tf)) for int in 1:n.Ni];     # scale time from [-1,1] to [t0,tf]
       else
-        t = [scale_tau(n.ts[int],n.t0,n.tf) for int in 1:n.Ni];
+        t = [scale_tau(n.ts[int],0.0,n.tf) for int in 1:n.Ni];
       end
       r.t_ctr= [idx for tempM in t for idx = tempM[1:end-1]];
       r.t_st = [r.t_ctr;t[end][end]];
+
     elseif n.integrationMethod==:tm
       if n.finalTimeDV
         r.t_ctr =  append!([0.0],cumsum(getvalue(n.dt)));

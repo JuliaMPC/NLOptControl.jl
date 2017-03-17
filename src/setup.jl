@@ -80,10 +80,11 @@ Date Create: 1/1/2017, Last Modified: 1/23/2017 \n
 function configure(n::NLOpt, args...; kwargs... )
   kw = Dict(kwargs);
 
-  # intial time
-  if !haskey(kw,:t0); kw_ = Dict(:t0 => 0); n.t0 = get(kw_,:t0,0);
+  #= intial time
+  if !haskey(kw,:t0); kw_ = Dict(:t0 => 0.0); n.t0 = get(kw_,:t0,0);
   else; n.t0 = get(kw,:t0,0);
   end
+=#
 
   # final time
   if !haskey(kw,:finalTimeDV); kw_ = Dict(:finalTimeDV => false); n.finalTimeDV = get(kw_,:finalTimeDV,0);
