@@ -1,6 +1,20 @@
+__precompile__(false) # this module NOT is safe to precompile
 module NLOptControl
 
-using Media, Plots, VehicleModels, Dierckx, Parameters, Interpolations, FastGaussQuadrature, Polynomials, JuMP, SymPy, VehicleModels, DataFrames, Ipopt, KNITRO
+using JuMP
+using Parameters
+using Interpolations
+using DataFrames
+using SymPy  # do not usually use...
+using Ipopt
+using KNITRO
+using VehicleModels
+
+#function __init__()
+  using Plots # TODO make PrettyPlots a module or submodule -> not always plotting
+  using FastGaussQuadrature  # why not precompiled?
+#end
+
 # To copy a particular piece of code (or function) in some location
 macro def(name, definition)
   return quote
@@ -102,9 +116,18 @@ type NLOpt <: AbstractNLOpt
   XF::Array{Float64,1}      # final state conditions
   XF_tol::Array{Float64,1}  # final state tolerance
 
-  # linear bounds on variables
+  # constant bounds on state variables
   XL::Array{Float64,1}
   XU::Array{Float64,1}
+
+  # variables for linear bounds on state variables
+  variableStateTol::Array{Bool,1} # array of Bools to indicate if bounds are linear
+  mXL::Array{Float64,1}           # slope on XL -> time always starts at zero
+  mXU::Array{Float64,1}           # slope on XU -> time always starts at zero
+  XL_var::Array{Float64,2}()      # time varying lower bounds on states
+  XU_var::Array{Float64,2}()      # time varying upper bounds on states
+
+  # constant bounds on control variables
   CL::Array{Float64,1}
   CU::Array{Float64,1}
 
@@ -112,7 +135,7 @@ type NLOpt <: AbstractNLOpt
   Nck::Array{Int64,1}           # number of collocation points per interval
   Ni::Int64                     # number of intervals
   τ::Array{Array{Float64,1},1}  # Node points ---> Nc increasing and distinct numbers ∈ [-1,1]
-  ts::Array{Array{Float64,1},1}     # time scaled based off of τ
+  ts::Array{Array{Float64,1},1} # time scaled based off of τ
   ω::Array{Array{Float64,1},1}  # weights
   ωₛ::Array{Array{Any,1},1}     # scaled weights
   DMatrix::Array{Array{Any,2},1}# differention matrix
@@ -156,6 +179,11 @@ NLOpt(Any,                # state equations
       Float64[],          # tolerances on final state constraint
       Float64[],          # XL
       Float64[],          # XU
+      Bool[],             # array of Bools to indicate if bounds are linear
+      Float64[],          # slopes on XL -> time always starts at zero
+      Float64[],          # slopes on XU -> time always starts at zero
+      Array{Float64,2},   # time varying lower bounds on states
+      Array{Float64,2},   # time varying upper bounds on states
       Float64[],          # CL
       Float64[],          # CU
       Int[],              # number of collocation points per interval

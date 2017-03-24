@@ -2,27 +2,63 @@
 n,r=OCPdef(mdl,n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/14/2017, Last Modified: 2/8/2017 \n
+Date Create: 1/14/2017, Last Modified: 3/23/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function OCPdef(mdl::JuMP.Model,n::NLOpt, args...)
+
   if length(args)==1; params=args[1]; paramsON=true; else paramsON=false; end
   r = Result();
 
-  # state and control variables
+  # state variables
   @variable(mdl, x[1:n.numStatePoints,1:n.numStates]); # +1 for the last interval
   for st in 1:n.numStates
-    if !isnan(n.XL[st])
-      for j in 1:n.numStatePoints
-        setlowerbound(x[j,st], n.XL[st])
+    # upper state constraint
+    if n.linearStateTol[st]
+      if !isnan(n.XL_var[st,j])
+        for j in 1:n.numStatePoints
+          setlowerbound(x[j,st],n.XL_var[st,j])
+        end
+      else #TODO check these error messages
+        error("Cannot have Zero Constraints and a Variable State Tolerance. \n
+               ____________________________________________________________\n
+                Either: \n
+                1): Leave the default (i.e) n.variableStateTol[st]==false \n
+                OR \n
+                2): Add an Upper Constraint on this state\n")
+      end
+    else
+      if !isnan(n.XL[st])
+        for j in 1:n.numStatePoints
+          setlowerbound(x[j,st], n.XL[st])
+        end
       end
     end
-    if !isnan(n.XU[st])
-      for j in 1:n.numStatePoints
-        setupperbound(x[j,st], n.XU[st])
+
+    # lower state constraint
+    if n.linearStateTol[st]
+      if !isnan(n.XU_var[st,j])
+        for j in 1:n.numStatePoints
+          setlowerbound(x[j,st],n.XU_var[st,j])
+        end
+      else
+        error("Cannot have Zero Constraints and a Variable State Tolerance. \n
+               ____________________________________________________________\n
+                Either: \n
+                1): Leave the default (i.e) n.variableStateTol[st]==false \n
+                OR \n
+                2): Add a Lower Constraint on this state\n")
+      end
+    else
+      if !isnan(n.XU[st])
+        for j in 1:n.numStatePoints
+          setlowerbound(x[j,st], n.XU[st])
+        end
       end
     end
   end
+
+  # control variables
   @variable(mdl, u[1:n.numControlPoints,1:n.numControls]);  #TODO make sure that there are not too many controls
   for ctr in 1:n.numControls
     if !isnan(n.CL[ctr])
@@ -36,6 +72,8 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt, args...)
       end
     end
   end
+
+
 
   # boundary constraints
   xf_con=[]; # currently modifying the final state constraint (with tolerance) is not needed, can easily ad this functionlity though
@@ -51,7 +89,7 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt, args...)
         x0_con[st,1]=@constraint(mdl, x[1,st] <=  (n.X0[st]+n.X0_tol[st]));
         x0_con[st,2]=@constraint(mdl,-x[1,st] <= -(n.X0[st]-n.X0_tol[st]));
       else
-        x0_con = [x0_con; @constraint(mdl, x[1,st]==n.X0[st])]
+        x0_con=[x0_con; @constraint(mdl, x[1,st]==n.X0[st])]
       end
     end
     if !isnan(n.XF[st])
