@@ -32,6 +32,9 @@ function DMatrix(n::NLOpt, kwargs...)         #TODO make IMatrix and option
       #  IMatrix[int] = inv(DM[int]);        # I = inv[D_{2:N_k+1}]
     end
   elseif mode==:symbolic # for validation only, too slow otherwise
+    error(" \n cannot precompile with SymPy \n
+             so this fucntion was turned off for typical use!! \n
+               -> do a (using SymPy) in NLOptControl.jl then remove this error message and rerun \n")
     Dsym = [Array(Any,n.Nck[int],n.Nck[int]+1) for int in 1:n.Ni];
     n.DMatrix = [Array(Any,n.Nck[int],n.Nck[int]+1) for int in 1:n.Ni]
     test = [Array(Any,n.Nck[int]+1) for int in 1:n.Ni];

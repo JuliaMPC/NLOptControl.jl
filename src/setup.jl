@@ -77,7 +77,7 @@ end
 n = configure(n::NLOpt,Ni=4,Nck=[3, 3, 7, 2];(:integrationMethod => :ps),(:integrationScheme => :lgrExplicit),(:finalTimeDV => false),(:tf => 1))
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/1/2017, Last Modified: 1/23/2017 \n
+Date Create: 1/1/2017, Last Modified: 3/25/2017 \n
 -------------------------------------------------------------------------------------\n
 """
 function configure(n::NLOpt, args...; kwargs... )
@@ -154,61 +154,4 @@ function configure(n::NLOpt, args...; kwargs... )
   end
 
   return n
-end
-"""
-linearTolerances(n)
-# the purpose of this function is to taper the tolerances on the constant state constraints
-# the idea is that when doing MPC, the final states are well within the bounds so that the next optimization is not initalized at an infeasible point
-# if you want a constant bond, set the slope to zero
-# default is a positive slope on the lower bound and a negative slope on the upper bound
-# this functionality in not needed for states like position, so you do not need to add a linearStateTol for all states
-
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 3/23/2017, Last Modified: 3/23/2017 \n
--------------------------------------------------------------------------------------\n
-"""
-function linearTolerance(n::NLOpt;
-                        linearStateTol::Array{Bool,1}=true,
-                        mXL::Array{Float64,1}=0.05*ones(Float64,n.numStates,1),
-                        mXU::Array{Float64,1}=-0.05*ones(Float64,numStates,1))
-    n.linearStateTol=linearStateTol;
-    n.mXL=mXL;
-    n.mXU=mXU;
-
-    for st in 1:n.numStates
-      if n.linearStateTol[st]
-        for j in 1:n.numStatePoints
-          n.XL_var[st,j]=n.mXL[st] + n.mXL[st]*(j/n.numStatePoints); # lower
-        end
-        for j in 1:n.numStatePoints
-          n.XU_var[st,j]=n.XU[st] + n.mXU[st]*(j/n.numStatePoints); # upper
-        end
-      end
-    end
-end
-
-"""
-defineTolerances(n)
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/8/2017, Last Modified: 2/8/2017 \n
--------------------------------------------------------------------------------------\n
-"""
-function defineTolerances(n::NLOpt;
-                          X0_tol::Array{Float64,1}=0.05*ones(Float64,n.numStates,1),
-                          XF_tol::Array{Float64,1}=0.05*ones(Float64,n.numStates,1))
-  n.X0_tol=X0_tol;
-  n.XF_tol=XF_tol;
-end
-"""
-defineSolver(n; solver=:KNITRO)
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/9/2017, Last Modified: 2/9/2017 \n
--------------------------------------------------------------------------------------\n
-"""
-function defineSolver(n::NLOpt;
-                      solver::Symbol=:IPOPT)
-  n.solver=solver;
 end

@@ -1,19 +1,16 @@
-__precompile__(false) # this module NOT is safe to precompile
+# TODO think about exporting the functions from JuMP and Parameters
+isdefined(Base, :__precompile__) && __precompile__()
+
 module NLOptControl
 
 using JuMP
 using Parameters
 using Interpolations
 using DataFrames
-using SymPy  # do not usually use...
+#using SymPy  # do not usually use...
 using Ipopt
 using KNITRO
-using VehicleModels
-
-#function __init__()
-  using Plots # TODO make PrettyPlots a module or submodule -> not always plotting
-  using FastGaussQuadrature  # why not precompiled?
-#end
+using FastGaussQuadrature
 
 # To copy a particular piece of code (or function) in some location
 macro def(name, definition)
@@ -121,11 +118,11 @@ type NLOpt <: AbstractNLOpt
   XU::Array{Float64,1}
 
   # variables for linear bounds on state variables
-  variableStateTol::Array{Bool,1} # array of Bools to indicate if bounds are linear
+  linearStateTol::Array{Bool,1} # array of Bools to indicate if bounds are linear
   mXL::Array{Float64,1}           # slope on XL -> time always starts at zero
   mXU::Array{Float64,1}           # slope on XU -> time always starts at zero
-  XL_var::Array{Float64,2}()      # time varying lower bounds on states
-  XU_var::Array{Float64,2}()      # time varying upper bounds on states
+  XL_var::Any      # time varying lower bounds on states
+  XU_var::Any      # time varying upper bounds on states
 
   # constant bounds on control variables
   CL::Array{Float64,1}
@@ -170,7 +167,7 @@ NLOpt(Any,                # state equations
       0,                  # number of dvs per control
       0,                  # total number of dv discretizations per variables
       Any,                # final time
-      Any,                # initial time
+      0.0,                  # initial time
       Any,                # maximum final time
       Any,                # optional vector for use with time varying constraints
       Float64[],          # initial state conditions
@@ -182,8 +179,8 @@ NLOpt(Any,                # state equations
       Bool[],             # array of Bools to indicate if bounds are linear
       Float64[],          # slopes on XL -> time always starts at zero
       Float64[],          # slopes on XU -> time always starts at zero
-      Array{Float64,2},   # time varying lower bounds on states
-      Array{Float64,2},   # time varying upper bounds on states
+      Any,   # time varying lower bounds on states
+      Any,   # time varying upper bounds on states
       Float64[],          # CL
       Float64[],          # CU
       Int[],              # number of collocation points per interval
@@ -296,7 +293,7 @@ include("setup.jl")
 include("ps.jl");
 include("ocp.jl")
 include("post_processing.jl")
-include("PrettyPlots.jl")
+#include("PrettyPlots.jl")
        # Functions
 export
        # setup functions
@@ -316,6 +313,7 @@ export
        # optimization related functions
        optimize,
        defineTolerances,
+       linearTolerances,
        defineSolver,
        build,
 
@@ -339,12 +337,12 @@ export
        # Objects
        NLOpt,
        Result,
-       Settings,
+       Settings
 
        # Plotting
-       adjust_axis,
-       resultsDir,
-       statePlot,
-       controlPlot,
-       allPlots
+       #adjust_axis,
+       #resultsDir,
+       #statePlot,
+       #controlPlot,
+       #allPlots
 end

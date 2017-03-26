@@ -1,3 +1,81 @@
+"""
+defineSolver(n; solver=:KNITRO)
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 2/9/2017, Last Modified: 2/9/2017 \n
+-------------------------------------------------------------------------------------\n
+"""
+function defineSolver(n::NLOpt;
+                      solver::Symbol=:IPOPT)
+  n.solver=solver;
+end
+
+"""
+linearTolerances(n)
+# the purpose of this function is to taper the tolerances on the constant state constraints
+# the idea is that when doing MPC, the final states are well within the bounds so that the next optimization is not initalized at an infeasible point
+# if you want a constant bond, set the slope to zero
+# default is a positive slope on the lower bound and a negative slope on the upper bound
+# this functionality in not needed for states like position, so you do not need to add a linearStateTol for all states
+
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 3/23/2017, Last Modified: 3/25/2017 \n
+-------------------------------------------------------------------------------------\n
+"""
+function linearTolerances(n::NLOpt;
+                        mXL::Array{Float64,1}=0.05*ones(Float64,n.numStates,),
+                        mXU::Array{Float64,1}=-0.05*ones(Float64,n.numStates,), kwargs...)
+    for st in 1:n.numStates
+      if isnan(mXL[st]) && !isnan(mXU[st]) || !isnan(mXL[st]) && isnan(mXU[st])
+        error(" \n currently NLOptControl does not support this \n")
+      end
+    end
+
+    kw = Dict(kwargs);
+
+    # linearStateTol on for all states -> may not make sense
+    if !haskey(kw,:linearStateTol);
+      n.linearStateTol=trues(n.numStates);
+    else  # typical case
+      temp=get(kw,:linearStateTol,0);
+        for i in 1:n.numStates
+          n.linearStateTol[i]=temp[i];
+        end
+    end
+
+    if any(n.linearStateTol)
+     n.mXL=mXL;  n.mXU=mXU;
+     n.XL_var=Matrix{Float64}(n.numStates,n.numStatePoints); n.XU_var=n.XL_var;
+      for st in 1:n.numStates
+        if n.linearStateTol[st]
+          if !isnan(n.XL[st])
+            for j in 1:n.numStatePoints
+              n.XL_var[st,j]=n.XL[st] + n.mXL[st]*(j/n.numStatePoints); # lower
+            end
+          end
+          if !isnan(n.XU[st])
+            for j in 1:n.numStatePoints
+              n.XU_var[st,j]=n.XU[st] + n.mXU[st]*(j/n.numStatePoints); # upper
+            end
+          end
+        end
+      end
+   end
+end
+
+"""
+defineTolerances(n)
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 2/8/2017, Last Modified: 2/8/2017 \n
+-------------------------------------------------------------------------------------\n
+"""
+function defineTolerances(n::NLOpt;
+                          X0_tol::Array{Float64,1}=0.05*ones(Float64,n.numStates,),
+                          XF_tol::Array{Float64,1}=0.05*ones(Float64,n.numStates,))
+  n.X0_tol=X0_tol; n.XF_tol=XF_tol;
+end
 
 """
 n = create_tV(mdl,n)
@@ -16,8 +94,8 @@ function create_tV(mdl::JuMP.Model,n::NLOpt)
       # go through each mesh interval creating time intervals; [t(i-1),t(i)] --> [-1,1]
       ts = [Array(Any,n.Nck[int]+1,) for int in 1:n.Ni];
       for int in 1:n.Ni
-      ts[int][1:end-1]=@NLexpression(mdl,[j=1:n.Nck[int]], (tm[int+1]-tm[int])/2*n.τ[int][j] +  (tm[int+1]+tm[int])/2);
-      ts[int][end]=@NLexpression(mdl, n.tf/n.Ni*int) # append +1 at end of each interval
+        ts[int][1:end-1]=@NLexpression(mdl,[j=1:n.Nck[int]], (tm[int+1]-tm[int])/2*n.τ[int][j] +  (tm[int+1]+tm[int])/2);
+        ts[int][end]=@NLexpression(mdl, n.tf/n.Ni*int) # append +1 at end of each interval
       end
 
       tt1 = [idx for tempM in ts for idx = tempM[1:end-1]];

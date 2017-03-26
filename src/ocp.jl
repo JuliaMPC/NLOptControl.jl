@@ -1,11 +1,11 @@
 """
-n,r=OCPdef(mdl,n)
+n,r=OCPdef(mdl,n,s)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 1/14/2017, Last Modified: 3/23/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function OCPdef(mdl::JuMP.Model,n::NLOpt, args...)
+function OCPdef(mdl::JuMP.Model,n::NLOpt,s::Settings,args...)
 
   if length(args)==1; params=args[1]; paramsON=true; else paramsON=false; end
   r = Result();
@@ -13,46 +13,28 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt, args...)
   # state variables
   @variable(mdl, x[1:n.numStatePoints,1:n.numStates]); # +1 for the last interval
   for st in 1:n.numStates
-    # upper state constraint
-    if n.linearStateTol[st]
-      if !isnan(n.XL_var[st,j])
-        for j in 1:n.numStatePoints
-          setlowerbound(x[j,st],n.XL_var[st,j])
-        end
-      else #TODO check these error messages
-        error("Cannot have Zero Constraints and a Variable State Tolerance. \n
-               ____________________________________________________________\n
-                Either: \n
-                1): Leave the default (i.e) n.variableStateTol[st]==false \n
-                OR \n
-                2): Add an Upper Constraint on this state\n")
-      end
-    else
+    if !n.linearStateTol[st]
       if !isnan(n.XL[st])
         for j in 1:n.numStatePoints
           setlowerbound(x[j,st], n.XL[st])
         end
       end
-    end
-
-    # lower state constraint
-    if n.linearStateTol[st]
-      if !isnan(n.XU_var[st,j])
-        for j in 1:n.numStatePoints
-          setlowerbound(x[j,st],n.XU_var[st,j])
-        end
-      else
-        error("Cannot have Zero Constraints and a Variable State Tolerance. \n
-               ____________________________________________________________\n
-                Either: \n
-                1): Leave the default (i.e) n.variableStateTol[st]==false \n
-                OR \n
-                2): Add a Lower Constraint on this state\n")
-      end
-    else
       if !isnan(n.XU[st])
         for j in 1:n.numStatePoints
-          setlowerbound(x[j,st], n.XU[st])
+          setupperbound(x[j,st], n.XU[st])
+        end
+      end
+    else # linearStateTol==true
+      for j in 1:n.numStatePoints
+        if !isnan(n.XL[st])
+          for j in 1:n.numStatePoints
+            setlowerbound(x[j,st],n.XL_var[st,j])
+          end
+        end
+        if !isnan(n.XU[st])
+          for j in 1:n.numStatePoints
+            setlowerbound(x[j,st],n.XU_var[st,j])
+          end
         end
       end
     end
@@ -72,8 +54,6 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt, args...)
       end
     end
   end
-
-
 
   # boundary constraints
   xf_con=[]; # currently modifying the final state constraint (with tolerance) is not needed, can easily ad this functionlity though
@@ -101,12 +81,15 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt, args...)
     end
   end
 
-  # initial time, t0 TODO consider only defining this if the user is doing mpc
-  @variable( mdl, t0); n.t0 = t0;
-  t01_con=[@constraint(mdl, t0>= 0.0)]; # to add constraints to output they must be arrays
-  @NLparameter(mdl, t0_param == 0.0);   # for now we just start at zero
-  n.mpc.t0_param=t0_param;
-  t0_con=[@NLconstraint(mdl, t0==t0_param)];
+  if s.MPC
+    @variable( mdl, t0); n.t0 = t0;
+    t01_con=[@constraint(mdl, t0>= 0.0)]; # to add constraints to output they must be arrays
+    @NLparameter(mdl, t0_param == 0.0);   # for now we just start at zero
+    n.mpc.t0_param=t0_param;
+    t0_con=[@NLconstraint(mdl, t0==t0_param)];
+    newConstraint(r,t01_con,:t01_con);
+    newConstraint(r,t0_con,:t0_con);
+  end
 
   if n.integrationMethod==:ps
     dyn_con  = [Array(Any,n.Nck[int],n.numStates) for int in 1:n.Ni];
@@ -154,7 +137,6 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt, args...)
      n.tf = tf;
     end
     n.dt = n.tf/n.N*ones(n.N,);
-
     if paramsON
       dx = n.stateEquations(mdl,n,r,x,u,params);
     else
@@ -171,12 +153,8 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt, args...)
     end
   end
 
-
   # store results
   r.x=x; r.u=u; r.x0_con=x0_con; r.xf_con=xf_con; r.dyn_con=dyn_con;
-
-  newConstraint(r,t01_con,:t01_con);
-  newConstraint(r,t0_con,:t0_con);
   newConstraint(r,x0_con,:x0_con); #TODO consider getting ride of redundancy
   newConstraint(r,xf_con,:xf_con);
   newConstraint(r,dyn_con,:dyn_con);

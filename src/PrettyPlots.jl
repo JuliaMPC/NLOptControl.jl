@@ -67,8 +67,13 @@ function statePlot(n::NLOpt,r::Result,s::Settings,idx::Int64,st::Int64,args...;k
 
   # plot the limits
   if lims
-    if !isinf(n.XL[st]);plot!(t_vec,n.XL[st]*ones(s.L,1),w=s.lw1,label=string(legend_string,"min"));end
-    if !isinf(n.XU[st]);plot!(t_vec,n.XU[st]*ones(s.L,1),w=s.lw1,label=string(legend_string,"max"));end
+		if n.linearStateTol[st]
+			if !isinf(n.XL[st]);plot!(r.t_st,n.XL_var[st,:],w=s.lw1,label=string(legend_string,"min"));end
+    	if !isinf(n.XU[st]);plot!(r.t_st,n.XU_var[st,:],w=s.lw1,label=string(legend_string,"max"));end
+		else
+    	if !isinf(n.XL[st]);plot!(t_vec,n.XL[st]*ones(s.L,1),w=s.lw1,label=string(legend_string,"min"));end
+    	if !isinf(n.XU[st]);plot!(t_vec,n.XU[st]*ones(s.L,1),w=s.lw1,label=string(legend_string,"max"));end
+		end
   end
 
   # plot the values
