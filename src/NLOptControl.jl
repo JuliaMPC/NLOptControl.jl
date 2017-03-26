@@ -118,9 +118,8 @@ type NLOpt <: AbstractNLOpt
   XU::Array{Float64,1}
 
   # variables for linear bounds on state variables
-  linearStateTol::Array{Bool,1} # array of Bools to indicate if bounds are linear
-  mXL::Array{Float64,1}           # slope on XL -> time always starts at zero
-  mXU::Array{Float64,1}           # slope on XU -> time always starts at zero
+  mXL::Array{Any,1}           # slope on XL -> time always starts at zero
+  mXU::Array{Any,1}           # slope on XU -> time always starts at zero
   XL_var::Any      # time varying lower bounds on states
   XU_var::Any      # time varying upper bounds on states
 
@@ -176,9 +175,8 @@ NLOpt(Any,                # state equations
       Float64[],          # tolerances on final state constraint
       Float64[],          # XL
       Float64[],          # XU
-      Bool[],             # array of Bools to indicate if bounds are linear
-      Float64[],          # slopes on XL -> time always starts at zero
-      Float64[],          # slopes on XU -> time always starts at zero
+      Any[],          # slopes on XL -> time always starts at zero
+      Any[],          # slopes on XU -> time always starts at zero
       Any,   # time varying lower bounds on states
       Any,   # time varying upper bounds on states
       Float64[],          # CL
@@ -293,7 +291,6 @@ include("setup.jl")
 include("ps.jl");
 include("ocp.jl")
 include("post_processing.jl")
-#include("PrettyPlots.jl")
        # Functions
 export
        # setup functions
@@ -313,7 +310,7 @@ export
        # optimization related functions
        optimize,
        defineTolerances,
-       linearTolerances,
+       linearStateTolerances,
        defineSolver,
        build,
 

@@ -11,7 +11,7 @@ function defineSolver(n::NLOpt;
 end
 
 """
-linearTolerances(n)
+linearStateTolerances(n)
 # the purpose of this function is to taper the tolerances on the constant state constraints
 # the idea is that when doing MPC, the final states are well within the bounds so that the next optimization is not initalized at an infeasible point
 # if you want a constant bond, set the slope to zero
@@ -23,45 +23,31 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 3/23/2017, Last Modified: 3/25/2017 \n
 -------------------------------------------------------------------------------------\n
 """
-function linearTolerances(n::NLOpt;
-                        mXL::Array{Float64,1}=0.05*ones(Float64,n.numStates,),
-                        mXU::Array{Float64,1}=-0.05*ones(Float64,n.numStates,), kwargs...)
-    for st in 1:n.numStates
-      if isnan(mXL[st]) && !isnan(mXU[st]) || !isnan(mXL[st]) && isnan(mXU[st])
-        error(" \n currently NLOptControl does not support this \n")
+function linearStateTolerances(n::NLOpt;
+                        mXL::Array{Any,1}=falses(n.numStates),
+                        mXU::Array{Any,1}=falses(n.numStates))
+
+n.mXL=mXL;  n.mXU=mXU;
+for st in 1:n.numStates
+  # lower state constraint
+  if n.mXL[st]!=false
+    if !isnan(n.XL[st])
+      for j in 1:n.numStatePoints
+      n.XL_var[st,j]=n.XL[st] + n.mXL[st]*(j/n.numStatePoints); # lower
       end
     end
+  end
 
-    kw = Dict(kwargs);
-
-    # linearStateTol on for all states -> may not make sense
-    if !haskey(kw,:linearStateTol);
-      n.linearStateTol=trues(n.numStates);
-    else  # typical case
-      temp=get(kw,:linearStateTol,0);
-        for i in 1:n.numStates
-          n.linearStateTol[i]=temp[i];
-        end
-    end
-
-    if any(n.linearStateTol)
-     n.mXL=mXL;  n.mXU=mXU;
-     n.XL_var=Matrix{Float64}(n.numStates,n.numStatePoints); n.XU_var=n.XL_var;
-      for st in 1:n.numStates
-        if n.linearStateTol[st]
-          if !isnan(n.XL[st])
-            for j in 1:n.numStatePoints
-              n.XL_var[st,j]=n.XL[st] + n.mXL[st]*(j/n.numStatePoints); # lower
-            end
-          end
-          if !isnan(n.XU[st])
-            for j in 1:n.numStatePoints
-              n.XU_var[st,j]=n.XU[st] + n.mXU[st]*(j/n.numStatePoints); # upper
-            end
-          end
-        end
+  # upper state constraint
+  if n.XU[st]!=false
+    if !isnan(n.XU[st])
+      for j in 1:n.numStatePoints
+      n.XU_var[st,j]=n.XU[st] + n.mXU[st]*(j/n.numStatePoints); # upper
       end
-   end
+    end
+  end
+end
+
 end
 
 """

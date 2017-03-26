@@ -15,7 +15,7 @@ end
 
 # define
 #n = define(n,stateEquations=MoonLander,numStates=2,numControls=1,X0=[10.,-2],XF=[0.,0.],XL=[NaN,NaN],XU=[NaN,NaN],CL=[0.],CU=[3.])
-n = define(n,stateEquations=MoonLander,numStates=2,numControls=1,X0=[10.,-2],XF=[0.,NaN],XL=[NaN,-3],XU=[NaN,NaN],CL=[0.],CU=[3.])
+n = define(n,stateEquations=MoonLander,numStates=2,numControls=1,X0=[10.,-2],XF=[0.,NaN],XL=[NaN,-3],XU=[NaN,-1],CL=[0.],CU=[3.])
 
 # build
 # no time
@@ -29,8 +29,8 @@ n = configure(n,Ni=4,Nck=[5,5,4,6];(:integrationMethod => :ps),(:integrationSche
 #n = configure(n,N=30;(:integrationMethod => :tm),(:integrationScheme => :trapezoidal),(:finalTimeDV => true))
 
 # addtional information
-mXL=[NaN, 0.1];mXU=[NaN, 0.0];  # set to zero if the other one is NaN or you don't want to taper that side
-linearTolerances(n;mXL=mXL,mXU=mXU,(:linearStateTol=>[false, true]));
+mXL=Any[false,0.1];mXU=Any[false,-.1];  # set to false if you don't want to taper that side
+linearStateTolerances(n;mXL=mXL,mXU=mXU);
 #defineSolver(n,solver=:KNITRO)
 #XF_tol = [0.001, 0.001]; X0_tol = [0.001, 0.001]; defineTolerances(n;X0_tol=X0_tol,XF_tol=XF_tol);
 names = [:h,:v]; descriptions = ["h(t)","v(t)"]; stateNames(n,names,descriptions);

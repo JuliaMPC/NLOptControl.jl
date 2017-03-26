@@ -13,31 +13,31 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt,s::Settings,args...)
   # state variables
   @variable(mdl, x[1:n.numStatePoints,1:n.numStates]); # +1 for the last interval
   for st in 1:n.numStates
-    if !n.linearStateTol[st]
-      if !isnan(n.XL[st])
+    # lower state constraint
+    if !isnan(n.XL[st])
+      if n.mXL[st]==false
         for j in 1:n.numStatePoints
           setlowerbound(x[j,st], n.XL[st])
         end
-      end
-      if !isnan(n.XU[st])
+      else
         for j in 1:n.numStatePoints
-          setupperbound(x[j,st], n.XU[st])
+          setlowerbound(x[j,st],n.XL_var[st,j])
         end
       end
-    else # linearStateTol==true
-      for j in 1:n.numStatePoints
-        if !isnan(n.XL[st])
+    end
+
+      # upper state constraint
+      if !isnan(n.XU[st])
+        if n.XU[st]!=false
           for j in 1:n.numStatePoints
-            setlowerbound(x[j,st],n.XL_var[st,j])
+            setupperbound(x[j,st], n.XU[st])
           end
-        end
-        if !isnan(n.XU[st])
+        else
           for j in 1:n.numStatePoints
             setlowerbound(x[j,st],n.XU_var[st,j])
           end
         end
       end
-    end
   end
 
   # control variables

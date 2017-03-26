@@ -63,9 +63,6 @@ function define(n::NLOpt;
   n.XF_tol = NaN*XF;
   n.XL = XL;
   n.XU = XU;
-  n.linearStateTol=falses(n.numStates);
-  n.mXL= NaN*X0;
-  n.mXU = NaN*X0;
   n.CL = CL;
   n.CU = CU;
   n.tf_max = tf_max;
@@ -152,6 +149,9 @@ function configure(n::NLOpt, args...; kwargs... )
     n.numStatePoints = n.N+1;
     n.numControlPoints = n.N+1;
   end
-
+  n.mXL= falses(n.numStates);
+  n.mXU = falses(n.numStates);
+  n.XL_var=Matrix{Float64}(n.numStates,n.numStatePoints);
+  n.XU_var=Matrix{Float64}(n.numStates,n.numStatePoints);
   return n
 end
