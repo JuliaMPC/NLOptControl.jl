@@ -1,5 +1,5 @@
-using NLOptControl, JuMP, Parameters, Plots, VehicleModels
-gr(); main_dir=pwd();
+using NLOptControl, JuMP, Parameters, VehicleModels
+main_dir=pwd();
 
 # initialize
 n = NLOpt(); s = Settings();
@@ -26,9 +26,12 @@ names = [:sr,:jx];
 descriptions = ["Steering Angle (rad)","Longitudinal Acceleration (m/s^2)"];
 controlNames(n,names,descriptions);
 
+mXL=Any[false,false,false,false];mXU=Any[false,false,false,-1];  # set to false if you don't want to taper that side
+linearStateTolerances(n;mXL=mXL,mXU=mXU);
+
 # setup OCP
 params = [pa];   # vehicle parameters
-n,r = OCPdef(mdl,n,params);
+n,r = OCPdef(mdl,n,s,params);
 x_ref = 10; y_ref = 100; # define target
 @NLobjective(mdl, Min, (r.x[end,1]-x_ref)^2 + (r.x[end,2]-y_ref)^2);
 
@@ -36,4 +39,6 @@ x_ref = 10; y_ref = 100; # define target
 optimize(mdl,n,r,s)
 
 # post process
+using PrettyPlots, Plots
+gr();
 allPlots(n,r,s,1)

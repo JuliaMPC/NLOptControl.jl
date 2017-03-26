@@ -44,10 +44,8 @@ obj = integrate(mdl,n,r.u[:,1];C=1.0,(:variable=>:control),(:integrand=>:default
 # solve
 optimize(mdl,n,r,s)
 
-# post process TODO make a function to pass the backend
-#=
+# post process
 using PrettyPlots, Plots
 gr();
 s=Settings(;format=:png);
 allPlots(n,r,s,1)
-=#

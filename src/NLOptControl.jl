@@ -334,12 +334,9 @@ export
        # Objects
        NLOpt,
        Result,
-       Settings
+       Settings,
 
-       # Plotting
-       #adjust_axis,
-       #resultsDir,
-       #statePlot,
-       #controlPlot,
-       #allPlots
+       # results
+       resultsDir
+
 end

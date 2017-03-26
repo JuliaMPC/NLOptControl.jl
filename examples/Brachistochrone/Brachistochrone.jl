@@ -1,5 +1,5 @@
-using NLOptControl, JuMP, Parameters, Plots, KNITRO
-gr(); main_dir=pwd();
+using NLOptControl, JuMP, Parameters, KNITRO
+main_dir=pwd();
 n = NLOpt(); s=Settings(); # initialize
 
 # Brachistichrone Problem @ http://gpops2.com/Examples/Brachistochrone.html
@@ -28,11 +28,13 @@ names = [:u]; descriptions = ["u(t)"]; controlNames(n,names,descriptions);
 # setup OCP
 defineSolver(n,solver=:KNITRO)  # TODO figure out why this does not run using IPOPT!!
 mdl = build(n);
-n,r = OCPdef(mdl,n)
+n,r = OCPdef(mdl,n,s)
 @NLobjective(mdl, Min, n.tf);
 
 optimize(mdl,n,r,s) # solve
 
 # post process
+using PrettyPlots, Plots
+gr(); 
 s=Settings(;format=:png);
 allPlots(n,r,s,1)

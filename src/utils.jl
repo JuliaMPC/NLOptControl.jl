@@ -1,4 +1,21 @@
 """
+resultsDir(results_dir)
+# removes results folder and creates a new one
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 2/10/2017, Last Modified: 2/17/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+function resultsDir(results_dir::String)
+	if isdir(results_dir)
+		rm(results_dir; recursive=true)
+		print("\n The old results have all been deleted! \n \n")
+	end
+	mkdir(results_dir)
+end
+
+
+"""
 defineSolver(n; solver=:KNITRO)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan

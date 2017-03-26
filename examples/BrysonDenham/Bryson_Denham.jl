@@ -24,7 +24,7 @@ n = configure(n,Ni=2,Nck=[10,5];(:integrationMethod => :ps),(:integrationScheme 
 ##################################
 defineSolver(n,solver=:IPOPT)
 mdl = build(n);
-n,r=OCPdef(mdl,n);
+n,r=OCPdef(mdl,n,s);
 obj = integrate(mdl,n,r.u[:,1];C=0.5,(:variable=>:control),(:integrand=>:squared))
 @NLobjective(mdl, Min, obj);
 s=Settings();
