@@ -46,6 +46,7 @@ optimize(mdl,n,r,s)
 
 # post process
 using PrettyPlots, Plots
-gr();
+#gr();
+pgfplots();
 s=Settings(;format=:png);
 allPlots(n,r,s,1)
