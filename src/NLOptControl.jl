@@ -243,10 +243,11 @@ type Settings <: AbstractNLOpt
   MPC::Bool      # bool for doing MPC
   save::Bool     # bool for saving data
   reset::Bool    # bool for reseting data
+  evalConstraints::Bool # bool for evaluating duals of the constraints
 end
 
 # Default Constructor
-function Settings(;format::Symbol=:png,MPC::Bool=false,save::Bool=true,reset::Bool=false,simulate::Bool=false)  # consider moving these plotting settings to PrettyPlots.jl
+function Settings(;format::Symbol=:png,MPC::Bool=false,save::Bool=true,reset::Bool=false,simulate::Bool=false,evalConstraints::Bool=false)  # consider moving these plotting settings to PrettyPlots.jl
 Settings(5.5,    # line width 1
          3.,     # line width 2
          1.0,    # marker size 1
@@ -258,7 +259,8 @@ Settings(5.5,    # line width 1
          format, # format for output plots
          MPC,    # bool for doing MPC
          save,   # bool for saving data
-         reset   # bool for reseting data
+         reset,  # bool for reseting data
+         evalConstraints # bool for evaluating duals of the constraints
         );
 end
 

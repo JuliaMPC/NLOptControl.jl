@@ -2,7 +2,7 @@
 postProcess(n,r,s)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/27/2017, Last Modified: 3/13/2017 \n
+Date Create: 1/27/2017, Last Modified: 3/28/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function postProcess(n::NLOpt,r::Result,s::Settings;kwargs...)
@@ -41,7 +41,9 @@ function postProcess(n::NLOpt,r::Result,s::Settings;kwargs...)
     end
 
     if s.save
-      evalConstraints(n,r);
+      if s.evalConstraints
+        evalConstraints(n,r);
+      end
       push!(r.dfs,dvs2dfs(n,r));
       push!(r.dfs_con,con2dfs(r));
       push!(r.dfs_opt,opt2dfs(r));
