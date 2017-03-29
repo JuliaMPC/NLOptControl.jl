@@ -2,7 +2,7 @@
 n,r=OCPdef(mdl,n,s)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/14/2017, Last Modified: 3/23/2017 \n
+Date Create: 1/14/2017, Last Modified: 3/28/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function OCPdef(mdl::JuMP.Model,n::NLOpt,s::Settings,args...)
@@ -158,5 +158,9 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt,s::Settings,args...)
   newConstraint(r,x0_con,:x0_con); #TODO consider getting ride of redundancy
   newConstraint(r,xf_con,:xf_con);
   newConstraint(r,dyn_con,:dyn_con);
+
+  # save the current working directory for navigation purposes
+  r.main_dir=pwd();
+
   return n, r
 end

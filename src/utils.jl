@@ -1,19 +1,3 @@
-"""
-resultsDir(results_dir)
-# removes results folder and creates a new one
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/10/2017, Last Modified: 2/17/2017 \n
---------------------------------------------------------------------------------------\n
-"""
-function resultsDir(results_dir::String)
-	if isdir(results_dir)
-		rm(results_dir; recursive=true)
-		print("\n The old results have all been deleted! \n \n")
-	end
-	mkdir(results_dir)
-end
-
 
 """
 defineSolver(n; solver=:KNITRO)
@@ -121,21 +105,6 @@ function create_tV(mdl::JuMP.Model,n::NLOpt)
   end
 
   return n
-end
-
-
-
-"""
-r=simPlant(n,r)
-# for simulating the plant model given commands
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/14/2017, Last Modified: 2/14/2017 \n
---------------------------------------------------------------------------------------\n
-"""
-function simPlant(n::NLOpt,r::Result;plantModel::Function=[])
-  #push!(r.dfs,dvs2dfs(n,r));
-#TODO finish
 end
 
 """
@@ -271,8 +240,8 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/6/2017, Last Modified: 2/20/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function optimize(mdl::JuMP.Model, n::NLOpt, r::Result, s::Settings;Iter::Int64=0)
-  t1 = time(); status = JuMP.solve(mdl); t2 = time();
+function optimize(mdl::JuMP.Model,n::NLOpt,r::Result,s::Settings;Iter::Int64=0)
+  t1 = time(); status=JuMP.solve(mdl); t2 = time();
   if s.save
     push!(r.status,status);
     push!(r.t_solve,(t2 - t1));
@@ -422,34 +391,6 @@ function stateNames(n::NLOpt,names,descriptions)
   end
 end
 
-"""
-updateX0(n,r)                           # uses solution from current plant data
-updateX0(n,r,X0;(:userUpdate=>true))    # user defined update of X0
-# updates intial states
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 3/6/2017, Last Modified: 3/10/2017 \n
---------------------------------------------------------------------------------------\n
-"""
-function updateX0(n::NLOpt,r::Result,args...;kwargs...)
-  kw = Dict(kwargs);
-  # check to see how the intial states are being updated
-  if !haskey(kw,:userUpdate); kw_ = Dict(:userUpdate => false); userUpdate = get(kw_,:userUpdate,0);
-  else; userUpdate = get(kw,:userUpdate,0);
-  end
-  if userUpdate
-    X0=args[1];
-    if length(X0) != n.numStates
-      error(string("\n Length of X0 must match number of states \n"));
-    end
-    n.X0=X0;
-  else # update using current location of plant
-    for st in 1:n.numStates
-      n.X0[st]=r.dfs_plant[end][n.state.name[st]][end];
-    end
-  end
-end
-
 ########################################################################################
 # control data functions
 ########################################################################################
@@ -480,35 +421,26 @@ function controlNames(n::NLOpt,names,descriptions)
 end
 
 ########################################################################################
-# mpc functions
+# data related functions
 ########################################################################################
+
 """
-# initialize mpc parameter settings
-# this function is designed to be called once
+resultsDir(results_dir)
+# removes results folder and creates a new one
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 3/6/2017, Last Modified: 3/6/2017 \n
+Date Create: 2/10/2017, Last Modified: 2/17/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function mpcParams(n::NLOpt;tp::Float64=0.0,tex::Float64=0.0,max_iter::Int64=10)
-  n.mpc::MPC = MPC(); # reset
-  n.mpc.tp = tp;
-  n.mpc.tex = tex;
-  n.mpc.max_iter = max_iter;
+function resultsDir(results_dir::String)
+	if isdir(results_dir)
+		rm(results_dir; recursive=true)
+		print("\n The old results have all been deleted! \n \n")
+	end
+	mkdir(results_dir)
 end
 
-function mpcUpdate(n::NLOpt,r::Result;goal_reached::Bool=false)
-  n.mpc.goal_reached = goal_reached;
-  if !n.mpc.goal_reached
-    n.mpc.t0 = n.mpc.tex*(r.eval_num-1);
-    n.mpc.tf = n.mpc.tex*r.eval_num;
-    setvalue(n.mpc.t0_param,n.mpc.t0);
-  end
-end
 
-########################################################################################
-# data saving functions
-########################################################################################
 """
 dvs2dfs(n,r)
 

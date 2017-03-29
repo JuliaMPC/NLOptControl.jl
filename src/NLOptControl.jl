@@ -12,6 +12,9 @@ using Ipopt
 using KNITRO
 using FastGaussQuadrature
 
+include("MPC_Module.jl")
+using .MPC_Module
+
 # To copy a particular piece of code (or function) in some location
 macro def(name, definition)
   return quote
@@ -57,34 +60,6 @@ function Constraint()
              [],
              [],
              []);
-end
-
-############################## mpc #############################################
-type MPC
-  # constants
-  tp::Float64          # predication time (if finalTimeDV == true -> this is not known before optimization)
-  tex::Float64         # execution horizon time
-  max_iter::Int64      # maximum number of iterations
-
-  # variables
-  goal_reached::Bool           # flag  to indicate that goal has been reached
-  t0::Float64                  # inital time
-  tf::Float64                  # final time
-  t0_param::Any                # parameter for t0
-  X0p::Array{Float64,1}        # predicted initial states
-  u::Array{Array{Float64,1},1} # all control signals
-end
-
-function MPC()
-  MPC(0.0,
-      0.0,
-      0,
-      false,
-      0.0,
-      0.0,
-      Any,
-      Float64[],          # predicted intial state conditions
-      Vector{Float64}[]);
 end
 
 ################################################################################
@@ -223,6 +198,7 @@ type Result <: AbstractNLOpt
   dfs_plant                   # plant data
   dfs_con                     # constraint data
   results_dir                 # string that defines results folder
+  main_dir                    # string that defines results folder
 end
 
 # Default Constructor
@@ -246,7 +222,8 @@ Result( Vector{Any}[], # time vector for control
         [],            # optimization information in DataFrame for plotting
         [],            # plant data
         [],            # constraint data
-        "./results/",   # string that defines results folder
+        "./results/",  # string that defines results folder
+        ""             # string that defines results folder
       );
 end
 
@@ -287,11 +264,12 @@ end
 
 # scripts
 include("utils.jl");
+include("MPC_extras.jl")
 include("setup.jl")
 include("ps.jl");
 include("ocp.jl")
 include("post_processing.jl")
-       # Functions
+
 export
        # setup functions
        NLOpt, define, configure,
@@ -325,11 +303,15 @@ export
        plant2dfs,
        opt2dfs,
 
-       # MPC
-       simPlant,
+       # MPC_Module.jl
+       updateStates,
+       updateX0,
        mpcParams,
        mpcUpdate,
-       updateX0,
+       simPlant,
+
+       # MPC_extras.jl
+       autonomousControl,
 
        # Objects
        NLOpt,
@@ -337,6 +319,6 @@ export
        Settings,
 
        # results
-       resultsDir
+       resultsDir  # a function to make a results folder
 
-end
+end # module
