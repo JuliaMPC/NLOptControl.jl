@@ -555,3 +555,38 @@ function con2dfs(r::Result)
   dfs_con[:con_val]=r.constraint.value;
   return dfs_con
 end
+
+
+"""
+# maximum(x->maximum(x[:A]), dfs) -> consider
+# maximum(x->maximum(filter(y->y !== nothing, x[:A])), dfs)
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 12/8/2016, Last Modified: 3/29/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+function minDF(dfs,varb)
+  k=length(dfs); tmp=1e10*ones(k,1);
+  for i in 1:k
+    if dfs[i][varb]!=nothing
+      tmp[i]=minimum(dfs[i][varb])
+    end
+  end
+  minimum(tmp)  # find the minimum
+end
+
+"""
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 12/8/2016, Last Modified: 3/29/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+function maxDF(dfs,varb)
+  k=length(dfs); tmp=1e-10*ones(k,1);
+  for i in 1:k
+    if dfs[i][varb]!=nothing
+      tmp[i]=maximum(dfs[i][varb])
+    end
+  end
+  maximum(tmp)  # find the minimum
+end

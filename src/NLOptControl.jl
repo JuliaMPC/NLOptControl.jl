@@ -294,7 +294,7 @@ export
        defineSolver,
        build,
 
-       # data processing
+       # data processing  - utils.jl ?
        postProcess,
        newConstraint,
        evalConstraints,
@@ -304,6 +304,8 @@ export
        dvs2dfs,
        plant2dfs,
        opt2dfs,
+       minDF,
+       maxDF,
 
        # MPC_Module.jl
        updateStates,
