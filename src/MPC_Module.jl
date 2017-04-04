@@ -41,6 +41,7 @@ end
 # mpc functions
 ########################################################################################
 """
+#TODO move this back to OCP? or make it more general for updating parameters -> move parameters out of this?
 updateStates(n,r,params,X0,SA,UX)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan

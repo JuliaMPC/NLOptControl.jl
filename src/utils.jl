@@ -560,6 +560,7 @@ end
 """
 # maximum(x->maximum(x[:A]), dfs) -> consider
 # maximum(x->maximum(filter(y->y !== nothing, x[:A])), dfs)
+# minimum(x->maximum(filter(y->y !== nothing, x[:t])), dfs)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 12/8/2016, Last Modified: 3/29/2017 \n
@@ -568,7 +569,7 @@ Date Create: 12/8/2016, Last Modified: 3/29/2017 \n
 function minDF(dfs,varb)
   k=length(dfs); tmp=1e10*ones(k,1);
   for i in 1:k
-    if dfs[i][varb]!=nothing
+    if dfs[i]!=nothing
       tmp[i]=minimum(dfs[i][varb])
     end
   end
@@ -584,7 +585,7 @@ Date Create: 12/8/2016, Last Modified: 3/29/2017 \n
 function maxDF(dfs,varb)
   k=length(dfs); tmp=1e-10*ones(k,1);
   for i in 1:k
-    if dfs[i][varb]!=nothing
+    if dfs[i]!=nothing
       tmp[i]=maximum(dfs[i][varb])
     end
   end

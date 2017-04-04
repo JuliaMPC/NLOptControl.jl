@@ -2,7 +2,7 @@
 n = define(n,numStates=2,numControls=1,X0=[0.,1],XF=[0.,-1.],XL=[0.,-Inf],XU=[1/9,Inf],CL=[-Inf],CU=[Inf])
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/1/2017, Last Modified: 1/23/2017 \n
+Date Create: 1/1/2017, Last Modified: 4/3/2017 \n
 Citations: \n
 ----------\n
 Initially Influenced by: S. Hughes.  steven.p.hughes@nasa.gov
@@ -19,7 +19,7 @@ function define(n::NLOpt;
                 XU::Array{Float64,1}=zeros(Float64,numStates,1),
                 CL::Array{Float64,1}=zeros(Float64,numControls,1),
                 CU::Array{Float64,1}=zeros(Float64,numControls,1),
-                tf_max::Float64=40.0
+                tf_max::Float64=400.0
                 )
 
   # validate input
