@@ -26,15 +26,15 @@ names = [:x,:y,:v]; descriptions = ["x(t)","y(t)","v(t)"]; stateNames(n,names,de
 names = [:u]; descriptions = ["u(t)"]; controlNames(n,names,descriptions);
 
 # setup OCP
-defineSolver(n,solver=:KNITRO)  # TODO figure out why this does not run using IPOPT!!
-mdl = build(n);
-n,r = OCPdef(mdl,n,s)
+mdl=defineSolver(n;solver=:KNITRO);
+
+n,r = OCPdef(mdl,n,s);
 @NLobjective(mdl, Min, n.tf);
 
 optimize(mdl,n,r,s) # solve
 
 # post process
 using PrettyPlots, Plots
-gr(); 
+gr();
 s=Settings(;format=:png);
 allPlots(n,r,s,1)

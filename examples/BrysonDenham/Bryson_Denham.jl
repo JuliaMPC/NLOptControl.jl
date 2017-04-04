@@ -22,8 +22,8 @@ n = configure(n,Ni=2,Nck=[10,5];(:integrationMethod => :ps),(:integrationScheme 
 ##################################
 # Define JuMP problem
 ##################################
-defineSolver(n,solver=:IPOPT)
-mdl = build(n);
+ mdl=defineSolver(n,solver=:IPOPT)
+
 n,r=OCPdef(mdl,n,s);
 obj = integrate(mdl,n,r.u[:,1];C=0.5,(:variable=>:control),(:integrand=>:squared))
 @NLobjective(mdl, Min, obj);

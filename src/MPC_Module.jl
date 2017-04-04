@@ -103,6 +103,7 @@ function mpcParams(n;tp::Float64=0.0,tex::Float64=0.0,max_iter::Int64=10)
   n.mpc.tex = tex;
   n.mpc.max_iter = max_iter;
 end
+mpcParams(n,c)=mpcParams(n;tp=c.m.tp,tex=c.m.tex,max_iter=c.m.max_iter);   # mpc setup
 
 function mpcUpdate(n,r;goal_reached::Bool=false)
   n.mpc.goal_reached = goal_reached;

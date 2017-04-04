@@ -36,7 +36,7 @@ linearStateTolerances(n;mXL=mXL,mXU=mXU);
 names = [:h,:v]; descriptions = ["h(t)","v(t)"]; stateNames(n,names,descriptions);
 
 # setup OCP
-mdl = build(n);
+mdl,z=defineSolver(n)
 n,r = OCPdef(mdl,n,s)
 obj = integrate(mdl,n,r.u[:,1];C=1.0,(:variable=>:control),(:integrand=>:default))
 @NLobjective(mdl, Min, obj);

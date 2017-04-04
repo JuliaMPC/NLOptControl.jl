@@ -1,15 +1,75 @@
 
 """
-defineSolver(n; solver=:KNITRO)
+mdl, z = defineSolver(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/9/2017, Last Modified: 2/9/2017 \n
+Date Create: 2/9/2017, Last Modified: 4/3/2017 \n
 -------------------------------------------------------------------------------------\n
 """
 function defineSolver(n::NLOpt;
-                      solver::Symbol=:IPOPT)
-  n.solver=solver;
-end
+                      name::Symbol=:IPOPT,
+                      max_cpu_time::Float64=100.,
+                      max_iter::Int64=500)
+
+  function try_import(name::Symbol)
+    try
+        @eval import $name
+        return true
+    catch e
+        return false
+    end
+  end
+
+  z=Solver();
+  z.max_iter=max_iter;
+  z.max_time=max_cpu_time;
+  if name==:IPOPT
+    if try_import(:Ipopt)
+      z.name=:IPOPT;
+      z.solver=Ipopt.IpoptSolver(max_cpu_time=max_cpu_time,
+                                 print_level=0,
+                                 warm_start_init_point = "yes",
+                                 max_iter=max_iter,
+                                 tol=5e-2,
+                                 dual_inf_tol=5.,
+                                 constr_viol_tol=1e-1,
+                                 compl_inf_tol=1e-1,
+                                 acceptable_tol=1e-2,
+                                 acceptable_constr_viol_tol=0.01,
+                                 acceptable_dual_inf_tol=1e10,
+                                 acceptable_compl_inf_tol=0.01,
+                                 acceptable_obj_change_tol=1e20,
+                                 diverging_iterates_tol=1e20)
+    end
+  elseif name==:KNITRO
+    if try_import(:KNITRO)
+      z.name=:KNITRO;
+      z.solver=KNITRO.KnitroSolver(outlev=0,
+                                   maxit=max_iter,
+                                   maxtime_real=max_cpu_time,
+                                   infeastol=1e-2,
+                                   feastol=1.0e20,
+                                   feastol_abs=7e-2,
+                                   opttol=1.0e20,
+                                   opttol_abs=1e-1,
+                                   algorithm=1,
+                                   bar_initpt=3,
+                                   bar_murule=4,
+                                   bar_penaltycons=1,
+                                   bar_penaltyrule =2,
+                                   bar_switchrule=2,
+                                   linesearch=1,
+                                   linsolver=2)
+    end
+  end
+  n.solver=z; # update model
+
+  mdl=Model(solver=z.solver)
+  return mdl
+end  # function
+
+defineSolver(n,c)=defineSolver(n;name=c.m.solver,max_cpu_time=c.m.max_cpu_time,max_iter=c.m.max_iter);
+
 
 """
 linearStateTolerances(n)
@@ -213,23 +273,6 @@ function integrate(mdl::JuMP.Model,n::NLOpt,V::Array{JuMP.Variable,1}, args...; 
   return Expr
 end
 
-"""
-mdl=build(n)
-# build JuMP model
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/9/2017, Last Modified: 2/22/2017 \n
---------------------------------------------------------------------------------------\n
-"""
-#TODO allow user to pass solver options
-function build(n::NLOpt)
-  if n.solver==:IPOPT
-    mdl=Model(solver=IpoptSolver());
-  else n.solver==:KNITRO
-    mdl=Model(solver=KnitroSolver());
-  end
-  return mdl
-end
 
 """
 optimize(mdl,n,r,s)

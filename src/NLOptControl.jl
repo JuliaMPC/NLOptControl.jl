@@ -9,7 +9,7 @@ using Interpolations
 using DataFrames
 #using SymPy  # do not usually use...
 using Ipopt
-using KNITRO
+#using KNITRO
 using FastGaussQuadrature
 
 include("MPC_Module.jl")
@@ -60,6 +60,21 @@ function Constraint()
              [],
              [],
              []);
+end
+
+############################### solver  ########################################
+type Solver
+    name
+    max_time
+    max_iter
+    solver
+end
+
+function Solver()
+       Solver([],
+              [],
+              [],
+              Any);
 end
 
 ################################################################################
@@ -126,7 +141,7 @@ type NLOpt <: AbstractNLOpt
   finalTimeDV::Bool
   integrationMethod::Symbol
   integrationScheme::Symbol
-  solver::Symbol                 # solver
+  solver::Solver             # solver
 end
 
 # Default Constructor
@@ -171,7 +186,7 @@ NLOpt(Any,                # state equations
       false,              # finalTimeDV
       :ts,                # integrtionMethod
       :bkwEuler,          # integrationScheme
-      :IPOPT              # default solver
+      Solver()            # default solver
     );
 end
 

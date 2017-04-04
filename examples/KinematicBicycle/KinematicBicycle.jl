@@ -15,8 +15,7 @@ n = define(n,stateEquations=KinematicBicycle,numStates=4,numControls=2,X0=X0,XF=
 
 # build
 n = configure(n,Ni=2,Nck=[15,10];(:integrationMethod => :ps),(:integrationScheme => :lgrExplicit),(:finalTimeDV => false),(:tf => 4.0))
-defineSolver(n,solver=:IPOPT)
-mdl = build(n);
+mdl=defineSolver(n)
 
 # addtional information
 names = [:x,:y,:psi,:ux];
