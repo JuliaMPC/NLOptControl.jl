@@ -37,34 +37,13 @@ function MPC()
       Vector{Float64}[]);
 end
 
-########################################################################################
-# mpc functions
-########################################################################################
-"""
-#TODO move this back to OCP? or make it more general for updating parameters -> move parameters out of this?
-updateStates(n,r,params,X0,SA,UX)
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/17/2017, Last Modified: 2/21/2017 \n
---------------------------------------------------------------------------------------\n
-"""
-function updateStates(n,r,params,X0,SA,UX)
-  setvalue(params[3], SA)   # update desired steering angle
-  setvalue(params[2], UX)   # update speed
-  for st in 1:n.numStates   # update states
-    if any(!isnan(n.X0_tol[st]))
-      JuMP.setRHS(r.x0_con[st,1], (X0[st]+n.X0_tol[st]));
-      JuMP.setRHS(r.x0_con[st,2],-(X0[st]-n.X0_tol[st]));
-   else
-     JuMP.setRHS(r.x0_con[st],X0[st]);
-    end
-  end
-end
 
 """
 updateX0(n,r)                           # uses solution from current plant data
 updateX0(n,r,X0;(:userUpdate=>true))    # user defined update of X0
 # updates intial states
+
+# make sure that you call this before updateStates
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 3/6/2017, Last Modified: 3/10/2017 \n
@@ -86,6 +65,28 @@ function updateX0(n,r,args...;kwargs...)
     for st in 1:n.numStates
       n.X0[st]=r.dfs_plant[end][n.state.name[st]][end];
     end
+  end
+end
+
+########################################################################################
+# mpc functions
+########################################################################################
+"""
+#TODO move this back to OCP? or make it more general for updating parameters -> move parameters out of this?
+updateStates(n,r)
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 2/17/2017, Last Modified: 2/21/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+function updateStates(n,r)
+  for st in 1:n.numStates   # update states
+    if any(!isnan(n.X0_tol[st]))
+      JuMP.setRHS(r.x0_con[st,1], (n.X0[st]+n.X0_tol[st]));
+      JuMP.setRHS(r.x0_con[st,2],-(n.X0[st]-n.X0_tol[st]));
+   else
+     JuMP.setRHS(r.x0_con[st],n.X0[st]);
+   end
   end
 end
 
