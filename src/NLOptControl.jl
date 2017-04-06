@@ -1,4 +1,3 @@
-# TODO think about exporting the functions from JuMP and Parameters
 isdefined(Base, :__precompile__) && __precompile__()
 
 module NLOptControl
@@ -7,10 +6,8 @@ using JuMP
 using Parameters
 using Interpolations
 using DataFrames
-#using SymPy  # do not usually use...
-using Ipopt
-#using KNITRO
 using FastGaussQuadrature
+using Ranges
 
 include("MPC_Module.jl")
 using .MPC_Module

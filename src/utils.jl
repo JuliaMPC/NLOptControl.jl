@@ -511,19 +511,15 @@ end
 
 """
 plant2dfs(n,r,s,u,sol)
-
-# funtionality to save state and control data from plant model
-
 # TODO: sometimes plant control models have different states and controls - > take this into account
-# TODO: allow for more general input than output from DifferentialEquations.jl
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/14/2017, Last Modified: 3/6/2017 \n
+Date Create: 2/14/2017, Last Modified: 4/3/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function plant2dfs(n::NLOpt,r::Result,s::Settings,u,sol)
 
-  t_sample=linspace(sol.t[1],sol.t[end],length(u[1]));
+  t_sample=Ranges.linspace(sol.t[1],sol.t[end],length(u[1]));
   dfs_plant=DataFrame();
   dfs_plant[:t]=t_sample;
 

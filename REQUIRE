@@ -3,15 +3,12 @@ Parameters
 Interpolations
 FastGaussQuadrature
 JuMP
-SymPy  # used for validation
 VehicleModels
 DataFrames
 Ipopt
 KNITRO
-Plots
-GR
-PGFPlots
-ImageMagick  # TODO consider moving plotting things to PrettyPlots
 WinRPM
 Sundials
 MbedTLS
+Ranges
+Ranges

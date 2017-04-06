@@ -1,6 +1,6 @@
 # note this cannot be defined in the module because it uses a fucntion that is defined afterwards
 """
-autonomousControl(mdl,n,r,s,params);
+status=autonomousControl(mdl,n,r,s,params);
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/1/2017, Last Modified: 3/11/2017 \n
@@ -15,5 +15,5 @@ function autonomousControl(mdl,n,r,s,params)
     JuMP.setRHS(r.x0_con[st],n.mpc.X0p[st]);
    end
  end
- optimize(mdl,n,r,s)
+  optimize(mdl,n,r,s)
 end
