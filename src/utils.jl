@@ -273,29 +273,6 @@ function integrate(mdl::JuMP.Model,n::NLOpt,V::Array{JuMP.Variable,1}, args...; 
   return Expr
 end
 
-
-"""
-optimize(mdl,n,r,s)
-
-# solves JuMP model and saves optimization data
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/6/2017, Last Modified: 2/20/2017 \n
---------------------------------------------------------------------------------------\n
-"""
-function optimize(mdl::JuMP.Model,n::NLOpt,r::Result,s::Settings;Iter::Int64=0)
-  t1 = time(); status=JuMP.solve(mdl); t2 = time();
-  if s.save
-    push!(r.status,status);
-    push!(r.t_solve,(t2 - t1));
-    push!(r.obj_val, getobjectivevalue(mdl));
-    push!(r.iter_nums,Iter); # iteration number for a higher level algorithm
-    r.eval_num=length(r.status);
-  end
-  postProcess(n,r,s);
-  return status
-end
-
 ########################################################################################
 # constraint data functions
 ########################################################################################
@@ -316,49 +293,6 @@ end
 function initConstraint(r::Result)
   if r.constraint == nothing
     r.constraint = Constraint()
-  end
-end
-
-function evalConstraints(n::NLOpt, r::Result)
-  r.constraint.value=[];   # reset values
-  r.constraint.nums=[]; s=1;
-  for i = 1:length(r.constraint.handle)
-    if r.constraint.name[i]==:dyn_con  # state constraits
-      dfs=Vector{DataFrame}(n.numStates);
-      con=DataFrame(step=1);
-      l=0;
-      for st in 1:n.numStates
-        if n.integrationMethod==:ps
-          temp=[getdual(r.constraint.handle[i][int][:,st]) for int in 1:n.Ni];
-          vals=[idx for tempM in temp for idx=tempM];
-          dfs[st]=DataFrame(step=1:sum(n.Nck);Dict(n.state.name[st] => vals)...);
-          l=l+length(vals);
-        else
-          dfs[st]=DataFrame(step=1:n.N;Dict(n.state.name[st] => getdual(r.constraint.handle[i][:,st]))...);
-          l=l+length(r.constraint.handle[i][:,st]);
-        end
-        if st==1; con=dfs[st]; else; con=join(con,dfs[st],on=:step); end
-      end
-    else
-      S=JuMP.size(r.constraint.handle[i])
-      if length(S)==1
-        con = DataFrame(step=1:length(r.constraint.handle[i]);Dict(r.constraint.name[i] => getdual(r.constraint.handle[i][:]))...);
-        l=S[1];
-      elseif length(S)==2
-        dfs=Vector{DataFrame}(S[1]);
-        con=DataFrame(step=1);
-        for idx in 1:S[1]
-          dfs[idx] = DataFrame(step=1:S[2];Dict(r.constraint.name[i] => getdual(r.constraint.handle[i][idx,:]))...);
-          if idx==1; con=dfs[idx]; else; con=join(con,dfs[idx],on=:step); end
-        end
-        l=S[1]*S[2];
-      end
-    end
-    f=s+l-1;
-    num=(i,r.constraint.name[i],@sprintf("length = %0.0f",l),string("indecies in g(x) = "),(s,f));
-    push!(r.constraint.nums,num);
-    push!(r.constraint.value,con);
-    s=f+1;
   end
 end
 
@@ -483,117 +417,6 @@ function resultsDir(results_dir::String)
 	mkdir(results_dir)
 end
 
-
-"""
-dvs2dfs(n,r)
-
-# funtionality to save state and control data from optimization
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/10/2017, Last Modified: 2/10/2017 \n
---------------------------------------------------------------------------------------\n
-"""
-function dvs2dfs(n::NLOpt,r::Result)
-  dfs=DataFrame()
-  dfs[:t]=r.t_st + n.mpc.t0;
-  for i in 1:n.numStates
-    dfs[n.state.name[i]]=r.X[:,i];
-  end
-  for i in 1:n.numControls
-    if n.integrationMethod==:ts
-      dfs[n.control.name[i]]=r.U[:,i];
-    else
-      dfs[n.control.name[i]]=[r.U[:,i];0];
-    end
-  end
-  return dfs
-end
-
-"""
-plant2dfs(n,r,s,u,sol)
-# TODO: sometimes plant control models have different states and controls - > take this into account
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/14/2017, Last Modified: 4/3/2017 \n
---------------------------------------------------------------------------------------\n
-"""
-function plant2dfs(n::NLOpt,r::Result,s::Settings,u,sol)
-
-  t_sample=Ranges.linspace(sol.t[1],sol.t[end],length(u[1]));
-  dfs_plant=DataFrame();
-  dfs_plant[:t]=t_sample;
-
-  for st in 1:n.numStates
-    dfs_plant[n.state.name[st]]=[sol(t)[st] for t in t_sample];
-  end
-
-  for ctr in 1:n.numControls
-    dfs_plant[n.control.name[ctr]]= u[ctr];
-  end
-
-  if s.reset
-    r.dfs_plant=[dfs_plant];
-  else
-    push!(r.dfs_plant,dfs_plant);
-  end
-end
-
-"""
-opt2dfs(r)
-
-# funtionality to save optimization data
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/10/2017, Last Modified: 2/20/2017 \n
---------------------------------------------------------------------------------------\n
-"""
-function opt2dfs(r::Result;kwargs...)
-
-  kw = Dict(kwargs);
-  # check to see if the user is initializing while compensating for control delay
-  if !haskey(kw,:Init); kw_ = Dict(:Init => false); Init = get(kw_,:Init,0);
-  else; Init = get(kw,:Init,0);
-  end
-
-  dfs_opt=DataFrame()
-
-  if !Init
-    id = find(r.t_solve)
-    idx = id[end]
-    dfs_opt[:t_solve]=r.t_solve[1:idx]
-    dfs_opt[:obj_val]=r.obj_val[1:idx]
-    dfs_opt[:status]=r.status[1:idx]
-    dfs_opt[:iter_num]=r.iter_nums[idx];
-  else
-    # find a better spot for this TODO consider eliminating altogether
-    push!(r.t_solve,0.0);
-    push!(r.obj_val,0.0);
-    push!(r.status,:Init);
-    push!(r.iter_nums,0);
-
-    dfs_opt[:t_solve]=r.t_solve[1]
-    dfs_opt[:obj_val]=r.obj_val[1]
-    dfs_opt[:status]=r.status[1]
-    dfs_opt[:iter_num]=r.iter_nums[1];
-  end
-
-  return dfs_opt
-end
-
-"""
-con2dfs(r)
-
-# funtionality to save constraint data
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/20/2017, Last Modified: 2/20/2017 \n
---------------------------------------------------------------------------------------\n
-"""
-function con2dfs(r::Result)
-  dfs_con=DataFrame()
-  dfs_con[:con_val]=r.constraint.value;
-  return dfs_con
-end
 
 
 """

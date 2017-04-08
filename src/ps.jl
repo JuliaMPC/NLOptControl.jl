@@ -60,17 +60,6 @@ function DMatrix(n::NLOpt, kwargs...)         #TODO make IMatrix and option
 end
 
 """
-scale_tau(τ,x₀,xₙ)
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 12/23/2017, Last Modified: 12/25/2016 \n
---------------------------------------------------------------------------------------\n
-"""
-function scale_tau(τ,x₀,xₙ)
-  (xₙ - x₀)/2*τ + (xₙ + x₀)/2;
-end
-
-"""
 scale_w(ω,x₀,xₙ)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
@@ -89,7 +78,7 @@ Date Create: 12/23/2017, Last Modified: 1/25/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function createIntervals(n::NLOpt)
-    tm = linspace(-1,1,n.Ni+1)     # create mesh points
+    tm = Ranges.linspace(-1,1,n.Ni+1)     # create mesh points
     di = 2/n.Ni;                   # interval size
     # go through each mesh interval creating time intervals; map [tm[i-1],tm[i]] --> [-1,1]
     n.ts=[[scale_tau(n.τ[int],tm[int],tm[int+1]);di*int-1] for int in 1:n.Ni];
@@ -98,7 +87,7 @@ function createIntervals(n::NLOpt)
 end
 
 function createIntervals(n::NLOpt, tf)
-    tm = linspace(-1,1,n.Ni+1)     # create mesh points
+    tm = Ranges.linspace(-1,1,n.Ni+1)     # create mesh points
     di = (tf+1)/n.Ni;              # interval size
     # go through each mesh interval creating time intervals; map [tm[i-1],tm[i]] --> [-1,1]
     n.ts=[[scale_tau(n.τ[int],tm[int],tm[int+1]);di*int-1] for int in 1:n.Ni];

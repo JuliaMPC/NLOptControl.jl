@@ -4,10 +4,13 @@ module NLOptControl
 
 using JuMP
 using Parameters
-using Interpolations
+using Interpolations  # do I need this?
 using DataFrames
 using FastGaussQuadrature
 using Ranges
+
+include("Base.jl")
+using .Base
 
 include("MPC_Module.jl")
 using .MPC_Module
@@ -278,21 +281,32 @@ end
 
 # scripts
 include("utils.jl");
-include("MPC_extras.jl")
 include("setup.jl")
 include("ps.jl");
 include("ocp.jl")
-include("post_processing.jl")
 
 export
+       # Base functions -> required by MPC_Module.jl
+       evalConstraints,
+       dvs2dfs,
+       plant2dfs,
+       opt2dfs,
+       postProcess,
+       optimize,
+       scale_tau,
+
        # setup functions
-       NLOpt, define, configure,
+       NLOpt,
+       define,
+       configure,
        OCPdef,
 
        # ps functions
        LGR_matrices,
-       scale_tau, scale_w, createIntervals,
-       lagrange_basis_poly, interpolate_lagrange,
+       scale_w,
+       createIntervals,
+       lagrange_basis_poly,
+       interpolate_lagrange,
        polyDiff,
        D_matrix,
 
@@ -300,34 +314,29 @@ export
        integrate,
 
        # optimization related functions
-       optimize,
        defineTolerances,
        linearStateTolerances,
        defineSolver,
        build,
 
        # data processing  - utils.jl ?
-       postProcess,
        newConstraint,
-       evalConstraints,
        evalMaxDualInf,
        stateNames,
        controlNames,
-       dvs2dfs,
-       plant2dfs,
-       opt2dfs,
        minDF,
        maxDF,
 
        # MPC_Module.jl
+       initializeMPC,
+       autonomousControl,
        updateStates,
        updateX0,
+       predictX0,
        mpcParams,
        mpcUpdate,
        simPlant,
-
-       # MPC_extras.jl
-       autonomousControl,
+       simModel,
 
        # Objects
        NLOpt,
