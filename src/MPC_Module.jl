@@ -113,7 +113,7 @@ function predictX0(n,pa,r;kwargs...)
   # check to see if the user would like to make the prediction based off of previous solve time
   # this in case the user would like to update as quicly as posible instead of a fixed time
     # will make predictions worse, but may be more important to run quickly in particular applications
-  if !haskey(kw,:Init); kw_=Dict(:fixedTp=> false); fixedTp=get(kw_,:fixedTp,0);
+  if !haskey(kw,:Init); kw_=Dict(:fixedTp=> true); fixedTp=get(kw_,:fixedTp,0);
   else; fixedTp=get(kw,:fixedTp,0);
   end
 
