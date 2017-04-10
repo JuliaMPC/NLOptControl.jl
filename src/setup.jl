@@ -1,5 +1,5 @@
 """
-n = define(n,numStates=2,numControls=1,X0=[0.,1],XF=[0.,-1.],XL=[0.,-Inf],XU=[1/9,Inf],CL=[-Inf],CU=[Inf])
+n = define!(n,numStates=2,numControls=1,X0=[0.,1],XF=[0.,-1.],XL=[0.,-Inf],XU=[1/9,Inf],CL=[-Inf],CU=[Inf])
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 1/1/2017, Last Modified: 4/3/2017 \n
@@ -9,7 +9,7 @@ Initially Influenced by: S. Hughes.  steven.p.hughes@nasa.gov
 Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/264a12acad195e6a2467cfdc68abdcee801f73fc/tree/prototype/OptimalControl/LowThrust/@DecisionVector/)
 -------------------------------------------------------------------------------------\n
 """
-function define(n::NLOpt;
+function define!(n::NLOpt;
                 stateEquations::Function=[],
                 numStates::Int64=0,
                 numControls::Int64=0,
@@ -67,17 +67,17 @@ function define(n::NLOpt;
   n.CU = CU;
   n.tf_max = tf_max;
   n.define = true;
-  return n
+  nothing
 end
 
 """
-n = configure(n::NLOpt,Ni=4,Nck=[3, 3, 7, 2];(:integrationMethod => :ps),(:integrationScheme => :lgrExplicit),(:finalTimeDV => false),(:tf => 1))
+n = configure!(n::NLOpt,Ni=4,Nck=[3, 3, 7, 2];(:integrationMethod => :ps),(:integrationScheme => :lgrExplicit),(:finalTimeDV => false),(:tf => 1))
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 1/1/2017, Last Modified: 3/25/2017 \n
 -------------------------------------------------------------------------------------\n
 """
-function configure(n::NLOpt, args...; kwargs... )
+function configure!(n::NLOpt, args...; kwargs... )
   kw = Dict(kwargs);
 
   # final time
@@ -133,8 +133,8 @@ function configure(n::NLOpt, args...; kwargs... )
     end
     n.τ = [taus_and_weights[int][1] for int in 1:n.Ni];
     n.ω = [taus_and_weights[int][2] for int in 1:n.Ni];
-    n = createIntervals(n);
-    n = DMatrix(n);
+    createIntervals!(n);
+    DMatrix!(n);
 
   elseif n.integrationMethod==:tm
     if haskey(kw,:Nck) || haskey(kw,:Ni)
@@ -153,5 +153,5 @@ function configure(n::NLOpt, args...; kwargs... )
   n.mXU = falses(n.numStates);
   n.XL_var=Matrix{Float64}(n.numStates,n.numStatePoints);
   n.XU_var=Matrix{Float64}(n.numStates,n.numStatePoints);
-  return n
+  nothing
 end

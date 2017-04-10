@@ -1,6 +1,6 @@
 using NLOptControl, JuMP, Parameters, VehicleModels
 main_dir=pwd();
-
+error("update this")
 # initialize
 n = NLOpt(); s = Settings();
 # define

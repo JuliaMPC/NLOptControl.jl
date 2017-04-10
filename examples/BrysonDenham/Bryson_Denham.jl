@@ -1,4 +1,5 @@
 using NLOptControl, JuMP, Parameters, Plots, Ipopt
+error("update this")
 
 n = NLOpt(); # initialize
 

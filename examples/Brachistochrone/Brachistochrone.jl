@@ -1,6 +1,7 @@
 using NLOptControl, JuMP, Parameters, KNITRO
 main_dir=pwd();
 n = NLOpt(); s=Settings(); # initialize
+error("update this")
 
 # Brachistichrone Problem @ http://gpops2.com/Examples/Brachistochrone.html
                         # @ http://apmonitor.com/wiki/index.php/Apps/BrachistochroneProblem

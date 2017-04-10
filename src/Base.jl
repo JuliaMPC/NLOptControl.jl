@@ -6,14 +6,13 @@ using DataFrames
 
 # These functions are required for MPC_Module.jl
 export
-  evalConstraints,
+  evalConstraints!,
   dvs2dfs,
-  plant2dfs,
+  plant2dfs!,
   opt2dfs,
-  postProcess,
-  optimize,
+  postProcess!,
+  optimize!,
   scale_tau
-
 
 """
 scale_tau(τ,x₀,xₙ)
@@ -34,7 +33,7 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/14/2017, Last Modified: 4/7/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function plant2dfs(n,r,s,u,sol)
+function plant2dfs!(n,r,s,u,sol)
   row, column=size(u)
   t_sample=Ranges.linspace(sol.t[1],sol.t[end],row);
   dfs_plant=DataFrame();
@@ -53,6 +52,7 @@ function plant2dfs(n,r,s,u,sol)
   else
     push!(r.dfs_plant,dfs_plant);
   end
+  nothing
 end
 
 
@@ -97,27 +97,18 @@ function opt2dfs(r;kwargs...)
   if !haskey(kw,:Init); kw_ = Dict(:Init => false); Init = get(kw_,:Init,0);
   else; Init = get(kw,:Init,0);
   end
-
   dfs_opt=DataFrame()
 
   if !Init
-    id = find(r.t_solve)
-    idx = id[end]
-    dfs_opt[:t_solve]=r.t_solve[1:idx]
-    dfs_opt[:obj_val]=r.obj_val[1:idx]
-    dfs_opt[:status]=r.status[1:idx]
-    dfs_opt[:iter_num]=r.iter_nums[idx];
+    dfs_opt[:t_solve]=r.t_solve
+    dfs_opt[:obj_val]=r.obj_val
+    dfs_opt[:status]=r.status
+    dfs_opt[:iter_num]=r.iter_nums
   else
-    # find a better spot for this TODO consider eliminating altogether
-    push!(r.t_solve,0.0);
-    push!(r.obj_val,0.0);
-    push!(r.status,:Init);
-    push!(r.iter_nums,0);
-
-    dfs_opt[:t_solve]=r.t_solve[1]
-    dfs_opt[:obj_val]=r.obj_val[1]
-    dfs_opt[:status]=r.status[1]
-    dfs_opt[:iter_num]=r.iter_nums[1];
+    dfs_opt[:t_solve]=0.0
+    dfs_opt[:obj_val]=0.0
+    dfs_opt[:status]=:Init
+    dfs_opt[:iter_num]=0
   end
 
   return dfs_opt
@@ -139,13 +130,13 @@ function con2dfs(r)
 end
 
 """
-postProcess(n,r,s)
+postProcess!(n,r,s)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 1/27/2017, Last Modified: 4/7/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function postProcess(n,r,s;kwargs...)
+function postProcess!(n,r,s;kwargs...)
 
   kw = Dict(kwargs);
   # check to see if the user is initializing while compensating for control delay
@@ -188,16 +179,17 @@ function postProcess(n,r,s;kwargs...)
       push!(r.dfs_con,con2dfs(r));
       push!(r.dfs_opt,opt2dfs(r));
     end
-  else
+  else  # no optimization run -> somtimes you drive straight to get started
     push!(r.dfs,nothing);
     push!(r.dfs_con,nothing);
     push!(r.dfs_opt,opt2dfs(r,;(:Init=>true)));
   end
+  nothing
 end
 
 
 """
-optimize(mdl,n,r,s)
+status=optimize(mdl,n,r,s)
 
 # solves JuMP model and saves optimization data
 --------------------------------------------------------------------------------------\n
@@ -205,16 +197,17 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/6/2017, Last Modified: 2/20/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function optimize(mdl,n,r,s;Iter::Int64=0)
+function optimize!(mdl,n,r,s;Iter::Int64=0)
   t1 = time(); status=JuMP.solve(mdl); t2 = time();
   if s.save
-    push!(r.status,status);
-    push!(r.t_solve,(t2 - t1));
-    push!(r.obj_val, getobjectivevalue(mdl));
-    push!(r.iter_nums,Iter); # iteration number for a higher level algorithm
-    r.eval_num=length(r.status);
+    r.status=status;
+    r.t_solve=t2-t1;
+    r.obj_val=getobjectivevalue(mdl);
+    r.iter_nums=Iter; # iteration number for a higher level algorithm
+    r.eval_num=r.eval_num+1;  
+    postProcess!(n,r,s);
   end
-  postProcess(n,r,s);
+  #postProcess!(n,r,s);
   return status
 end
 
@@ -226,7 +219,7 @@ Date Create: 2/7/2017, Last Modified: 4/7/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 
-function evalConstraints(n,r)
+function evalConstraints!(n,r)
   r.constraint.value=[];   # reset values
   r.constraint.nums=[]; s=1;
   for i = 1:length(r.constraint.handle)
@@ -267,6 +260,7 @@ function evalConstraints(n,r)
     push!(r.constraint.value,con);
     s=f+1;
   end
+  nothing
 end
 
 

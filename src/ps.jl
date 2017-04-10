@@ -1,12 +1,12 @@
 """
-n = DMatrix(n)
-n = DMatrix(n, (:mode=>:symbolic))
+n = DMatrix!(n)
+n = DMatrix!(n, (:mode=>:symbolic))
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 1/15/2017, Last Modified: 1/27/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function DMatrix(n::NLOpt, kwargs...)         #TODO make IMatrix and option
+function DMatrix!(n::NLOpt, kwargs...)         #TODO make IMatrix and option
   kw = Dict(kwargs);
 
   if !haskey(kw,:mode); kw_ = Dict(:mode => :defaut); mode = get(kw_,:mode,0);
@@ -40,7 +40,7 @@ function DMatrix(n::NLOpt, kwargs...)         #TODO make IMatrix and option
     test = [Array(Any,n.Nck[int]+1) for int in 1:n.Ni];
     val = 1; # since this is always = 1 this funtion is useful for testing, without scaling the problem from [-1,1] this was useful becuase tf was a design variable
     tf = Sym("tf")
-    n = createIntervals(n,tf); # gives symbolic expression
+    createIntervals!(n,tf); # gives symbolic expression
     for int in 1:n.Ni
       for i in 1:n.Nck[int]+1
         test[int][i] =  n.ts[int][i](tf=>val)
@@ -56,7 +56,7 @@ function DMatrix(n::NLOpt, kwargs...)         #TODO make IMatrix and option
         end
     end
   end
-  return n
+  nothing
 end
 
 """
@@ -77,22 +77,22 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 12/23/2017, Last Modified: 1/25/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function createIntervals(n::NLOpt)
+function createIntervals!(n::NLOpt)
     tm = Ranges.linspace(-1,1,n.Ni+1)     # create mesh points
     di = 2/n.Ni;                   # interval size
     # go through each mesh interval creating time intervals; map [tm[i-1],tm[i]] --> [-1,1]
     n.ts=[[scale_tau(n.τ[int],tm[int],tm[int+1]);di*int-1] for int in 1:n.Ni];
     n.ωₛ=[scale_w(n.ω[int],tm[int],tm[int+1]) for int in 1:n.Ni];
-    return n
+    nothing
 end
 
-function createIntervals(n::NLOpt, tf)
+function createIntervals!(n::NLOpt, tf)
     tm = Ranges.linspace(-1,1,n.Ni+1)     # create mesh points
     di = (tf+1)/n.Ni;              # interval size
     # go through each mesh interval creating time intervals; map [tm[i-1],tm[i]] --> [-1,1]
     n.ts=[[scale_tau(n.τ[int],tm[int],tm[int+1]);di*int-1] for int in 1:n.Ni];
     n.ωₛ=[scale_w(n.ω[int],tm[int],tm[int+1]) for int in 1:n.Ni];
-    return n
+    nothing
 end
 
 """

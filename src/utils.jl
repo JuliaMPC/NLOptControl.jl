@@ -1,12 +1,12 @@
 
 """
-mdl, z = defineSolver(n)
+mdl=defineSolver!(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/9/2017, Last Modified: 4/3/2017 \n
 -------------------------------------------------------------------------------------\n
 """
-function defineSolver(n::NLOpt;
+function defineSolver!(n::NLOpt;
                       name::Symbol=:IPOPT,
                       max_cpu_time::Float64=100.,
                       max_iter::Int64=500)
@@ -63,16 +63,14 @@ function defineSolver(n::NLOpt;
     end
   end
   n.solver=z; # update model
-
   mdl=Model(solver=z.solver)
   return mdl
 end  # function
-
-defineSolver(n,c)=defineSolver(n;name=c.m.solver,max_cpu_time=c.m.max_cpu_time,max_iter=c.m.max_iter);
+defineSolver!(n,c)=defineSolver!(n;name=c.m.solver,max_cpu_time=c.m.max_cpu_time,max_iter=c.m.max_iter);
 
 
 """
-linearStateTolerances(n)
+linearStateTolerances!(n)
 # the purpose of this function is to taper the tolerances on the constant state constraints
 # the idea is that when doing MPC, the final states are well within the bounds so that the next optimization is not initalized at an infeasible point
 # if you want a constant bond, set the slope to zero
@@ -84,55 +82,55 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 3/23/2017, Last Modified: 3/25/2017 \n
 -------------------------------------------------------------------------------------\n
 """
-function linearStateTolerances(n::NLOpt;
-                        mXL::Array{Any,1}=falses(n.numStates),
-                        mXU::Array{Any,1}=falses(n.numStates))
+function linearStateTolerances!(n::NLOpt;
+                                mXL::Array{Any,1}=falses(n.numStates),
+                                mXU::Array{Any,1}=falses(n.numStates))
+  n.mXL=mXL;  n.mXU=mXU;
+  for st in 1:n.numStates
+    # lower state constraint
+    if n.mXL[st]!=false
+      if !isnan(n.XL[st])
+        for j in 1:n.numStatePoints
+        n.XL_var[st,j]=n.XL[st] + n.mXL[st]*(j/n.numStatePoints); # lower
+        end
+      end
+    end
 
-n.mXL=mXL;  n.mXU=mXU;
-for st in 1:n.numStates
-  # lower state constraint
-  if n.mXL[st]!=false
-    if !isnan(n.XL[st])
-      for j in 1:n.numStatePoints
-      n.XL_var[st,j]=n.XL[st] + n.mXL[st]*(j/n.numStatePoints); # lower
+    # upper state constraint
+    if n.XU[st]!=false
+      if !isnan(n.XU[st])
+        for j in 1:n.numStatePoints
+        n.XU_var[st,j]=n.XU[st] + n.mXU[st]*(j/n.numStatePoints); # upper
+        end
       end
     end
   end
-
-  # upper state constraint
-  if n.XU[st]!=false
-    if !isnan(n.XU[st])
-      for j in 1:n.numStatePoints
-      n.XU_var[st,j]=n.XU[st] + n.mXU[st]*(j/n.numStatePoints); # upper
-      end
-    end
-  end
-end
-
+  nothing
 end
 
 """
-defineTolerances(n)
+defineTolerances!(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/8/2017, Last Modified: 2/8/2017 \n
 -------------------------------------------------------------------------------------\n
 """
-function defineTolerances(n::NLOpt;
+function defineTolerances!(n::NLOpt;
                           X0_tol::Array{Float64,1}=0.05*ones(Float64,n.numStates,),
                           XF_tol::Array{Float64,1}=0.05*ones(Float64,n.numStates,))
   n.X0_tol=X0_tol; n.XF_tol=XF_tol;
+  nothing
 end
 
 """
-n = create_tV(mdl,n)
+create_tV!(mdl,n)
 # define a time vector (n.tV) for use with time varying constraints when (finalTimeDV=>true)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 3/17/2017, Last Modified: 3/17/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function create_tV(mdl::JuMP.Model,n::NLOpt)
+function create_tV!(mdl::JuMP.Model,n::NLOpt)
 
   if n.integrationMethod==:ps
     if n.finalTimeDV
@@ -163,22 +161,21 @@ function create_tV(mdl::JuMP.Model,n::NLOpt)
 
     end
   end
-
-  return n
+  nothing
 end
 
 """
 # integrating JuMP variables
-Expr = integrate(mdl,n,u;(:mode=>:control))
-Expr = integrate(mdl,n,u,idx=1;C=0.5,(:variable=>:control),(:integrand=>:squared))
-Expr = integrate(mdl,n,r.u[:,1];D=1.2,(:variable=>:control),(:integrand=>:squared),(:integrandAlgebra=>:subtract))
+Expr=integrate!(mdl,n,u;(:mode=>:control))
+Expr=integrate!(mdl,n,u,idx=1;C=0.5,(:variable=>:control),(:integrand=>:squared))
+Expr=integrate!(mdl,n,r.u[:,1];D=1.2,(:variable=>:control),(:integrand=>:squared),(:integrandAlgebra=>:subtract))
 
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 1/2/2017, Last Modified: 1/27/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function integrate(mdl::JuMP.Model,n::NLOpt,V::Array{JuMP.Variable,1}, args...; C::Float64=1.0,D=0.0,kwargs...)
+function integrate!(mdl::JuMP.Model,n::NLOpt,V::Array{JuMP.Variable,1}, args...; C::Float64=1.0,D=0.0,kwargs...)
   kw = Dict(kwargs);
   if !haskey(kw,:integrand); kw_ = Dict(:integrand => :default); integrand = get(kw_,:integrand,0);
   else; integrand = get(kw,:integrand,0);
@@ -283,16 +280,17 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/7/2017, Last Modified: 3/6/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function newConstraint(r::Result,handle,name::Symbol)
+function newConstraint!(r::Result,handle,name::Symbol)
   initConstraint(r)
   r.constraint::Constraint = r.constraint
   push!(r.constraint.handle,handle)
   push!(r.constraint.name,name)
+  nothing
 end
 
 function initConstraint(r::Result)
-  if r.constraint == nothing
-    r.constraint = Constraint()
+  if r.constraint==nothing
+    r.constraint=Constraint()
   end
 end
 
@@ -354,7 +352,7 @@ function initStateNames(n::NLOpt)
        );
 end
 
-function stateNames(n::NLOpt,names,descriptions)
+function stateNames!(n::NLOpt,names,descriptions)
   if !n.define
     error("\n call define() before calling controlNames() \n")
   end
@@ -366,6 +364,7 @@ function stateNames(n::NLOpt,names,descriptions)
     push!(n.state.name,names[i])
     push!(n.state.description,descriptions[i])
   end
+  nothing
 end
 
 ########################################################################################
@@ -383,7 +382,7 @@ function initControlNames(n::NLOpt)
           [String("u$i") for i in 1:n.numControls]);
 end
 
-function controlNames(n::NLOpt,names,descriptions)
+function controlNames!(n::NLOpt,names,descriptions)
   if !n.define
     error("\n call define() before calling controlNames() \n")
   end
@@ -395,6 +394,7 @@ function controlNames(n::NLOpt,names,descriptions)
     push!(n.control.name,names[i])
     push!(n.control.description,descriptions[i])
   end
+  nothing
 end
 
 ########################################################################################
@@ -415,6 +415,7 @@ function resultsDir(results_dir::String)
 		print("\n The old results have all been deleted! \n \n")
 	end
 	mkdir(results_dir)
+  nothing
 end
 
 

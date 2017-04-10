@@ -1,7 +1,6 @@
 using NLOptControl, JuMP, Parameters
 main_dir=pwd();s=Settings();
-
-n = NLOpt(); # initialize
+n=NLOpt();
 
 # Moon Lander Problem @ http://www.gpops2.com/Examples/MoonLander.html
 const g = 1.62519; # m/s^2
@@ -15,7 +14,7 @@ end
 
 # define
 #n = define(n,stateEquations=MoonLander,numStates=2,numControls=1,X0=[10.,-2],XF=[0.,0.],XL=[NaN,NaN],XU=[NaN,NaN],CL=[0.],CU=[3.])
-n = define(n,stateEquations=MoonLander,numStates=2,numControls=1,X0=[10.,-2],XF=[0.,NaN],XL=[NaN,-3],XU=[NaN,-1],CL=[0.],CU=[3.])
+define!(n,stateEquations=MoonLander,numStates=2,numControls=1,X0=[10.,-2],XF=[0.,NaN],XL=[NaN,-3],XU=[NaN,-1],CL=[0.],CU=[3.])
 
 # build
 # no time
@@ -24,25 +23,26 @@ n = define(n,stateEquations=MoonLander,numStates=2,numControls=1,X0=[10.,-2],XF=
 #n = configure(n,N=10;(:integrationMethod => :tm),(:integrationScheme => :trapezoidal),(:finalTimeDV => false),(:tf => 4.0))
 
 # with time
-n = configure(n,Ni=4,Nck=[5,5,4,6];(:integrationMethod => :ps),(:integrationScheme => :lgrExplicit),(:finalTimeDV =>true))
+configure!(n,Ni=4,Nck=[5,5,4,6];(:integrationMethod => :ps),(:integrationScheme => :lgrExplicit),(:finalTimeDV =>true))
 #n = configure(n,N=30;(:integrationMethod => :tm),(:integrationScheme => :bkwEuler),(:finalTimeDV => true))
 #n = configure(n,N=30;(:integrationMethod => :tm),(:integrationScheme => :trapezoidal),(:finalTimeDV => true))
 
-# addtional information
+# addtional settings
 mXL=Any[false,0.1];mXU=Any[false,-.1];  # set to false if you don't want to taper that side
-linearStateTolerances(n;mXL=mXL,mXU=mXU);
-#defineSolver(n,solver=:KNITRO)
-#XF_tol = [0.001, 0.001]; X0_tol = [0.001, 0.001]; defineTolerances(n;X0_tol=X0_tol,XF_tol=XF_tol);
-names = [:h,:v]; descriptions = ["h(t)","v(t)"]; stateNames(n,names,descriptions);
+linearStateTolerances!(n;mXL=mXL,mXU=mXU);
+defineSolver!(n;name=:KNITRO)
+XF_tol = [0.001, 0.001]; X0_tol = [0.001, 0.001];
+defineTolerances!(n;X0_tol=X0_tol,XF_tol=XF_tol);
+names = [:h,:v]; descriptions = ["h(t)","v(t)"]; stateNames!(n,names,descriptions);
 
 # setup OCP
-mdl,z=defineSolver(n)
-n,r = OCPdef(mdl,n,s)
-obj = integrate(mdl,n,r.u[:,1];C=1.0,(:variable=>:control),(:integrand=>:default))
+mdl=defineSolver!(n)
+r=OCPdef!(mdl,n,s)
+obj=integrate!(mdl,n,r.u[:,1];C=1.0,(:variable=>:control),(:integrand=>:default))
 @NLobjective(mdl, Min, obj);
 
 # solve
-optimize(mdl,n,r,s)
+optimize!(mdl,n,r,s)
 
 # post process
 using PrettyPlots, Plots

@@ -5,7 +5,7 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 1/14/2017, Last Modified: 3/28/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function OCPdef(mdl::JuMP.Model,n::NLOpt,s::Settings,args...)
+function OCPdef!(mdl::JuMP.Model,n::NLOpt,s::Settings,args...)
 
   if length(args)==1; params=args[1]; paramsON=true; else paramsON=false; end
   r = Result();
@@ -87,8 +87,8 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt,s::Settings,args...)
     @NLparameter(mdl, t0_param == 0.0);   # for now we just start at zero
     n.mpc.t0_param=t0_param;
     t0_con=[@NLconstraint(mdl, t0==t0_param)];
-    newConstraint(r,t01_con,:t01_con);
-    newConstraint(r,t0_con,:t0_con);
+    newConstraint!(r,t01_con,:t01_con);
+    newConstraint!(r,t0_con,:t0_con);
   end
 
   if n.integrationMethod==:ps
@@ -99,7 +99,7 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt,s::Settings,args...)
     if n.finalTimeDV
       @variable(mdl, 0.1 <= tf <=  n.tf_max)
       n.tf = tf;
-      create_tV(mdl,n) # make a time vector
+      create_tV!(mdl,n) # make a time vector
     end
 
     for int in 1:n.Ni
@@ -155,12 +155,12 @@ function OCPdef(mdl::JuMP.Model,n::NLOpt,s::Settings,args...)
 
   # store results
   r.x=x; r.u=u; r.x0_con=x0_con; r.xf_con=xf_con; r.dyn_con=dyn_con;
-  newConstraint(r,x0_con,:x0_con); #TODO consider getting ride of redundancy
-  newConstraint(r,xf_con,:xf_con);
-  newConstraint(r,dyn_con,:dyn_con);
+  newConstraint!(r,x0_con,:x0_con); #TODO consider getting ride of redundancy
+  newConstraint!(r,xf_con,:xf_con);
+  newConstraint!(r,dyn_con,:dyn_con);
 
   # save the current working directory for navigation purposes
   r.main_dir=pwd();
 
-  return n, r
+  return r
 end

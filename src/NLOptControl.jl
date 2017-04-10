@@ -203,11 +203,11 @@ type Result <: AbstractNLOpt
   xf_con                      # handle for final state constraints
   dyn_con                     # dynamics constraints
   constraint::Constraint      # constraint handels and data
-  eval_num::Int64             # number of times optimization has been run
-  iter_nums::Vector{Any}      # mics. data, perhaps an iteration number for a higher level algorithm
-  status::Vector{Symbol}      # optimization status
-  t_solve::Vector{Float64}    # solve time for optimization
-  obj_val::Vector{Float64}    # objective function value
+  eval_num             # number of times optimization has been run
+  iter_nums     # mics. data, perhaps an iteration number for a higher level algorithm
+  status      # optimization status
+  t_solve   # solve time for optimization
+  obj_val    # objective function value
   dfs                         # results in DataFrame for plotting
   dfs_opt                     # optimization information in DataFrame for plotting
   dfs_plant                   # plant data
@@ -230,9 +230,9 @@ Result( Vector{Any}[], # time vector for control
         Constraint(),  # constraint data  TODO consider moving this
         0,             # number of times optimization has been run
         [],            # mics. data, perhaps an iteration number for a higher level algorithm
-        Symbol[],      # optimization status
-        Float64[],     # solve time for optimization
-        Float64[],     # objective function value
+        Symbol,      # optimization status
+        Float64,     # solve time for optimization
+        Float64,     # objective function value
         [],            # results in DataFrame for plotting
         [],            # optimization information in DataFrame for plotting
         [],            # plant data
@@ -286,57 +286,40 @@ include("ps.jl");
 include("ocp.jl")
 
 export
-       # Base functions -> required by MPC_Module.jl
-       evalConstraints,
-       dvs2dfs,
-       plant2dfs,
-       opt2dfs,
-       postProcess,
-       optimize,
-       scale_tau,
+       # Base functions
+       evalConstraints!,
+       postProcess!,
+       optimize!,
 
        # setup functions
        NLOpt,
-       define,
-       configure,
-       OCPdef,
-
-       # ps functions
-       LGR_matrices,
-       scale_w,
-       createIntervals,
-       lagrange_basis_poly,
-       interpolate_lagrange,
-       polyDiff,
-       D_matrix,
+       define!,
+       configure!,
+       OCPdef!,
 
        # math functions
-       integrate,
+       integrate!,
 
-       # optimization related functions
-       defineTolerances,
-       linearStateTolerances,
-       defineSolver,
-       build,
+       # optimization related functions - utils.jl
+       defineTolerances!,
+       linearStateTolerances!,
+       defineSolver!,
 
-       # data processing  - utils.jl ?
-       newConstraint,
+       # data processing  - utils.jl
+       newConstraint!,
        evalMaxDualInf,
-       stateNames,
-       controlNames,
+       stateNames!,
+       controlNames!,
        minDF,
        maxDF,
 
        # MPC_Module.jl
-       initializeMPC,
-       autonomousControl,
-       updateStates,
-       updateX0,
-       predictX0,
-       mpcParams,
-       mpcUpdate,
-       simPlant,
-       simModel,
+       autonomousControl!,
+       initializeMPC!,
+       driveStraight!,
+       updateX0!,
+       simPlant!,
+       MPC,
 
        # Objects
        NLOpt,
