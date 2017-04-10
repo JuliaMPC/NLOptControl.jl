@@ -173,7 +173,7 @@ function postProcess!(n,r,s;kwargs...)
 
     if s.save
       if s.evalConstraints
-        evalConstraints(n,r);
+        evalConstraints!(n,r);
       end
       push!(r.dfs,dvs2dfs(n,r));
       push!(r.dfs_con,con2dfs(r));
@@ -204,7 +204,7 @@ function optimize!(mdl,n,r,s;Iter::Int64=0)
     r.t_solve=t2-t1;
     r.obj_val=getobjectivevalue(mdl);
     r.iter_nums=Iter; # iteration number for a higher level algorithm
-    r.eval_num=r.eval_num+1;  
+    r.eval_num=r.eval_num+1;
     postProcess!(n,r,s);
   end
   #postProcess!(n,r,s);

@@ -53,16 +53,16 @@ end
 # mpc functions
 ########################################################################################
 """
-initializeMPC(n,r,X0)
+initializeMPC(n,r)
 
-initializeMPC!(n,r,copy(c.m.X0);FixedTp=c.m.FixedTp,PredictX0=c.m.PredictX0,tp=c.m.tp,tex=copy(c.m.tex),max_iter=c.m.mpc_max_iter);
+initializeMPC!(n,r;FixedTp=c.m.FixedTp,PredictX0=c.m.PredictX0,tp=c.m.tp,tex=copy(c.m.tex),max_iter=c.m.mpc_max_iter);
 
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 4/7/2017, Last Modified: 4/7/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function initializeMPC!(n,r,X0;FixedTp::Bool=true,PredictX0::Bool=true,tp::Float64=5.0,tex::Float64=0.5,max_iter::Int64=10)
+function initializeMPC!(n,r;FixedTp::Bool=true,PredictX0::Bool=true,tp::Float64=5.0,tex::Float64=0.5,max_iter::Int64=10)
   n.mpc::MPC=MPC();
   n.mpc.FixedTp=FixedTp;
   n.mpc.PredictX0=PredictX0;
@@ -72,10 +72,9 @@ function initializeMPC!(n,r,X0;FixedTp::Bool=true,PredictX0::Bool=true,tp::Float
   n.mpc.t0=0.0;
   n.mpc.t0_actual=0.0;
   n.mpc.tf=tex;
-  n.mpc.X0=[X0]; # since X0 changes
   nothing
 end
-#initializeMPC!(n,r,X0,c)=initializeMPC!(n,r,copy(c.m.X0);FixedTp=c.m.FixedTp,PredictX0=c.m.PredictX0,tp=c.m.tp,tex=c.m.tex,max_iter=c.m.mpc_max_iter);
+#initializeMPC!(n,r,c)=initializeMPC!(n,r;FixedTp=c.m.FixedTp,PredictX0=c.m.PredictX0,tp=c.m.tp,tex=c.m.tex,max_iter=c.m.mpc_max_iter);
 
 """
 # for simulating the model of the plant given control commands
@@ -157,7 +156,7 @@ function predictX0!(n,pa,r)
   if n.mpc.FixedTp || r.eval_num==1
     t0p=n.mpc.tex;
   else
-    t0p=r.dfs_opt[r.eval_num][:t_solve]
+    t0p=r.dfs_opt[end][:t_solve][1]
   end
   # based off of "current X0". Even though we may have the next X0 we should not (i.e.look at @show length(n.mpc.X0)). It is because it is a simulation (in reality they would be running in parallel)
   sol=simModel(n,pa,n.mpc.X0[r.eval_num],r.t_ctr+n.mpc.t0,r.U,n.mpc.t0,n.mpc.t0+t0p)
