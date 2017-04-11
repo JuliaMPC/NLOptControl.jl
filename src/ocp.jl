@@ -97,7 +97,7 @@ function OCPdef!(mdl::JuMP.Model,n::NLOpt,s::Settings,args...)
     dynamics_expr  = [Array(Any,n.Nck[int],n.numStates) for int in 1:n.Ni];
 
     if n.finalTimeDV
-      @variable(mdl, 0.1 <= tf <=  n.tf_max)
+      @variable(mdl, 0.001 <= tf <=  n.tf_max)
       n.tf = tf;
       create_tV!(mdl,n) # make a time vector
     end
@@ -133,7 +133,7 @@ function OCPdef!(mdl::JuMP.Model,n::NLOpt,s::Settings,args...)
     dyn_con  = Array(Any,n.N,n.numStates);
     if n.finalTimeDV
      #@variable( mdl, 0.00001 <= dt[1:n.N] <= 0.2) #TODO allow for an varaible array of dts
-     @variable(mdl, 0.01 <= tf <= n.tf_max)
+     @variable(mdl, 0.001 <= tf <= n.tf_max)
      n.tf = tf;
     end
     n.dt = n.tf/n.N*ones(n.N,);
