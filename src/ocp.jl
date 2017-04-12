@@ -161,6 +161,5 @@ function OCPdef!(mdl::JuMP.Model,n::NLOpt,s::Settings,args...)
 
   # save the current working directory for navigation purposes
   r.main_dir=pwd();
-
   return r
 end

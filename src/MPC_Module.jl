@@ -45,7 +45,7 @@ function MPC()
       0.0,
       Any,
       Float64[],          # predicted intial state conditions
-      [Float64[]],
+      [],
       true,
       true);
 end
@@ -92,8 +92,27 @@ function simModel(n,pa,X0,t,U,t0,tf)
 end
 
 """
+updateStates(n,r)
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 2/17/2017, Last Modified: 2/21/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+function updateStates!(n,r)
+  for st in 1:n.numStates   # update states
+    if any(!isnan(n.X0_tol[st]))
+      JuMP.setRHS(r.x0_con[st,1], (n.X0[st]+n.X0_tol[st]));
+      JuMP.setRHS(r.x0_con[st,2],-(n.X0[st]-n.X0_tol[st]));
+   else
+     JuMP.setRHS(r.x0_con[st],n.X0[st]);
+   end
+  end
+  nothing
+end
+
+"""
 # NOTE: this function is called inside simPlant()
-updateX0(n,r,X0;(:userUpdate=>true))    # user defined update of X0
+updateX0!(n,r,X0;(:userUpdate=>true))    # user defined update of X0
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 3/6/2017, Last Modified: 4/9/2017 \n
@@ -184,24 +203,6 @@ function driveStraight!(n,pa,r,s;t0::Float64=n.mpc.t0,tf::Float64=n.mpc.tf)
   nothing
 end
 
-"""
-updateStates(n,r)
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/17/2017, Last Modified: 2/21/2017 \n
---------------------------------------------------------------------------------------\n
-"""
-function updateStates!(n,r)
-  for st in 1:n.numStates   # update states
-    if any(!isnan(n.X0_tol[st]))
-      JuMP.setRHS(r.x0_con[st,1], (n.X0[st]+n.X0_tol[st]));
-      JuMP.setRHS(r.x0_con[st,2],-(n.X0[st]-n.X0_tol[st]));
-   else
-     JuMP.setRHS(r.x0_con[st],n.X0[st]);
-   end
-  end
-  nothing
-end
 
 """
 

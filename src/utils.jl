@@ -280,6 +280,12 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/7/2017, Last Modified: 3/6/2017 \n
 --------------------------------------------------------------------------------------\n
 """
+function initConstraint(r::Result)
+  if r.constraint==nothing
+    r.constraint=Constraint()
+  end
+end
+
 function newConstraint!(r::Result,handle,name::Symbol)
   initConstraint(r)
   r.constraint::Constraint = r.constraint
@@ -288,11 +294,6 @@ function newConstraint!(r::Result,handle,name::Symbol)
   nothing
 end
 
-function initConstraint(r::Result)
-  if r.constraint==nothing
-    r.constraint=Constraint()
-  end
-end
 
 """
 maxDualInf = evalMaxDualInf(n,r)
@@ -414,7 +415,7 @@ Date Create: 3/26/2017, Last Modified: 3/26/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function resultsDir!(r,results_name::String;description::String="no description given")
- results_dir = string(main_dir,"/results/",results_name)  # define directories
+ results_dir = string(r.main_dir,"/results/",results_name)  # define directories
  r.results_dir=results_dir;
 
  if isdir(r.results_dir)
