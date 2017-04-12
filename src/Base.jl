@@ -137,7 +137,6 @@ Date Create: 1/27/2017, Last Modified: 4/7/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function postProcess!(n,r,s;kwargs...)
-
   kw = Dict(kwargs);
   # check to see if the user is initializing while compensating for control delay
   if !haskey(kw,:Init); kw_ = Dict(:Init => false); Init = get(kw_,:Init,0);
@@ -171,18 +170,21 @@ function postProcess!(n,r,s;kwargs...)
       r.U[:,ctr] = getvalue(r.u[:,ctr]);
     end
 
+    if s.evalConstraints
+      evalConstraints!(n,r);
+    end
+
     if s.save
-      if s.evalConstraints
-        evalConstraints!(n,r);
-      end
       push!(r.dfs,dvs2dfs(n,r));
       push!(r.dfs_con,con2dfs(r));
       push!(r.dfs_opt,opt2dfs(r));
     end
-  else  # no optimization run -> somtimes you drive straight to get started
+  elseif s.save  # no optimization run -> somtimes you drive straight to get started
     push!(r.dfs,nothing);
     push!(r.dfs_con,nothing);
     push!(r.dfs_opt,opt2dfs(r,;(:Init=>true)));
+  else
+    warn("postProcess.jl did not do anything")
   end
   nothing
 end
@@ -205,9 +207,8 @@ function optimize!(mdl,n,r,s;Iter::Int64=0)
     r.obj_val=getobjectivevalue(mdl);
     r.iter_nums=Iter; # iteration number for a higher level algorithm
     r.eval_num=r.eval_num+1;
-    postProcess!(n,r,s);
   end
-  #postProcess!(n,r,s);
+  postProcess!(n,r,s);  # temporarily save data
   return status
 end
 

@@ -319,6 +319,7 @@ export
        driveStraight!,
        updateX0!,
        simPlant!,
+       simModel,
        MPC,
 
        # Objects
@@ -327,6 +328,6 @@ export
        Settings,
 
        # results
-       resultsDir  # a function to make a results folder
+       resultsDir!  # a function to make a results folder
 
 end # module

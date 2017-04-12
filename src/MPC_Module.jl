@@ -12,6 +12,7 @@ export
       driveStraight!,
       updateX0!,
       simPlant!,
+      simModel,
       MPC
 
 type MPC

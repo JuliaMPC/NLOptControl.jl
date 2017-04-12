@@ -402,23 +402,37 @@ end
 ########################################################################################
 
 """
-resultsDir(results_dir)
+description = string(
+" *  \n ")
+
+setupResults(r,results_name;description=description)
 # removes results folder and creates a new one
+
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/10/2017, Last Modified: 2/17/2017 \n
+Date Create: 3/26/2017, Last Modified: 3/26/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function resultsDir(results_dir::String)
-	if isdir(results_dir)
-		rm(results_dir; recursive=true)
-		print("\n The old results have all been deleted! \n \n")
-	end
-	mkdir(results_dir)
-  nothing
+function resultsDir!(r,results_name::String;description::String="no description given")
+ results_dir = string(main_dir,"/results/",results_name)  # define directories
+ r.results_dir=results_dir;
+
+ if isdir(r.results_dir)
+   rm(r.results_dir; recursive=true)
+   print("\n The old results have all been deleted! \n \n")
+ end
+ mkdir(r.results_dir)# create directory
+
+ description_str = string(
+ "In this test: \n
+  RESULTS DISCUSSION:  \n
+  * " , description )
+
+ cd(r.results_dir)
+   write("description.txt", description_str)
+ cd(r.main_dir)
+ nothing
 end
-
-
 
 """
 # maximum(x->maximum(x[:A]), dfs) -> consider
