@@ -169,13 +169,13 @@ end
 Expr=integrate!(mdl,n,u;(:mode=>:control))
 Expr=integrate!(mdl,n,u,idx=1;C=0.5,(:variable=>:control),(:integrand=>:squared))
 Expr=integrate!(mdl,n,r.u[:,1];D=rand(n.numStatePoints),(:variable=>:control),(:integrand=>:squared),(:integrandAlgebra=>:subtract))
-
+#TODO fix D  ::Array{JuMP.NonlinearParameter,1}
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/2/2017, Last Modified: 4/10/2017 \n
+Date Create: 1/2/2017, Last Modified: 4/12/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function integrate!(mdl::JuMP.Model,n::NLOpt,V::Array{JuMP.Variable,1}, args...; C::Float64=1.0,D::Array{Float64,1}=zeros(Float64,n.numStatePoints,),kwargs...)
+function integrate!(mdl::JuMP.Model,n::NLOpt,V::Array{JuMP.Variable,1}, args...; C=1.0,D=zeros(n.numStatePoints,),kwargs...)
   kw = Dict(kwargs);
   if !haskey(kw,:integrand); kw_ = Dict(:integrand => :default); integrand = get(kw_,:integrand,0);
   else; integrand = get(kw,:integrand,0);
