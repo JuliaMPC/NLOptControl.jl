@@ -93,7 +93,7 @@ type NLOpt <: AbstractNLOpt
   numControlPoints::Int64   # numer of dvs per control
   lengthDV::Int64           # total number of dv discretizations per variables
   tf::Any                   # final time
-  t0::Any                   # initial time
+  t0::Any                   # initial time TODO consider getting ride of this! or replace it with n.mpc.t0_param
   tf_max::Any               # maximum final time
   tV::Any                   # vector for use with time varying constraints
 

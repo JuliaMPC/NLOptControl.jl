@@ -54,16 +54,19 @@ end
 # mpc functions
 ########################################################################################
 """
-initializeMPC(n,r)
+initializeMPC(n)
 
-initializeMPC!(n,r;FixedTp=c.m.FixedTp,PredictX0=c.m.PredictX0,tp=c.m.tp,tex=copy(c.m.tex),max_iter=c.m.mpc_max_iter);
+initializeMPC!(n;FixedTp=c.m.FixedTp,PredictX0=c.m.PredictX0,tp=c.m.tp,tex=copy(c.m.tex),max_iter=c.m.mpc_max_iter);
 
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 4/7/2017, Last Modified: 4/7/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function initializeMPC!(n,r;FixedTp::Bool=true,PredictX0::Bool=true,tp::Float64=5.0,tex::Float64=0.5,max_iter::Int64=10)
+function initializeMPC!(n;FixedTp::Bool=true,PredictX0::Bool=true,tp::Float64=5.0,tex::Float64=0.5,max_iter::Int64=10)
+  if n.mpc.t0_param!=Any
+    error("\n initializeMPC!() must be called before OCPdef!() \n")
+  end
   n.mpc::MPC=MPC();
   n.mpc.FixedTp=FixedTp;
   n.mpc.PredictX0=PredictX0;
@@ -168,7 +171,6 @@ Date Create: 4/7/2017, Last Modified: 4/9/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function predictX0!(n,pa,r)
-
   if n.mpc.tf==n.mpc.t0
     error("n.mpc.tf==n.mpc.t0")
   end
@@ -192,7 +194,6 @@ Date Create: 4/9/2017, Last Modified: 4/9/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function driveStraight!(n,pa,r,s;t0::Float64=n.mpc.t0,tf::Float64=n.mpc.tf)
-
   # add these signals to r so that they can be used for predictions during optimization
   r.U=0*Matrix{Float64}(n.numControlPoints,n.numControls);
   r.t_ctr=Vector(Ranges.linspace(t0,tf,n.numControlPoints)); # gives a bunch of points
@@ -217,7 +218,8 @@ function mpcUpdate!(n,pa,r)
   else
     t0p=0; n.mpc.X0p=n.mpc.X0[r.eval_num];  # current "known" plant states
   end
-  n.mpc.t0=copy(n.mpc.t0_actual+t0p);     # there are two different time scales-> the plant leads by t0p
+  n.mpc.t0=copy(n.mpc.t0_actual+t0p);      # there are two different time scales-> the plant leads by t0p
+  setvalue(n.mpc.t0_param,copy(n.mpc.t0)); # update for time varying constraints
   n.mpc.tf=copy(n.mpc.t0+n.mpc.tex);
   if n.mpc.t0_param!=Any
     setvalue(n.mpc.t0_param,copy(n.mpc.t0));

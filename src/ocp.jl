@@ -82,13 +82,13 @@ function OCPdef!(mdl::JuMP.Model,n::NLOpt,s::Settings,args...)
   end
 
   if s.MPC
-    @variable( mdl, t0); n.t0 = t0;
-    t01_con=[@constraint(mdl, t0>= 0.0)]; # to add constraints to output they must be arrays
+  #  @variable(mdl, t0); n.t0 = t0;
+  #  t01_con=[@constraint(mdl, t0>= 0.0)]; # to add constraints to output they must be arrays
     @NLparameter(mdl, t0_param == 0.0);   # for now we just start at zero
     n.mpc.t0_param=t0_param;
-    t0_con=[@NLconstraint(mdl, t0==t0_param)];
-    newConstraint!(r,t01_con,:t01_con);
-    newConstraint!(r,t0_con,:t0_con);
+  #  t0_con=[@NLconstraint(mdl, t0==t0_param)];
+  #  newConstraint!(r,t01_con,:t01_con);
+  #  newConstraint!(r,t0_con,:t0_con);
   end
 
   if n.integrationMethod==:ps

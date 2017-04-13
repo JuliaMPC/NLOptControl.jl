@@ -145,7 +145,8 @@ function create_tV!(mdl::JuMP.Model,n::NLOpt)
 
       tt1 = [idx for tempM in ts for idx = tempM[1:end-1]];
       tmp = [tt1;ts[end][end]];
-      n.tV = @NLexpression(mdl,[j=1:n.numStatePoints], n.t0 + tmp[j]);
+#      n.tV = @NLexpression(mdl,[j=1:n.numStatePoints], n.t0 + tmp[j]);
+      n.tV = @NLexpression(mdl,[j=1:n.numStatePoints], n.mpc.t0_param + tmp[j]);
     else
       error("finish this")
     end
