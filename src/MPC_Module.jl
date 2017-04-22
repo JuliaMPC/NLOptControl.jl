@@ -216,7 +216,7 @@ function mpcUpdate!(n,pa,r)
   if n.mpc.PredictX0        # predict where X0 will be when optimized signal is actually sent to the vehicle
     t0p=predictX0!(n,pa,r); # predicted start time -> important for time varying constraints
   else
-    t0p=0; n.mpc.X0p=n.mpc.X0[r.eval_num];  # current "known" plant states
+    t0p=0; n.mpc.X0p=n.mpc.X0[end];  # current "known" plant states  TODO make sure the plant is never simulated ahead
   end
   n.mpc.t0=copy(n.mpc.t0_actual+t0p);      # there are two different time scales-> the plant leads by t0p
   setvalue(n.mpc.t0_param,copy(n.mpc.t0)); # update for time varying constraints

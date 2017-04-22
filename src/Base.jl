@@ -174,7 +174,7 @@ function postProcess!(n,r,s;kwargs...)
       evalConstraints!(n,r);
     end
 
-    if s.save
+    if s.save 
       push!(r.dfs,dvs2dfs(n,r));
       push!(r.dfs_con,con2dfs(r));
       push!(r.dfs_opt,opt2dfs(r));
@@ -191,6 +191,7 @@ end
 
 
 """
+
 status=optimize(mdl,n,r,s)
 
 # solves JuMP model and saves optimization data
