@@ -174,7 +174,7 @@ function postProcess!(n,r,s;kwargs...)
       evalConstraints!(n,r);
     end
 
-    if s.save 
+    if s.save
       push!(r.dfs,dvs2dfs(n,r));
       push!(r.dfs_con,con2dfs(r));
       push!(r.dfs_opt,opt2dfs(r));
@@ -242,7 +242,15 @@ function evalConstraints!(n,r)
         if st==1; con=dfs[st]; else; con=join(con,dfs[st],on=:step); end
       end
     else
-      S=JuMP.size(r.constraint.handle[i])
+      S=0;
+      try
+        S=JuMP.size(r.constraint.handle[i])
+      catch
+        error("\n For now, the constraints cannot be in this form: \n
+        con=@NLconstraint(mdl,r.u[1,1]==param); \n
+        Write it in array form: \n
+          con=@NLconstraint(mdl,[i=1],r.u[i,1]==param); \n")
+      end
       if length(S)==1
         con = DataFrame(step=1:length(r.constraint.handle[i]);Dict(r.constraint.name[i] => getdual(r.constraint.handle[i][:]))...);
         l=S[1];
