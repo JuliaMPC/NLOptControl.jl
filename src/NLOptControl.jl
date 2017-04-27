@@ -315,6 +315,7 @@ export
        controlNames!,
        minDF,
        maxDF,
+       savePlantData,
 
        # MPC_Module.jl
        autonomousControl!,

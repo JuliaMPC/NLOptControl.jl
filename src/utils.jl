@@ -47,11 +47,11 @@ function defineSolver!(n::NLOpt;
       z.solver=KNITRO.KnitroSolver(outlev=0,
                                    maxit=max_iter,
                                    maxtime_real=max_cpu_time,
-                                   infeastol=1e-2,
+                                   infeastol=5e-1, #1e-2
                                    feastol=1.0e20,
-                                   feastol_abs=7e-2,
+                                   feastol_abs=5e-1,#7e-2
                                    opttol=1.0e20,
-                                   opttol_abs=1e-1,
+                                   opttol_abs=9e-1,#5e-1
                                    algorithm=1,
                                    bar_initpt=3,
                                    bar_murule=4,
@@ -435,6 +435,37 @@ function resultsDir!(r,results_name::String;description::String="no description 
  cd(r.main_dir)
  nothing
 end
+
+
+"""
+------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 3/26/2017, Last Modified: 4/27/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+
+function savePlantData(n,r)
+  dfs=DataFrame();
+  temp = [r.dfs_plant[jj][:t][1:end-1,:] for jj in 1:length(r.dfs_plant)]; # time
+  U=[idx for tempM in temp for idx=tempM]; dfs[:t]=U;
+
+  for st in 1:n.numStates # state
+    temp = [r.dfs_plant[jj][n.state.name[st]][1:end-1,:] for jj in 1:length(r.dfs_plant)];
+    U=[idx for tempM in temp for idx=tempM];
+    dfs[n.state.name[st]]=U;
+  end
+
+  for ctr in 1:n.numControls # control
+    temp = [r.dfs_plant[jj][n.control.name[ctr]][1:end-1,:] for jj in 1:length(r.dfs_plant)];
+    U=[idx for tempM in temp for idx=tempM];
+    dfs[n.control.name[ctr]]=U;
+  end
+  cd(r.results_dir)
+    writetable("plant_data.csv",dfs);
+  cd(r.main_dir)
+  return nothing
+end
+
 
 """
 # maximum(x->maximum(x[:A]), dfs) -> consider
