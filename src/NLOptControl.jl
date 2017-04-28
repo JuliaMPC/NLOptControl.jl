@@ -264,13 +264,13 @@ type Settings <: AbstractNLOpt
 end
 
 # Default Constructor
-function Settings(;format::Symbol=:png,MPC::Bool=false,save::Bool=true,reset::Bool=false,simulate::Bool=false,evalConstraints::Bool=false,plantOnly::Bool=false)  # consider moving these plotting settings to PrettyPlots.jl
-Settings(5.5,    # line width 1
-         3.,     # line width 2
-         1.0,    # marker size 1
-         5.0,    # marker size 2
-         700,    # size of figure
-         1000,   # size of figure
+function Settings(;lw1::Float64=4.0,lw2::Float64=3.0,ms1::Float64=1.0,ms2::Float64=5.0,s1::Int64=700,s2::Int64=1000,format::Symbol=:png,MPC::Bool=false,save::Bool=true,reset::Bool=false,simulate::Bool=false,evalConstraints::Bool=false,plantOnly::Bool=false)  # consider moving these plotting settings to PrettyPlots.jl
+Settings(lw1,    # line width 1
+         lw2,    # line width 2
+         ms1,    # marker size 1
+         ms2,    # marker size 2
+         s1,     # size of figure
+         s2,     # size of figure
          simulate,  # bool for simulations
          100,    # length for plotting points
          format, # format for output plots
