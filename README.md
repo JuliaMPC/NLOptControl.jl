@@ -17,7 +17,9 @@ The full documentation can be found [here](http://nloptcontroljl.readthedocs.io/
 
 In Julia, you can install the NLOptControl.jl package by typing:
 ```julia
-Pkg.clone("https://github.com/huckl3b3rry87/NLOptControl.jl")
+Pkg.clone("https://github.com/JuliaMPC/PrettyPlots.jl")
+Pkg.clone("https://github.com/JuliaMPC/VehicleModels.jl")
+Pkg.clone("https://github.com/JuliaMPC/NLOptControl.jl")
 ```
 
 ## Tutorial
