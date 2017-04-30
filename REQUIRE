@@ -7,8 +7,6 @@ VehicleModels
 DataFrames
 Ipopt
 KNITRO
-WinRPM
 Sundials
 MbedTLS
-Ranges
 Ranges
