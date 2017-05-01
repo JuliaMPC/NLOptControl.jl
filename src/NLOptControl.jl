@@ -264,7 +264,7 @@ type Settings <: AbstractNLOpt
 end
 
 # Default Constructor
-function Settings(;lw1::Float64=4.0,lw2::Float64=3.0,ms1::Float64=1.0,ms2::Float64=5.0,s1::Int64=700,s2::Int64=1000,format::Symbol=:png,MPC::Bool=false,save::Bool=true,reset::Bool=false,simulate::Bool=false,evalConstraints::Bool=false,plantOnly::Bool=false)  # consider moving these plotting settings to PrettyPlots.jl
+function Settings(;lw1::Float64=4.0,lw2::Float64=3.0,ms1::Float64=1.0,ms2::Float64=5.0,s1::Int64=1800,s2::Int64=1200,format::Symbol=:png,MPC::Bool=false,save::Bool=true,reset::Bool=false,simulate::Bool=false,evalConstraints::Bool=false,plantOnly::Bool=false)  # consider moving these plotting settings to PrettyPlots.jl
 Settings(lw1,    # line width 1
          lw2,    # line width 2
          ms1,    # marker size 1
