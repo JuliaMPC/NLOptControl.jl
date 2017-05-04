@@ -133,7 +133,7 @@ Date Create: 3/17/2017, Last Modified: 3/17/2017 \n
 function create_tV!(mdl::JuMP.Model,n::NLOpt)
 
   if n.integrationMethod==:ps
-    if n.finalTimeDV
+    if n.finalTimeDV  
       # create mesh points, interval size = tf_var/Ni
       tm = @NLexpression(mdl, [idx=1:n.Ni+1], (idx-1)*n.tf/n.Ni);
       # go through each mesh interval creating time intervals; [t(i-1),t(i)] --> [-1,1]

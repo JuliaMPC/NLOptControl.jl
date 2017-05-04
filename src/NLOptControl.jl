@@ -245,40 +245,19 @@ end
 # Settings Class
 abstract AbstractNLOpt
 type Settings <: AbstractNLOpt
-  # plotting
-  lw1::Float64   # line width 1
-  lw2::Float64   # line width 2
-  ms1::Float64   # marker size 1
-  ms2::Float64   # marker size 2
-  s1::Int64      # size of figure
-  s2::Int64      # size of figure
-  simulate::Bool # bool for simulation
-  L::Int64       # length for plotting points
-  format::Symbol # format for output plots
   MPC::Bool      # bool for doing MPC
   save::Bool     # bool for saving data
   reset::Bool    # bool for reseting data
   evalConstraints::Bool # bool for evaluating duals of the constraints
-  plantOnly::Bool       # bool for plotting only the plant response
-
 end
 
 # Default Constructor
-function Settings(;lw1::Float64=4.0,lw2::Float64=3.0,ms1::Float64=1.0,ms2::Float64=5.0,s1::Int64=1800,s2::Int64=1200,format::Symbol=:png,MPC::Bool=false,save::Bool=true,reset::Bool=false,simulate::Bool=false,evalConstraints::Bool=false,plantOnly::Bool=false)  # consider moving these plotting settings to PrettyPlots.jl
-Settings(lw1,    # line width 1
-         lw2,    # line width 2
-         ms1,    # marker size 1
-         ms2,    # marker size 2
-         s1,     # size of figure
-         s2,     # size of figure
-         simulate,  # bool for simulations
-         100,    # length for plotting points
-         format, # format for output plots
+function Settings(;MPC::Bool=false,save::Bool=true,reset::Bool=false,evalConstraints::Bool=false)  # consider moving these plotting settings to PrettyPlots.jl
+Settings(
          MPC,    # bool for doing MPC
          save,   # bool for saving data
          reset,  # bool for reseting data
-         evalConstraints, # bool for evaluating duals of the constraints
-         plantOnly        # bool for plotting only the plant response
+         evalConstraints # bool for evaluating duals of the constraints
         );
 end
 

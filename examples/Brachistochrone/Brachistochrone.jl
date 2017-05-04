@@ -38,4 +38,4 @@ optimize(mdl,n,r,s) # solve
 using PrettyPlots, Plots
 gr();
 s=Settings(;format=:png);
-allPlots(n,r,s,1)
+allPlots(n,r,1)

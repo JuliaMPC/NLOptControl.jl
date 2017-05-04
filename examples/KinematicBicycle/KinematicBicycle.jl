@@ -40,4 +40,4 @@ optimize(mdl,n,r,s)
 # post process
 using PrettyPlots, Plots
 gr();
-allPlots(n,r,s,1)
+allPlots(n,r,1)

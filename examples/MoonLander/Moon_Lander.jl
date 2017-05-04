@@ -13,8 +13,8 @@ function MoonLander{T<:Any}(mdl::JuMP.Model,n::NLOpt,r::Result,x::Array{T,2},u::
 end
 
 # define
-#n = define(n,stateEquations=MoonLander,numStates=2,numControls=1,X0=[10.,-2],XF=[0.,0.],XL=[NaN,NaN],XU=[NaN,NaN],CL=[0.],CU=[3.])
-define!(n,stateEquations=MoonLander,numStates=2,numControls=1,X0=[10.,-2],XF=[0.,NaN],XL=[NaN,-3],XU=[NaN,-1],CL=[0.],CU=[3.])
+define!(n,stateEquations=MoonLander,numStates=2,numControls=1,X0=[10.,-2],XF=[0.,0.],XL=[NaN,NaN],XU=[NaN,NaN],CL=[0.],CU=[3.])
+#define!(n,stateEquations=MoonLander,numStates=2,numControls=1,X0=[10.,-2],XF=[0.,NaN],XL=[NaN,-3],XU=[NaN,-1],CL=[0.],CU=[3.])
 
 # build
 # no time
@@ -28,11 +28,11 @@ configure!(n,Ni=4,Nck=[5,5,4,6];(:integrationMethod => :ps),(:integrationScheme 
 #n = configure(n,N=30;(:integrationMethod => :tm),(:integrationScheme => :trapezoidal),(:finalTimeDV => true))
 
 # addtional settings
-mXL=Any[false,0.1];mXU=Any[false,-.1];  # set to false if you don't want to taper that side
-linearStateTolerances!(n;mXL=mXL,mXU=mXU);
-defineSolver!(n;name=:KNITRO)
-XF_tol = [0.001, 0.001]; X0_tol = [0.001, 0.001];
-defineTolerances!(n;X0_tol=X0_tol,XF_tol=XF_tol);
+#mXL=Any[false,0.1];mXU=Any[false,-.1];  # set to false if you don't want to taper that side
+#linearStateTolerances!(n;mXL=mXL,mXU=mXU);
+#defineSolver!(n;name=:KNITRO)
+#XF_tol = [0.001, 0.001]; X0_tol = [0.001, 0.001];
+#defineTolerances!(n;X0_tol=X0_tol,XF_tol=XF_tol);
 names = [:h,:v]; descriptions = ["h(t)","v(t)"]; stateNames!(n,names,descriptions);
 
 # setup OCP
@@ -47,6 +47,6 @@ optimize!(mdl,n,r,s)
 # post process
 using PrettyPlots, Plots
 #gr();
-pgfplots();
-s=Settings(;format=:png);
-allPlots(n,r,s,1)
+#pgfplots();
+pyplot()
+allPlots(n,r,1)

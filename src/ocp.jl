@@ -11,7 +11,7 @@ function OCPdef!(mdl::JuMP.Model,n::NLOpt,s::Settings,args...)
   r = Result();
 
   # state variables
-  @variable(mdl, x[1:n.numStatePoints,1:n.numStates]); # +1 for the last interval
+  @variable(mdl, x[1:n.numStatePoints,1:n.numStates]);
   for st in 1:n.numStates
     # lower state constraint
     if !isnan(n.XL[st])
@@ -41,7 +41,7 @@ function OCPdef!(mdl::JuMP.Model,n::NLOpt,s::Settings,args...)
   end
 
   # control variables
-  @variable(mdl, u[1:n.numControlPoints,1:n.numControls]);  #TODO make sure that there are not too many controls
+  @variable(mdl, u[1:n.numControlPoints,1:n.numControls]);
   for ctr in 1:n.numControls
     if !isnan(n.CL[ctr])
       for j in 1:n.numControlPoints
@@ -57,8 +57,8 @@ function OCPdef!(mdl::JuMP.Model,n::NLOpt,s::Settings,args...)
 
   # boundary constraints
   xf_con=[]; # currently modifying the final state constraint (with tolerance) is not needed, can easily ad this functionlity though
-  if any(!isnan(n.X0_tol)) # create handles for constraining the enire initial state
-    x0_con = Array(Any,n.numStates,2); # this is so they can be easily reference when doing MPC
+  if any(!isnan(n.X0_tol))             # create handles for constraining the enire initial state
+    x0_con=Array(Any,n.numStates,2); # this is so they can be easily reference when doing MPC
   else
     x0_con=[];
   end
@@ -74,22 +74,15 @@ function OCPdef!(mdl::JuMP.Model,n::NLOpt,s::Settings,args...)
     end
     if !isnan(n.XF[st])
       if isnan(n.XF_tol[st])
-        xf_con = [xf_con; @constraint(mdl, x[end,st]==n.XF[st])];
+        xf_con=[xf_con; @constraint(mdl, x[end,st]==n.XF[st])];
       else #TODO fix this as well
-        xf_con = [xf_con; @constraint(mdl, n.XF[st]-n.XF_tol[st] <= x[end,st] <= n.XF[st]+n.XF_tol[st])];
+        xf_con=[xf_con; @constraint(mdl, n.XF[st]-n.XF_tol[st] <= x[end,st] <= n.XF[st]+n.XF_tol[st])];
       end
     end
   end
 
-  if s.MPC
-  #  @variable(mdl, t0); n.t0 = t0;
-  #  t01_con=[@constraint(mdl, t0>= 0.0)]; # to add constraints to output they must be arrays
-    @NLparameter(mdl, t0_param == 0.0);   # for now we just start at zero
-    n.mpc.t0_param=t0_param;
-  #  t0_con=[@NLconstraint(mdl, t0==t0_param)];
-  #  newConstraint!(r,t01_con,:t01_con);
-  #  newConstraint!(r,t0_con,:t0_con);
-  end
+  @NLparameter(mdl, t0_param==0.0);   # for now we just start at zero
+  n.mpc.t0_param=t0_param;
 
   if n.integrationMethod==:ps
     dyn_con  = [Array(Any,n.Nck[int],n.numStates) for int in 1:n.Ni];
