@@ -124,15 +124,15 @@ function configure!(n::NLOpt, args...; kwargs... )
       error("\n Ni must be > 0 \n");
     end
      n.numPoints = [n.Nck[int] for int in 1:n.Ni];  # number of design variables per interval
-     n.numStatePoints = sum(n.Nck)+1;
-     n.numControlPoints = sum(n.Nck);
+     n.numStatePoints=sum(n.Nck)+1;
+     n.numControlPoints=sum(n.Nck);
 
     # initialize node data
     if n.integrationScheme==:lgrExplicit
       taus_and_weights = [gaussradau(n.Nck[int]) for int in 1:n.Ni];
     end
-    n.τ = [taus_and_weights[int][1] for int in 1:n.Ni];
-    n.ω = [taus_and_weights[int][2] for int in 1:n.Ni];
+    n.τ=[taus_and_weights[int][1] for int in 1:n.Ni];
+    n.ω=[taus_and_weights[int][2] for int in 1:n.Ni];
     createIntervals!(n);
     DMatrix!(n);
 

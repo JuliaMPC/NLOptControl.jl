@@ -75,7 +75,7 @@ function dvs2dfs(n,r)
     if n.integrationMethod==:ts
       dfs[n.control.name[i]]=r.U[:,i];
     else
-      dfs[n.control.name[i]]=[r.U[:,i];0];
+      dfs[n.control.name[i]]=[r.U[:,i];NaN];
     end
   end
   return dfs
@@ -154,10 +154,11 @@ function postProcess!(n,r,s;kwargs...)
       r.t_st = [r.t_ctr;t[end][end]];
 
     elseif n.integrationMethod==:tm
+      warn("NaN not test in postProcess!() for :tm methods")
       if n.finalTimeDV
-        r.t_ctr =  append!([0.0],cumsum(getvalue(n.dt)));
+        r.t_ctr =  append!([NaN],cumsum(getvalue(n.dt)));
       else
-        r.t_ctr =  append!([0.0],cumsum(n.dt));
+        r.t_ctr =  append!([NaN],cumsum(n.dt));
       end
       r.t_st = r.t_ctr;
     end

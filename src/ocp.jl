@@ -85,45 +85,56 @@ function OCPdef!(mdl::JuMP.Model,n::NLOpt,s::Settings,args...)
   n.mpc.t0_param=t0_param;
 
   if n.integrationMethod==:ps
-    dyn_con  = [Array(Any,n.Nck[int],n.numStates) for int in 1:n.Ni];
-    Nck_st  = [0;cumsum(n.Nck+1)]; Nck_ctr = [0;cumsum(n.Nck)];
-    dynamics_expr  = [Array(Any,n.Nck[int],n.numStates) for int in 1:n.Ni];
+    dyn_con=[Array(Any,n.Nck[int],n.numStates) for int in 1:n.Ni];
+    Nck_st=[0;cumsum(n.Nck+1)];  #TODO chande this Nck_st and Nck_ctr to other names. They are not longer corresponded to the state and control
+    Nck_ctr=[0;cumsum(n.Nck)];
+    dynamics_expr=[Array(Any,n.Nck[int],n.numStates) for int in 1:n.Ni];
 
     if n.finalTimeDV
       @variable(mdl, 0.001 <= tf <=  n.tf_max)
-      n.tf = tf;
+      n.tf=tf;
       create_tV!(mdl,n) # make a time vector
     end
 
     for int in 1:n.Ni
       # states
-      x_int = Array(Any,length(Nck_st[int]+1:Nck_st[int+1]),n.numStates);
+      x_int=Array(Any,length(Nck_st[int]+1:Nck_st[int+1]),n.numStates);
       for st in 1:n.numStates # NOTE we use Nck_ctr for state indexing
-        x_int[:,st] = x[Nck_ctr[int]+1:Nck_ctr[int+1]+1,st];  #+1 adds the DV in the next interval
+        x_int[:,st]=x[Nck_ctr[int]+1:Nck_ctr[int+1]+1,st];  #+1 adds the DV in the next interval
       end
+
       # controls
-      u_int = Array(Any,length(Nck_ctr[int]+1:Nck_ctr[int+1]),n.numControls);
+      if int!=n.Ni
+        u_int=Array(Any,length(Nck_st[int]+1:Nck_st[int+1]),n.numControls);
+      else # -1 -> removing control in last mesh interval
+        u_int=Array(Any,length(Nck_st[int]+1:Nck_st[int+1]-1),n.numControls);
+      end
+
       for ctr in 1:n.numControls
-        u_int[:,ctr] = u[Nck_ctr[int]+1:Nck_ctr[int+1],ctr];
+        if int!=n.Ni
+          u_int[:,ctr]=u[Nck_ctr[int]+1:Nck_ctr[int+1]+1,ctr]; #NOTE this +1 is a test 5/4/2017
+        else
+          u_int[:,ctr]=u[Nck_ctr[int]+1:Nck_ctr[int+1],ctr];  # TODO check this against old code 
+        end
       end
       # dynamics
       if paramsON
-        dx = n.stateEquations(mdl,n,r,x_int,u_int,params);
+        dx=n.stateEquations(mdl,n,r,x_int,u_int,params);
       else
-        dx = n.stateEquations(mdl,n,r,x_int,u_int);
+        dx=n.stateEquations(mdl,n,r,x_int,u_int);
       end
       for st in 1:n.numStates
         if n.integrationScheme==:lgrExplicit
-          dynamics_expr[int][:,st] = @NLexpression(mdl, [j in 1:n.Nck[int]], sum(n.DMatrix[int][j,i]*x_int[i,st] for i in 1:n.Nck[int]+1) - ((n.tf)/2)*dx[j,st]  )
+          dynamics_expr[int][:,st]=@NLexpression(mdl, [j in 1:n.Nck[int]], sum(n.DMatrix[int][j,i]*x_int[i,st] for i in 1:n.Nck[int]+1) - ((n.tf)/2)*dx[j,st]  )
         end
         for j in 1:n.Nck[int]
-          dyn_con[int][j,st] = @NLconstraint(mdl, 0 == dynamics_expr[int][j,st])
+          dyn_con[int][j,st]=@NLconstraint(mdl, 0==dynamics_expr[int][j,st])
         end
       end
 
     end
   elseif n.integrationMethod==:tm
-    dyn_con  = Array(Any,n.N,n.numStates);
+    dyn_con=Array(Any,n.N,n.numStates);
     if n.finalTimeDV
      #@variable( mdl, 0.00001 <= dt[1:n.N] <= 0.2) #TODO allow for an varaible array of dts
      @variable(mdl, 0.001 <= tf <= n.tf_max)

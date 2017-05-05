@@ -1,6 +1,10 @@
 
 """
-mdl=defineSolver!(n)
+mdl=defineSolver!(n;name=:KNITRO,max_iter=1000,feastol_abs=1.0e-3,infeastol=1.0e-8,opttol_abs=1.0e-3)
+# TODO make an option to run solvers with default settings
+# figure out best correspondence between IPOPT and KNITRO settings
+# To debug KNITRO turn up the optput level
+# Try to tune KNITRO
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/9/2017, Last Modified: 4/3/2017 \n
@@ -9,7 +13,10 @@ Date Create: 2/9/2017, Last Modified: 4/3/2017 \n
 function defineSolver!(n::NLOpt;
                       name::Symbol=:IPOPT,
                       max_cpu_time::Float64=100.,
-                      max_iter::Int64=500)
+                      max_iter::Int64=500,
+                      infeastol::Float64=5e-1,
+                      feastol_abs::Float64=5e-1,
+                      opttol_abs::Float64=9e-1)
 
   function try_import(name::Symbol)
     try
@@ -30,7 +37,7 @@ function defineSolver!(n::NLOpt;
                                  print_level=0,
                                  warm_start_init_point = "yes",
                                  max_iter=max_iter,
-                                 tol=5e-2,
+                                 tol=infeastol,
                                  dual_inf_tol=5.,
                                  constr_viol_tol=1e-1,
                                  compl_inf_tol=1e-1,
@@ -47,11 +54,11 @@ function defineSolver!(n::NLOpt;
       z.solver=KNITRO.KnitroSolver(outlev=0,
                                    maxit=max_iter,
                                    maxtime_real=max_cpu_time,
-                                   infeastol=5e-1, #1e-2
+                                   infeastol=infeastol, #1e-2
                                    feastol=1.0e20,
-                                   feastol_abs=5e-1,#7e-2
+                                   feastol_abs=feastol_abs,#7e-2
                                    opttol=1.0e20,
-                                   opttol_abs=9e-1,#5e-1
+                                   opttol_abs=opttol_abs,#5e-1
                                    algorithm=1,
                                    bar_initpt=3,
                                    bar_murule=4,
@@ -133,7 +140,7 @@ Date Create: 3/17/2017, Last Modified: 3/17/2017 \n
 function create_tV!(mdl::JuMP.Model,n::NLOpt)
 
   if n.integrationMethod==:ps
-    if n.finalTimeDV  
+    if n.finalTimeDV
       # create mesh points, interval size = tf_var/Ni
       tm = @NLexpression(mdl, [idx=1:n.Ni+1], (idx-1)*n.tf/n.Ni);
       # go through each mesh interval creating time intervals; [t(i-1),t(i)] --> [-1,1]
