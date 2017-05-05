@@ -2,7 +2,7 @@
 n,r=OCPdef(mdl,n,s)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/14/2017, Last Modified: 3/28/2017 \n
+Date Create: 1/14/2017, Last Modified: 5/4/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function OCPdef!(mdl::JuMP.Model,n::NLOpt,s::Settings,args...)
@@ -57,7 +57,7 @@ function OCPdef!(mdl::JuMP.Model,n::NLOpt,s::Settings,args...)
 
   # boundary constraints
   xf_con=[]; # currently modifying the final state constraint (with tolerance) is not needed, can easily ad this functionlity though
-  if any(!isnan(n.X0_tol))             # create handles for constraining the enire initial state
+  if any(!isnan(n.X0_tol))           # create handles for constraining the enire initial state
     x0_con=Array(Any,n.numStates,2); # this is so they can be easily reference when doing MPC
   else
     x0_con=[];
@@ -86,8 +86,7 @@ function OCPdef!(mdl::JuMP.Model,n::NLOpt,s::Settings,args...)
 
   if n.integrationMethod==:ps
     dyn_con=[Array(Any,n.Nck[int],n.numStates) for int in 1:n.Ni];
-    Nck_st=[0;cumsum(n.Nck+1)];  #TODO chande this Nck_st and Nck_ctr to other names. They are not longer corresponded to the state and control
-    Nck_ctr=[0;cumsum(n.Nck)];
+    Nck_full=[0;cumsum(n.Nck+1)]; Nck_vars=[0;cumsum(n.Nck)];
     dynamics_expr=[Array(Any,n.Nck[int],n.numStates) for int in 1:n.Ni];
 
     if n.finalTimeDV
@@ -98,23 +97,23 @@ function OCPdef!(mdl::JuMP.Model,n::NLOpt,s::Settings,args...)
 
     for int in 1:n.Ni
       # states
-      x_int=Array(Any,length(Nck_st[int]+1:Nck_st[int+1]),n.numStates);
-      for st in 1:n.numStates # NOTE we use Nck_ctr for state indexing
-        x_int[:,st]=x[Nck_ctr[int]+1:Nck_ctr[int+1]+1,st];  #+1 adds the DV in the next interval
+      x_int=Array(Any,length(Nck_full[int]+1:Nck_full[int+1]),n.numStates);
+      for st in 1:n.numStates # +1 adds the DV in the next interval
+        x_int[:,st]=x[Nck_vars[int]+1:Nck_vars[int+1]+1,st];
       end
 
       # controls
       if int!=n.Ni
-        u_int=Array(Any,length(Nck_st[int]+1:Nck_st[int+1]),n.numControls);
+        u_int=Array(Any,length(Nck_full[int]+1:Nck_full[int+1]),n.numControls);
       else # -1 -> removing control in last mesh interval
-        u_int=Array(Any,length(Nck_st[int]+1:Nck_st[int+1]-1),n.numControls);
+        u_int=Array(Any,length(Nck_full[int]+1:Nck_full[int+1]-1),n.numControls);
       end
 
       for ctr in 1:n.numControls
-        if int!=n.Ni
-          u_int[:,ctr]=u[Nck_ctr[int]+1:Nck_ctr[int+1]+1,ctr]; #NOTE this +1 is a test 5/4/2017
+        if int!=n.Ni # +1 adds the DV in the next interval
+          u_int[:,ctr]=u[Nck_vars[int]+1:Nck_vars[int+1]+1,ctr]; # NOTE this +1 is a test 5/4/2017
         else
-          u_int[:,ctr]=u[Nck_ctr[int]+1:Nck_ctr[int+1],ctr];  # TODO check this against old code 
+          u_int[:,ctr]=u[Nck_vars[int]+1:Nck_vars[int+1],ctr];  # TODO check this against old code
         end
       end
       # dynamics
