@@ -9,7 +9,9 @@ function MoonLander{T<:Any}(mdl::JuMP.Model,n::NLOpt,r::Result,x::Array{T,2},u::
   return dx
 end
 define!(n,stateEquations=MoonLander,numStates=2,numControls=1,X0=[10.,-2],XF=[0.,0.],XL=[NaN,NaN],XU=[NaN,NaN],CL=[0.],CU=[3.])
-configure!(n,Ni=4,Nck=[10,10,12,10];(:integrationMethod => :ps),(:integrationScheme => :lgrExplicit),(:finalTimeDV =>true))
+configure!(n,Ni=4,Nck=[10,10,10,10];(:integrationMethod => :ps),(:integrationScheme => :lgrExplicit),(:finalTimeDV =>true))
+#configure!(n,N=40;(:integrationMethod => :tm),(:integrationScheme => :bkwEuler),(:finalTimeDV =>true))
+
 names = [:h,:v]; descriptions = ["h(t)","v(t)"]; stateNames!(n,names,descriptions);
 mdl=defineSolver!(n;name=:KNITRO,max_iter=1000,feastol_abs=1.0e-3,infeastol=1.0e-8,opttol_abs=1.0e-3); r=OCPdef!(mdl,n,s);
 obj=integrate!(mdl,n,r.u[:,1];C=1.0,(:variable=>:control),(:integrand=>:default))

@@ -55,7 +55,6 @@ function plant2dfs!(n,r,s,u,sol)
   nothing
 end
 
-
 """
 dvs2dfs(n,r)
 
@@ -72,7 +71,7 @@ function dvs2dfs(n,r)
     dfs[n.state.name[i]]=r.X[:,i];
   end
   for i in 1:n.numControls
-    if n.integrationMethod==:ts
+    if n.integrationMethod==:tm
       dfs[n.control.name[i]]=r.U[:,i];
     else
       dfs[n.control.name[i]]=[r.U[:,i];NaN];
