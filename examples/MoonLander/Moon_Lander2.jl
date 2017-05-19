@@ -13,8 +13,9 @@ configure!(n,Ni=4,Nck=[10,10,10,10];(:integrationMethod => :ps),(:integrationSch
 #configure!(n,N=40;(:integrationMethod => :tm),(:integrationScheme => :bkwEuler),(:finalTimeDV =>true))
 
 names = [:h,:v]; descriptions = ["h(t)","v(t)"]; stateNames!(n,names,descriptions);
-mdl=defineSolver!(n;name=:KNITRO,max_iter=1000,feastol_abs=1.0e-3,infeastol=1.0e-8,opttol_abs=1.0e-3); r=OCPdef!(mdl,n,s);
+mdl=defineSolver!(n;name=:IPOPT,max_iter=1000,feastol_abs=1.0e-3,infeastol=1.0e-8,opttol_abs=1.0e-3); r=OCPdef!(mdl,n,s);
 obj=integrate!(mdl,n,r.u[:,1];C=1.0,(:variable=>:control),(:integrand=>:default))
 @NLobjective(mdl, Min, obj); optimize!(mdl,n,r,s);
 plotSettings(;(:mpc_lines =>[(4.0,:blue,:solid)]),(:size=>(700,700)));
-allPlots(n,r,1)
+#allPlots(n,r,1)
+r.dfs_opt

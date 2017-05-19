@@ -213,7 +213,7 @@ type Result <: AbstractNLOpt
   dfs_plant                   # plant data
   dfs_con                     # constraint data
   results_dir                 # string that defines results folder
-  main_dir                    # string that defines results folder
+  main_dir                    # string that defines main folder
 end
 
 # Default Constructor
@@ -238,7 +238,7 @@ Result( Vector{Any}[], # time vector for control
         [],            # plant data
         [],            # constraint data
         "./results/",  # string that defines results folder
-        ""             # string that defines results folder
+        ""             # string that defines main folder
       );
 end
 

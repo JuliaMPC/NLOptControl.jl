@@ -35,7 +35,7 @@ function defineSolver!(n::NLOpt;
       z.name=:IPOPT;
       z.solver=Ipopt.IpoptSolver(max_cpu_time=max_cpu_time,
                                  print_level=0,
-                                 warm_start_init_point = "yes",
+                                 warm_start_init_point="yes",
                                  max_iter=max_iter,
                                  tol=infeastol,
                                  dual_inf_tol=5.,
