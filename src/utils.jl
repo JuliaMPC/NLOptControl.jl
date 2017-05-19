@@ -414,15 +414,15 @@ end
 description = string(
 " *  \n ")
 
-setupResults(r,results_name;description=description)
+setupResults(r;results_name,description=description)
 # removes results folder and creates a new one
 
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 3/26/2017, Last Modified: 3/26/2017 \n
+Date Create: 3/26/2017, Last Modified: 5/19/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function resultsDir!(r,results_name::String;description::String="no description given")
+function resultsDir!(r;results_name::String="",description::String="no description given")
  results_dir = string(r.main_dir,"/results/",results_name)  # define directories
  r.results_dir=results_dir;
 

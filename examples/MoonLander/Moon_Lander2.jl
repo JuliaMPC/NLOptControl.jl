@@ -17,5 +17,5 @@ mdl=defineSolver!(n;name=:IPOPT,max_iter=1000,feastol_abs=1.0e-3,infeastol=1.0e-
 obj=integrate!(mdl,n,r.u[:,1];C=1.0,(:variable=>:control),(:integrand=>:default))
 @NLobjective(mdl, Min, obj); optimize!(mdl,n,r,s);
 plotSettings(;(:mpc_lines =>[(4.0,:blue,:solid)]),(:size=>(700,700)));
-#allPlots(n,r,1)
+allPlots(n,r,1)
 r.dfs_opt
