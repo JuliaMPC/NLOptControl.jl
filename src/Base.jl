@@ -192,7 +192,7 @@ end
 
 """
 
-status=optimize(mdl,n,r,s)
+status=optimize!(mdl,n,r,s)
 
 # solves JuMP model and saves optimization data
 --------------------------------------------------------------------------------------\n

@@ -17,7 +17,7 @@ function defineSolver!(n::NLOpt;
                       infeastol::Float64=5e-1,
                       feastol_abs::Float64=5e-1,
                       opttol_abs::Float64=9e-1)
-
+#TODO the struture z needs to update the rest of the model, consider getting ride of it
   function try_import(name::Symbol)
     try
         @eval import $name

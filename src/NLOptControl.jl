@@ -2,12 +2,14 @@ isdefined(Base, :__precompile__) && __precompile__()
 
 module NLOptControl
 
+import MathProgBase
+
 using JuMP
 using Parameters
-using Interpolations  # do I need this?
 using DataFrames
 using FastGaussQuadrature
 using Ranges
+using Ipopt # for now make this manditory
 
 include("Base.jl")
 using .Base
@@ -67,14 +69,14 @@ type Solver
     name
     max_time
     max_iter
-    solver
+    solver::MathProgBase.AbstractMathProgSolver
 end
 
 function Solver()
        Solver([],
               [],
               [],
-              Any);
+              Ipopt.IpoptSolver());
 end
 
 ################################################################################
@@ -165,10 +167,10 @@ NLOpt(Any,                # state equations
       Float64[],          # tolerances on final state constraint
       Float64[],          # XL
       Float64[],          # XU
-      Any[],          # slopes on XL -> time always starts at zero
-      Any[],          # slopes on XU -> time always starts at zero
-      Any,   # time varying lower bounds on states
-      Any,   # time varying upper bounds on states
+      Any[],              # slopes on XL -> time always starts at zero
+      Any[],              # slopes on XU -> time always starts at zero
+      Any,                # time varying lower bounds on states
+      Any,                # time varying upper bounds on states
       Float64[],          # CL
       Float64[],          # CU
       Int[],              # number of collocation points per interval
@@ -203,11 +205,11 @@ type Result <: AbstractNLOpt
   xf_con                      # handle for final state constraints
   dyn_con                     # dynamics constraints
   constraint::Constraint      # constraint handels and data
-  eval_num             # number of times optimization has been run
-  iter_nums     # mics. data, perhaps an iteration number for a higher level algorithm
-  status      # optimization status
-  t_solve   # solve time for optimization
-  obj_val    # objective function value
+  eval_num                    # number of times optimization has been run
+  iter_nums                   # mics. data, perhaps an iteration number for a higher level algorithm
+  status                      # optimization status
+  t_solve                     # solve time for optimization
+  obj_val                     # objective function value
   dfs                         # results in DataFrame for plotting
   dfs_opt                     # optimization information in DataFrame for plotting
   dfs_plant                   # plant data
