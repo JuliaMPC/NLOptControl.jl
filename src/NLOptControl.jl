@@ -2,14 +2,11 @@ isdefined(Base, :__precompile__) && __precompile__()
 
 module NLOptControl
 
-import MathProgBase
-
-using JuMP
-using Parameters
-using DataFrames
+using MathProgBase
 using FastGaussQuadrature
+using JuMP
+using DataFrames
 using Ranges
-using Ipopt # for now make this manditory
 
 include("Base.jl")
 using .Base
@@ -17,7 +14,7 @@ using .Base
 include("MPC_Module.jl")
 using .MPC_Module
 
-# To copy a particular piece of code (or function) in some location
+# To copy a particular piece of code (or function) in some location # credit: Christopher Rackauckas
 macro def(name, definition)
   return quote
     macro $name()
@@ -69,14 +66,14 @@ type Solver
     name
     max_time
     max_iter
-    solver::MathProgBase.AbstractMathProgSolver
+    NLPsolver
 end
 
 function Solver()
        Solver([],
               [],
               [],
-              Ipopt.IpoptSolver());
+              Any);
 end
 
 ################################################################################
@@ -143,7 +140,7 @@ type NLOpt <: AbstractNLOpt
   finalTimeDV::Bool
   integrationMethod::Symbol
   integrationScheme::Symbol
-  solver::Solver             # solver
+  solverInfo::Solver             # solver
 end
 
 # Default Constructor

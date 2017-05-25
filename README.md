@@ -7,8 +7,6 @@ A current limitation of optimization modeling software, such as [JuMP](https://g
 
   * provide an implementation of the [hp-pseudospectral method](http://vdol.mae.ufl.edu/JournalPublications/TOMS-GPOPS-II-August-2013.pdf) written in written in the [Julia-language](http://julialang.org/)
 
-  * The ultimate goal is to eventually utilize and support both [Julia DiffEQ](https://github.com/JuliaDiffEq) and [JuMP](https://github.com/JuliaOpt/JuMP.jl)
-
 ## Documentation
 
 The full documentation can be found [here](http://nloptcontroljl.readthedocs.io/en/latest/).

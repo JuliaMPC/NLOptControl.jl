@@ -1,12 +1,6 @@
 julia 0.5
-Parameters
-Interpolations
+MathProgBase
 FastGaussQuadrature
 JuMP
-VehicleModels
 DataFrames
-Ipopt
-KNITRO
-Sundials
-MbedTLS
 Ranges

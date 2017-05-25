@@ -33,7 +33,7 @@ function defineSolver!(n::NLOpt;
   if name==:IPOPT
     if try_import(:Ipopt)
       z.name=:IPOPT;
-      z.solver=Ipopt.IpoptSolver(max_cpu_time=max_cpu_time,
+      z.NLPsolver=Ipopt.IpoptSolver(max_cpu_time=max_cpu_time,
                                  print_level=0,
                                  warm_start_init_point="yes",
                                  max_iter=max_iter,
@@ -47,11 +47,11 @@ function defineSolver!(n::NLOpt;
                                  acceptable_compl_inf_tol=0.01,
                                  acceptable_obj_change_tol=1e20,
                                  diverging_iterates_tol=1e20)
-    end
+    end #name=:IPOPT,max_iter=1000,feastol_abs=1.0e-3,infeastol=1.0e-8,opttol_abs=1.0e-3
   elseif name==:KNITRO
     if try_import(:KNITRO)
       z.name=:KNITRO;
-      z.solver=KNITRO.KnitroSolver(outlev=0,
+      z.NLPsolver=KNITRO.KnitroSolver(outlev=0,
                                    maxit=max_iter,
                                    maxtime_real=max_cpu_time,
                                    infeastol=infeastol, #1e-2
@@ -68,9 +68,11 @@ function defineSolver!(n::NLOpt;
                                    linesearch=1,
                                    linsolver=2)
     end
+  else
+    error("the :name key needs to be set to either :KNITRO or :IPOPT in defineSolver!()\n ")
   end
-  n.solver=z; # update model
-  mdl=Model(solver=z.solver)
+  n.solverInfo=z; # update model
+  mdl=Model(solver=n.solverInfo.NLPsolver)
   return mdl
 end  # function
 defineSolver!(n,c)=defineSolver!(n;name=c.m.solver,max_cpu_time=c.m.max_cpu_time,max_iter=c.m.max_iter);

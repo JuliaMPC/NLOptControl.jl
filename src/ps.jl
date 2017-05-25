@@ -124,6 +124,26 @@ function lagrange_basis_poly(x,x_data,Nc,j)
   return L
 end
 
+
+"""
+L = lagrange_basis_poly!(x,x_data,Nc,L)
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 12/26/2016, Last Modified: 1/25/2016
+Citations: This function was influenced by the lagrange() function [located here](https://github.com/pjabardo/Jacobi.jl/blob/master/src/gauss_quad.jl)
+--------------------------------------------------------------------------------------\n
+# Input Arguments
+* `x`: point to approximate function value at
+* `x_data`: x data to used calculate basis polynomials
+* `Nc`: order of Lagrange interpolating polynomial
+* `L`: array of interest
+
+# Output Arguments
+* `L`: Lagrange basis polynomials
+
+A basic description of Lagrange interpolating polynomials is provided [here](http://127.0.0.1:8000/lagrange_poly.html#lagrange-poly)
+
+"""
 function lagrange_basis_poly!{T<:Number}(x::AbstractArray{T},x_data,Nc,L::AbstractArray{T})
    if Nc > length(x_data) -1
       error("Maximum Nc value = length(x_data)-1")

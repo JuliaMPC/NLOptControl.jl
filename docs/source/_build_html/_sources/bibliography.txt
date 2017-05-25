@@ -1,6 +1,0 @@
-Bibliography
-============
-
-.. bibliography:: zref.bib
-   :list: enumerated
-   :all:

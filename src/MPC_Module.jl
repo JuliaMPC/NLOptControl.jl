@@ -28,7 +28,7 @@ type MPC
   tf::Float64                  # mpc final time
   t0_param::Any                # parameter for mpc t0
   X0p::Array{Float64,1}        # predicted initial states
-  X0                          # array of all actual intial states (n.X0 leads because we are in simulation)
+  X0                           # array of all actual intial states (n.X0 leads because we are in simulation)
 
   # options
   PredictX0::Bool
