@@ -66,15 +66,14 @@ function define!(n::NLOpt;
   n.CL = CL;
   n.CU = CU;
   n.tf_max = tf_max;
-  n.define = true;
   nothing
 end
 
 """
-n = configure!(n::NLOpt,Ni=4,Nck=[3, 3, 7, 2];(:integrationMethod => :ps),(:integrationScheme => :lgrExplicit),(:finalTimeDV => false),(:tf => 1))
+configure!(n,Ni=4,Nck=[3, 3, 7, 2];(:integrationMethod => :ps),(:integrationScheme => :lgrExplicit),(:finalTimeDV => false),(:tf => 1))
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/1/2017, Last Modified: 3/25/2017 \n
+Date Create: 1/1/2017, Last Modified: 5/28/2017 \n
 -------------------------------------------------------------------------------------\n
 """
 function configure!(n::NLOpt, args...; kwargs... )
@@ -82,24 +81,24 @@ function configure!(n::NLOpt, args...; kwargs... )
 
   # final time
   if !haskey(kw,:finalTimeDV); kw_ = Dict(:finalTimeDV => false); n.finalTimeDV = get(kw_,:finalTimeDV,0);
-  else; n.finalTimeDV  = get(kw,:finalTimeDV,0);
+  else; n.s.finalTimeDV  = get(kw,:finalTimeDV,0);
   end
 
-  if !haskey(kw,:tf) && !n.finalTimeDV
+  if !haskey(kw,:tf) && !n.s.finalTimeDV
     error("\n If the final is not a design variable pass it as: (:tf=>Float64(some #)) \n
         If the final time is a design variable, indicate that as: (:finalTimeDV=>true)\n")
-  elseif haskey(kw,:tf) && !n.finalTimeDV
+  elseif haskey(kw,:tf) && !n.s.finalTimeDV
     n.tf = get(kw,:tf,0);
-  elseif n.finalTimeDV
+  elseif n.s.finalTimeDV
     n.tf = Any;
   end
 
   # integration method
-  if !haskey(kw,:integrationMethod); kw_ = Dict(:integrationMethod => :ps); n.integrationMethod = get(kw_,:integrationMethod,0);
-  else; n.integrationMethod  = get(kw,:integrationMethod,0);
+  if !haskey(kw,:integrationMethod); kw_ = Dict(:integrationMethod => :ps); n.s.integrationMethod = get(kw_,:integrationMethod,0);
+  else; n.s.integrationMethod  = get(kw,:integrationMethod,0);
   end
 
-  if n.integrationMethod==:ps
+  if n.s.integrationMethod==:ps
     if haskey(kw,:N)
       error(" \n N is not an appropriate kwargs for :tm methods \n")
     end
@@ -109,8 +108,8 @@ function configure!(n::NLOpt, args...; kwargs... )
     if !haskey(kw,:Nck); kw_ = Dict(:Nck => [10]); n.Nck=get(kw_,:Nck,0); # default
     else; n.Nck = get(kw,:Nck,0);
     end
-    if !haskey(kw,:integrationScheme); kw_ = Dict(:integrationScheme => :lgrExplicit); n.integrationScheme=get(kw_,:integrationScheme,0); # default
-    else;  n.integrationScheme=get(kw,:integrationScheme,0);
+    if !haskey(kw,:integrationScheme); kw_ = Dict(:integrationScheme => :lgrExplicit); n.s.integrationScheme=get(kw_,:integrationScheme,0); # default
+    else;  n.s.integrationScheme=get(kw,:integrationScheme,0);
     end
     if length(n.Nck) != n.Ni
         error("\n length(Nck) != Ni \n");
@@ -128,7 +127,7 @@ function configure!(n::NLOpt, args...; kwargs... )
      n.numControlPoints=sum(n.Nck);
 
     # initialize node data
-    if n.integrationScheme==:lgrExplicit
+    if n.s.integrationScheme==:lgrExplicit
       taus_and_weights = [gaussradau(n.Nck[int]) for int in 1:n.Ni];
     end
     n.τ=[taus_and_weights[int][1] for int in 1:n.Ni];
@@ -136,15 +135,15 @@ function configure!(n::NLOpt, args...; kwargs... )
     createIntervals!(n);
     DMatrix!(n);
 
-  elseif n.integrationMethod==:tm
+  elseif n.s.integrationMethod==:tm
     if haskey(kw,:Nck) || haskey(kw,:Ni)
       error(" \n Nck and Ni are not appropriate kwargs for :tm methods \n")
     end
     if !haskey(kw,:N); kw_ = Dict(:N => 10); n.N=get(kw_,:N,0); # default
     else; n.N = get(kw,:N,0);
     end
-    if !haskey(kw,:integrationScheme); kw_ = Dict(:integrationScheme => :bkwEuler);  n.integrationScheme=get(kw_,:integrationScheme,0); # default
-    else;  n.integrationScheme=get(kw,:integrationScheme,0);
+    if !haskey(kw,:integrationScheme); kw_ = Dict(:integrationScheme => :bkwEuler);  n.s.integrationScheme=get(kw_,:integrationScheme,0); # default
+    else;  n.s.integrationScheme=get(kw,:integrationScheme,0);
     end
     n.numStatePoints = n.N+1;
     n.numControlPoints = n.N+1;
@@ -153,5 +152,9 @@ function configure!(n::NLOpt, args...; kwargs... )
   n.mXU = falses(n.numStates);
   n.XL_var=Matrix{Float64}(n.numStates,n.numStatePoints);
   n.XU_var=Matrix{Float64}(n.numStates,n.numStatePoints);
+
+  # define the optimal control problem
+  n.mdl=OCPdef!(n)
+
   nothing
 end

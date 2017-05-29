@@ -95,19 +95,19 @@ function simModel(n,pa,X0,t,U,t0,tf)
 end
 
 """
-updateStates(n,r)
+updateStates!(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/17/2017, Last Modified: 2/21/2017 \n
+Date Create: 2/17/2017, Last Modified: 5/28/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function updateStates!(n,r)
+function updateStates!(n)
   for st in 1:n.numStates   # update states
     if any(!isnan(n.X0_tol[st]))
-      JuMP.setRHS(r.x0_con[st,1], (n.X0[st]+n.X0_tol[st]));
-      JuMP.setRHS(r.x0_con[st,2],-(n.X0[st]-n.X0_tol[st]));
+      JuMP.setRHS(n.r.x0_con[st,1], (n.X0[st]+n.X0_tol[st]));
+      JuMP.setRHS(n.r.x0_con[st,2],-(n.X0[st]-n.X0_tol[st]));
    else
-     JuMP.setRHS(r.x0_con[st],n.X0[st]);
+     JuMP.setRHS(n.r.x0_con[st],n.X0[st]);
    end
   end
   nothing
@@ -115,13 +115,13 @@ end
 
 """
 # NOTE: this function is called inside simPlant()
-updateX0!(n,r,X0;(:userUpdate=>true))    # user defined update of X0
+updateX0!(n,X0;(:userUpdate=>true))    # user defined update of X0
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 3/6/2017, Last Modified: 4/9/2017 \n
+Date Create: 3/6/2017, Last Modified: 5/28/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function updateX0!(n,r,args...;kwargs...)
+function updateX0!(n,args...;kwargs...)
   kw = Dict(kwargs);
   # check to see how the intial states are being updated
   if !haskey(kw,:userUpdate); kw_ = Dict(:userUpdate => false); userUpdate = get(kw_,:userUpdate,0);
@@ -136,10 +136,10 @@ function updateX0!(n,r,args...;kwargs...)
     n.X0=X0;
   else # update using the current location of plant
     for st in 1:n.numStates
-      n.X0[st]=r.dfs_plant[end][n.state.name[st]][end];
+      n.X0[st]=n.r.dfs_plant[end][n.state.name[st]][end];
     end
   end
-  updateStates!(n,r)
+  updateStates!(n)
   append!(n.mpc.X0,[copy(n.X0)])
   nothing
 end
@@ -151,13 +151,13 @@ simPlant(pa,X0,t,U,t0,tf)
 # TODO eventually the "plant" will be different from the "model"
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/14/2017, Last Modified: 4/7/2017 \n
+Date Create: 2/14/2017, Last Modified: 5/28/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function simPlant!(n,r,s,pa,X0,t,U,t0,tf)
+function simPlant!(n,pa,X0,t,U,t0,tf)
   sol=n.stateEquations(pa,X0,t,U,t0,tf);
-  plant2dfs!(n,r,s,U,sol);
-  t0p=updateX0!(n,r);
+  plant2dfs!(n,U,sol);
+  t0p=updateX0!(n);
   nothing
 end
 

@@ -26,15 +26,15 @@ function scale_tau(τ,x₀,xₙ)
 end
 
 """
-plant2dfs(n,r,s,u,sol)
+plant2dfs!(n,sol)
 # TODO: sometimes plant control models have different states and controls - > take this into account
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/14/2017, Last Modified: 4/7/2017 \n
+Date Create: 2/14/2017, Last Modified: 5/28/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function plant2dfs!(n,r,s,u,sol)
-  row, column=size(u)
+function plant2dfs!(n,sol)
+  row, column=size(n.r.u)
   t_sample=Ranges.linspace(sol.t[1],sol.t[end],row);
   dfs_plant=DataFrame();
   dfs_plant[:t]=t_sample;
@@ -44,37 +44,37 @@ function plant2dfs!(n,r,s,u,sol)
   end
 
   for ctr in 1:n.numControls
-    dfs_plant[n.control.name[ctr]]= u[ctr];
+    dfs_plant[n.control.name[ctr]]= n.r.u[ctr];
   end
 
-  if s.reset
-    r.dfs_plant=[dfs_plant];
+  if n.s.reset
+    n.r.dfs_plant=[dfs_plant];
   else
-    push!(r.dfs_plant,dfs_plant);
+    push!(n.r.dfs_plant,dfs_plant);
   end
   nothing
 end
 
 """
-dvs2dfs(n,r)
+dvs2dfs(n)
 
 # funtionality to save state and control data from optimization
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/10/2017, Last Modified: 2/10/2017 \n
+Date Create: 2/10/2017, Last Modified: 5/28/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function dvs2dfs(n,r)
+function dvs2dfs(n)
   dfs=DataFrame()
-  dfs[:t]=r.t_st + n.mpc.t0;
+  dfs[:t]=n.r.t_st + n.mpc.t0;
   for i in 1:n.numStates
-    dfs[n.state.name[i]]=r.X[:,i];
+    dfs[n.state.name[i]]=n.r.X[:,i];
   end
   for i in 1:n.numControls
-    if n.integrationMethod==:tm
-      dfs[n.control.name[i]]=r.U[:,i];
+    if n.s.integrationMethod==:tm
+      dfs[n.control.name[i]]=n.r.U[:,i];
     else
-      dfs[n.control.name[i]]=[r.U[:,i];NaN];
+      dfs[n.control.name[i]]=[n.r.U[:,i];NaN];
     end
   end
   return dfs
@@ -86,7 +86,7 @@ opt2dfs(r)
 # funtionality to save optimization data
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/10/2017, Last Modified: 2/20/2017 \n
+Date Create: 2/10/2017, Last Modified: 5/28/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function opt2dfs(r;kwargs...)
@@ -119,7 +119,7 @@ con2dfs(r)
 # funtionality to save constraint data
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/20/2017, Last Modified: 2/20/2017 \n
+Date Create: 2/20/2017, Last Modified: 5/28/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function con2dfs(r)
@@ -129,13 +129,13 @@ function con2dfs(r)
 end
 
 """
-postProcess!(n,r,s)
+postProcess!(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/27/2017, Last Modified: 4/7/2017 \n
+Date Create: 1/27/2017, Last Modified: 5/28/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function postProcess!(n,r,s;kwargs...)
+function postProcess!(n;kwargs...)
   kw = Dict(kwargs);
   # check to see if the user is initializing while compensating for control delay
   if !haskey(kw,:Init); kw_ = Dict(:Init => false); Init = get(kw_,:Init,0);
@@ -143,41 +143,41 @@ function postProcess!(n,r,s;kwargs...)
   end
 
   if !Init
-    if n.integrationMethod==:ps
-      if n.finalTimeDV
+    if n.s.integrationMethod==:ps
+      if n.s.finalTimeDV
         t = [scale_tau(n.ts[int],0.0,getvalue(n.tf)) for int in 1:n.Ni];     # scale time from [-1,1] to [t0,tf]
       else
         t = [scale_tau(n.ts[int],0.0,n.tf) for int in 1:n.Ni];
       end
       r.t_ctr= [idx for tempM in t for idx = tempM[1:end-1]];
-      r.t_st = [r.t_ctr;t[end][end]];
+      r.t_st = [n.r.t_ctr;t[end][end]];
 
-    elseif n.integrationMethod==:tm
+    elseif n.s.integrationMethod==:tm
       warn("NaN not test in postProcess!() for :tm methods")
-      if n.finalTimeDV
-        r.t_ctr =  append!([NaN],cumsum(getvalue(n.dt)));
+      if n.s.finalTimeDV
+        n.r.t_ctr =  append!([NaN],cumsum(getvalue(n.dt)));
       else
-        r.t_ctr =  append!([NaN],cumsum(n.dt));
+        n.r.t_ctr =  append!([NaN],cumsum(n.dt));
       end
-      r.t_st = r.t_ctr;
+      n.r.t_st = n.r.t_ctr;
     end
-    r.X =zeros(Float64,n.numStatePoints,n.numStates);
-    r.U =zeros(Float64,n.numControlPoints,n.numControls);
+    n.r.X =zeros(Float64,n.numStatePoints,n.numStates);
+    n.r.U =zeros(Float64,n.numControlPoints,n.numControls);
     for st in 1:n.numStates
-      r.X[:,st] = getvalue(r.x[:,st]);
+      n.r.X[:,st] = getvalue(n.r.x[:,st]);
     end
     for ctr in 1:n.numControls
-      r.U[:,ctr] = getvalue(r.u[:,ctr]);
+      n.r.U[:,ctr] = getvalue(n.r.u[:,ctr]);
     end
 
-    if s.evalConstraints
-      evalConstraints!(n,r);
+    if n.s.evalConstraints
+      evalConstraints!(n);
     end
 
-    if s.save
-      push!(r.dfs,dvs2dfs(n,r));
-      push!(r.dfs_con,con2dfs(r));
-      push!(r.dfs_opt,opt2dfs(r));
+    if n.s.save
+      push!(n.r.dfs,dvs2dfs(n));
+      push!(n.r.dfs_con,con2dfs(n.r));
+      push!(n.r.dfs_opt,opt2dfs(n.r));
     end
   elseif s.save  # no optimization run -> somtimes you drive straight to get started
     push!(r.dfs,nothing);

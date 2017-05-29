@@ -1,57 +1,60 @@
 
+# credit JuMP.jl
+function try_import(name::Symbol)
+ try
+      @eval import $name
+      return true
+  catch e
+      return false
+  end
+end
 """
-mdl=defineSolver!(n;name=:KNITRO,max_iter=1000,feastol_abs=1.0e-3,infeastol=1.0e-8,opttol_abs=1.0e-3)
-# TODO make an option to run solvers with default settings
-# figure out best correspondence between IPOPT and KNITRO settings
-# To debug KNITRO turn up the optput level
+defineSolver!(n;(:name=>:Ipopt))
+# To debug KNITRO turn up the output level
 # Try to tune KNITRO
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/9/2017, Last Modified: 4/3/2017 \n
+Date Create: 2/9/2017, Last Modified: 5/28/2017 \n
 -------------------------------------------------------------------------------------\n
 """
-function defineSolver!(n::NLOpt;
-                      name::Symbol=:IPOPT,
-                      max_cpu_time::Float64=100.,
-                      max_iter::Int64=500,
-                      infeastol::Float64=5e-1,
-                      feastol_abs::Float64=5e-1,
-                      opttol_abs::Float64=9e-1)
-#TODO the struture z needs to update the rest of the model, consider getting ride of it
-  function try_import(name::Symbol)
-    try
-        @eval import $name
-        return true
-    catch e
-        return false
+function defineSolver!(n::NLOpt;kwargs...)
+  kw=Dict(kwargs);
+
+  # get the name of the solver
+  if haskey(kw,:name); n.solver.name=get(kw,:name,0); end
+
+  # modify defaults
+  for (key,value) in kw
+    if haskey(n.solver.settings,key)
+      n.solver.settings[key]=value
+    elseif key!=:name # ignore the name
+      error("Unknown key: ", kw)
     end
   end
 
-  z=Solver();
-  z.max_iter=max_iter;
-  z.max_time=max_cpu_time;
-  if name==:IPOPT
-    if try_import(:Ipopt)
-      z.name=:IPOPT;
-      z.NLPsolver=Ipopt.IpoptSolver(max_cpu_time=max_cpu_time,
+  if try_import(n.solver.name)
+  else (string("\n could not import ",n.solver.name,"\n"))
+  end
+  if n.solver.name==:Ipopt
+    NLPsolver=Ipopt.IpoptSolver(n.solver.settings)
+      #=
+      NLPsolver=Ipopt.IpoptSolver(max_cpu_time=max_cpu_time,
                                  print_level=0,
                                  warm_start_init_point="yes",
                                  max_iter=max_iter,
                                  tol=infeastol,
-                                 dual_inf_tol=5.,
-                                 constr_viol_tol=1e-1,
-                                 compl_inf_tol=1e-1,
-                                 acceptable_tol=1e-2,
+                                 dual_inf_tol=1.,
+                                 constr_viol_tol=0.0001,
+                                 compl_inf_tol=1e-6,
+                                 acceptable_tol=1e-6,
                                  acceptable_constr_viol_tol=0.01,
                                  acceptable_dual_inf_tol=1e10,
                                  acceptable_compl_inf_tol=0.01,
                                  acceptable_obj_change_tol=1e20,
                                  diverging_iterates_tol=1e20)
-    end #name=:IPOPT,max_iter=1000,feastol_abs=1.0e-3,infeastol=1.0e-8,opttol_abs=1.0e-3
-  elseif name==:KNITRO
-    if try_import(:KNITRO)
-      z.name=:KNITRO;
-      z.NLPsolver=KNITRO.KnitroSolver(outlev=0,
+                                 =#
+  elseif n.solve.name==:KNITRO
+      NLPsolver=KNITRO.KnitroSolver(outlev=0,
                                    maxit=max_iter,
                                    maxtime_real=max_cpu_time,
                                    infeastol=infeastol, #1e-2
@@ -67,15 +70,12 @@ function defineSolver!(n::NLOpt;
                                    bar_switchrule=2,
                                    linesearch=1,
                                    linsolver=2)
-    end
   else
     error("the :name key needs to be set to either :KNITRO or :IPOPT in defineSolver!()\n ")
   end
-  n.solverInfo=z; # update model
-  mdl=Model(solver=n.solverInfo.NLPsolver)
-  return mdl
+  n.mdl=Model(solver=NLPsolver)
+  return nothing
 end  # function
-defineSolver!(n,c)=defineSolver!(n;name=c.m.solver,max_cpu_time=c.m.max_cpu_time,max_iter=c.m.max_iter);
 
 
 """
@@ -132,41 +132,39 @@ function defineTolerances!(n::NLOpt;
 end
 
 """
-create_tV!(mdl,n)
+create_tV!(n)
 # define a time vector (n.tV) for use with time varying constraints when (finalTimeDV=>true)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 3/17/2017, Last Modified: 3/17/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function create_tV!(mdl::JuMP.Model,n::NLOpt)
+function create_tV!(n::NLOpt)
 
-  if n.integrationMethod==:ps
-    if n.finalTimeDV
+  if n.s.integrationMethod==:ps
+    if n.s.finalTimeDV
       # create mesh points, interval size = tf_var/Ni
-      tm = @NLexpression(mdl, [idx=1:n.Ni+1], (idx-1)*n.tf/n.Ni);
+      tm = @NLexpression(n.mdl, [idx=1:n.Ni+1], (idx-1)*n.tf/n.Ni);
       # go through each mesh interval creating time intervals; [t(i-1),t(i)] --> [-1,1]
       ts = [Array(Any,n.Nck[int]+1,) for int in 1:n.Ni];
       for int in 1:n.Ni
-        ts[int][1:end-1]=@NLexpression(mdl,[j=1:n.Nck[int]], (tm[int+1]-tm[int])/2*n.τ[int][j] +  (tm[int+1]+tm[int])/2);
-        ts[int][end]=@NLexpression(mdl, n.tf/n.Ni*int) # append +1 at end of each interval
+        ts[int][1:end-1]=@NLexpression(n.mdl,[j=1:n.Nck[int]], (tm[int+1]-tm[int])/2*n.τ[int][j] +  (tm[int+1]+tm[int])/2);
+        ts[int][end]=@NLexpression(n.mdl, n.tf/n.Ni*int) # append +1 at end of each interval
       end
-
       tt1 = [idx for tempM in ts for idx = tempM[1:end-1]];
       tmp = [tt1;ts[end][end]];
-#      n.tV = @NLexpression(mdl,[j=1:n.numStatePoints], n.t0 + tmp[j]);
-      n.tV = @NLexpression(mdl,[j=1:n.numStatePoints], n.mpc.t0_param + tmp[j]);
+      n.tV = @NLexpression(n.mdl,[j=1:n.numStatePoints], n.mpc.t0_param + tmp[j]);
     else
       error("finish this")
     end
   else
     error("finish this")
 
-    if n.finalTimeDV
+    if n.s.finalTimeDV
       # vector with the design variable in it
       t = Array(Any,n.N+1,1);
       tmp = [0;cumsum(n.dt)];
-      n.tV = @NLexpression(mdl,[j=1:n.numStatePoints], n.t0 + tmp[j]);
+      n.tV = @NLexpression(n.mdl,[j=1:n.numStatePoints], n.t0 + tmp[j]);
     else
 
     end
@@ -176,16 +174,16 @@ end
 
 """
 # integrating JuMP variables
-Expr=integrate!(mdl,n,u;(:mode=>:control))
-Expr=integrate!(mdl,n,u,idx=1;C=0.5,(:variable=>:control),(:integrand=>:squared))
-Expr=integrate!(mdl,n,r.u[:,1];D=rand(n.numStatePoints),(:variable=>:control),(:integrand=>:squared),(:integrandAlgebra=>:subtract))
+Expr=integrate!(n,u;(:mode=>:control))
+Expr=integrate!(n,u,idx=1;C=0.5,(:variable=>:control),(:integrand=>:squared))
+Expr=integrate!(n,n.r.u[:,1];D=rand(n.numStatePoints),(:variable=>:control),(:integrand=>:squared),(:integrandAlgebra=>:subtract))
 #TODO fix D  ::Array{JuMP.NonlinearParameter,1}
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 1/2/2017, Last Modified: 4/12/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function integrate!(mdl::JuMP.Model,n::NLOpt,V::Array{JuMP.Variable,1}, args...; C=1.0,D=zeros(n.numStatePoints,),kwargs...)
+function integrate!(n::NLOpt,V::Array{JuMP.Variable,1}, args...; C=1.0,D=zeros(n.numStatePoints,),kwargs...)
   kw = Dict(kwargs);
   if !haskey(kw,:integrand); kw_ = Dict(:integrand => :default); integrand = get(kw_,:integrand,0);
   else; integrand = get(kw,:integrand,0);
@@ -195,23 +193,23 @@ function integrate!(mdl::JuMP.Model,n::NLOpt,V::Array{JuMP.Variable,1}, args...;
   end
 
   if integrandAlgebra ==:subtract
-    if n.integrationMethod==:tm
+    if n.s.integrationMethod==:tm
       if integrand == :default      # integrate V
-        if n.integrationScheme==:bkwEuler
-          Expr =  @NLexpression(mdl,C*sum((V[j+1]-D[j])*n.tf/(n.N) for j = 1:n.N));  #TODO fix this.. there is an extra dv here for control, but it does not effect solution
+        if n.s.integrationScheme==:bkwEuler
+          Expr =  @NLexpression(n.mdl,C*sum((V[j+1]-D[j])*n.tf/(n.N) for j = 1:n.N));  #TODO fix this.. there is an extra dv here for control, but it does not effect solution
         elseif n.integrationScheme==:trapezoidal
-          Expr =  @NLexpression(mdl,C*sum(0.5*((V[j]-D[j]+V[j+1]-D[j])*n.tf/(n.N) for j = 1:n.N)));
+          Expr =  @NLexpression(n.mdl,C*sum(0.5*((V[j]-D[j]+V[j+1]-D[j])*n.tf/(n.N) for j = 1:n.N)));
         end
       elseif integrand == :squared # integrate V^2
-        if n.integrationScheme==:bkwEuler
-          Expr =  @NLexpression(mdl, C*sum(((V[j+1]-D[j])^2)*n.tf/(n.N) for j = 1:n.N));
+        if n.s.integrationScheme==:bkwEuler
+          Expr =  @NLexpression(n.mdl, C*sum(((V[j+1]-D[j])^2)*n.tf/(n.N) for j = 1:n.N));
         elseif n.integrationScheme==:trapezoidal
-          Expr =  @NLexpression(mdl, C*sum(0.5*((V[j]-D[j])^2+(V[j+1]-D[j])^2)*n.tf/(n.N) for j = 1:n.N));
+          Expr =  @NLexpression(n.mdl, C*sum(0.5*((V[j]-D[j])^2+(V[j+1]-D[j])^2)*n.tf/(n.N) for j = 1:n.N));
         end
       else
         error("\n Check :integrand \n")
       end
-    elseif n.integrationMethod==:ps
+    elseif n.s.integrationMethod==:ps
       if !haskey(kw,:mode); kw_ = Dict(:mode => :quadrature); mode = get(kw_,:mode,0);
       else; mode  = get(kw,:mode,0);
       end
@@ -223,11 +221,11 @@ function integrate!(mdl::JuMP.Model,n::NLOpt,V::Array{JuMP.Variable,1}, args...;
 
       if mode == :quadrature  #TODO recalculate ws based off of time
         if integrand == :default      # integrate V
-          @NLexpression(mdl, temp[int=1:n.Ni], ((n.tf-n.t0)/2)*sum((n.ωₛ[int])[j]*((V[Nck_cum[int]+1:Nck_cum[int+1]])[j]-D[j]) for j = 1:n.Nck[int]));
-          Expr =  @NLexpression(mdl, C*sum(temp[int] for int = 1:n.Ni));
+          @NLexpression(n.mdl, temp[int=1:n.Ni], ((n.tf-n.t0)/2)*sum((n.ωₛ[int])[j]*((V[Nck_cum[int]+1:Nck_cum[int+1]])[j]-D[j]) for j = 1:n.Nck[int]));
+          Expr =  @NLexpression(n.mdl, C*sum(temp[int] for int = 1:n.Ni));
         elseif integrand == :squared # integrate V^2
           @NLexpression(mdl, temp[int=1:n.Ni],((n.tf-n.t0)/2)*C*sum((n.ωₛ[int])[j]*((V[Nck_cum[int]+1:Nck_cum[int+1]])[j]-D[j])*((V[Nck_cum[int] + 1:Nck_cum[int+1]])[j]-D[j]) for j = 1:n.Nck[int]));
-          Expr =  @NLexpression(mdl, sum(temp[int] for int = 1:n.Ni));
+          Expr =  @NLexpression(n.mdl, sum(temp[int] for int = 1:n.Ni));
         else
           error("\n Check :integrand \n")
         end
@@ -236,23 +234,23 @@ function integrate!(mdl::JuMP.Model,n::NLOpt,V::Array{JuMP.Variable,1}, args...;
       end
     end
   elseif integrandAlgebra==:default
-    if n.integrationMethod==:tm
+    if n.s.integrationMethod==:tm
       if integrand == :default      # integrate V
-        if n.integrationScheme==:bkwEuler
-          Expr =  @NLexpression(mdl,C*sum(V[j+1]*n.tf/(n.N) for j = 1:n.N));  #TODO fix this.. there is an extra dv here for control, but it does not effect solution
-        elseif n.integrationScheme==:trapezoidal
-          Expr =  @NLexpression(mdl,C*sum(0.5*(V[j]+V[j+1])*n.tf/(n.N) for j = 1:n.N));
+        if n.s.integrationScheme==:bkwEuler
+          Expr =  @NLexpression(n.mdl,C*sum(V[j+1]*n.tf/(n.N) for j = 1:n.N));  #TODO fix this.. there is an extra dv here for control, but it does not effect solution
+        elseif n.s.integrationScheme==:trapezoidal
+          Expr =  @NLexpression(n.mdl,C*sum(0.5*(V[j]+V[j+1])*n.tf/(n.N) for j = 1:n.N));
         end
       elseif integrand == :squared # integrate V^2
-        if n.integrationScheme==:bkwEuler
-          Expr =  @NLexpression(mdl, C*sum((V[j+1]^2)*n.tf/(n.N) for j = 1:n.N));
-        elseif n.integrationScheme==:trapezoidal
-          Expr =  @NLexpression(mdl, C*sum(0.5*(V[j]^2+V[j+1]^2)*n.tf/(n.N) for j = 1:n.N));
+        if n.s.integrationScheme==:bkwEuler
+          Expr =  @NLexpression(n.mdl, C*sum((V[j+1]^2)*n.tf/(n.N) for j = 1:n.N));
+        elseif n.s.integrationScheme==:trapezoidal
+          Expr =  @NLexpression(n.mdl, C*sum(0.5*(V[j]^2+V[j+1]^2)*n.tf/(n.N) for j = 1:n.N));
         end
       else
         error("\n Check :integrand \n")
       end
-    elseif n.integrationMethod==:ps
+    elseif n.s.integrationMethod==:ps
       if !haskey(kw,:mode); kw_ = Dict(:mode => :quadrature); mode = get(kw_,:mode,0);
       else; mode  = get(kw,:mode,0);
       end
@@ -262,13 +260,13 @@ function integrate!(mdl::JuMP.Model,n::NLOpt,V::Array{JuMP.Variable,1}, args...;
       else; error("\n Set the variable to either (:variable => :state) or (:variable => :control). \n")
       end
 
-      if mode == :quadrature  #TODO recalculate ws based off of time
+      if mode == :quadrature
         if integrand == :default      # integrate V
-          @NLexpression(mdl, temp[int=1:n.Ni], ((n.tf-n.t0)/2)*sum((n.ωₛ[int])[j]*(V[Nck_cum[int]+1:Nck_cum[int+1]])[j] for j = 1:n.Nck[int]));
-          Expr =  @NLexpression(mdl, C*sum(temp[int] for int = 1:n.Ni));
+          @NLexpression(n.mdl, temp[int=1:n.Ni], ((n.tf-n.t0)/2)*sum((n.ωₛ[int])[j]*(V[Nck_cum[int]+1:Nck_cum[int+1]])[j] for j = 1:n.Nck[int]));
+          Expr =  @NLexpression(n.mdl, C*sum(temp[int] for int = 1:n.Ni));
         elseif integrand == :squared # integrate V^2
-          @NLexpression(mdl, temp[int=1:n.Ni],((n.tf-n.t0)/2)*C*sum((n.ωₛ[int])[j]*(V[Nck_cum[int]+1:Nck_cum[int+1]])[j]*(V[Nck_cum[int] + 1:Nck_cum[int+1]])[j] for j = 1:n.Nck[int]));
-          Expr =  @NLexpression(mdl, sum(temp[int] for int = 1:n.Ni));
+          @NLexpression(n.mdl, temp[int=1:n.Ni],((n.tf-n.t0)/2)*C*sum((n.ωₛ[int])[j]*(V[Nck_cum[int]+1:Nck_cum[int+1]])[j]*(V[Nck_cum[int] + 1:Nck_cum[int+1]])[j] for j = 1:n.Nck[int]));
+          Expr =  @NLexpression(n.mdl, sum(temp[int] for int = 1:n.Ni));
         else
           error("\n Check :integrand \n")
         end
@@ -290,53 +288,54 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/7/2017, Last Modified: 3/6/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function initConstraint(r::Result)
-  if r.constraint==nothing
-    r.constraint=Constraint()
+function initConstraint!(n)
+  if n.r.constraint==nothing
+    n.r.constraint=Constraint()
   end
+  nothing
 end
 
-function newConstraint!(r::Result,handle,name::Symbol)
-  initConstraint(r)
-  r.constraint::Constraint = r.constraint
-  push!(r.constraint.handle,handle)
-  push!(r.constraint.name,name)
+function newConstraint!(n,handle,name::Symbol)
+  initConstraint!(n)
+  n.r.constraint::Constraint=n.r.constraint
+  push!(n.r.constraint.handle,handle)
+  push!(n.r.constraint.name,name)
   nothing
 end
 
 
 """
-maxDualInf = evalMaxDualInf(n,r)
+maxDualInf = evalMaxDualInf(n)
 # funtionality to evaluate maximum dual infeasibility of problem
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/13/2017, Last Modified: 2/13/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function evalMaxDualInf(n::NLOpt, r::Result)
-  num=length(r.constraint.handle); dual_con_temp=zeros(num);
-  for i = 1:length(r.constraint.handle)
-    if !isempty(r.constraint.handle[i])
-      if r.constraint.name[i]==:dyn_con  # state constraits
+function evalMaxDualInf(n::NLOpt)
+  num=length(n.r.constraint.handle); dual_con_temp=zeros(num);
+  for i = 1:length(n.r.constraint.handle)
+    if !isempty(n.r.constraint.handle[i])
+      if n.r.constraint.name[i]==:dyn_con  # state constraits
         temp1=zeros(n.numStates);
         for st in 1:n.numStates
-          if n.integrationMethod==:ps
-            temp=[getdual(r.constraint.handle[i][int][:,st]) for int in 1:n.Ni];
+          if n.r.integrationMethod==:ps
+            temp=[getdual(n.r.constraint.handle[i][int][:,st]) for int in 1:n.Ni];
             vals=[idx for tempM in temp for idx=tempM];
             temp1[st]=maximum(vals);
           else
-            temp1[st] = maximum(getdual(r.constraint.handle[i][:,st]));
+            temp1[st] = maximum(getdual(n.r.constraint.handle[i][:,st]));
           end
         end
         dual_con_temp[i]=maximum(temp1);
       else
-        S=JuMP.size(r.constraint.handle[i])
+        S=JuMP.size(n.r.constraint.handle[i])
         if length(S)==1
-          dual_con_temp[i]=maximum(getdual(r.constraint.handle[i][:]));
+          dual_con_temp[i]=maximum(getdual(n.r.constraint.handle[i][:]));
         elseif length(S)==2
           temp1=zeros(S[1]);
           for idx in 1:S[1]
-            temp1[idx] = maximum(getdual(r.constraint.handle[i][idx,:]));
+            temp1[idx] = maximum(getdual(n.r.constraint.handle[i][idx,:]));
           end
           dual_con_temp[i]=maximum(temp1);
         end
@@ -424,24 +423,24 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 3/26/2017, Last Modified: 5/19/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function resultsDir!(r;results_name::String="",description::String="no description given")
- results_dir = string(r.main_dir,"/results/",results_name)  # define directories
- r.results_dir=results_dir;
+function resultsDir!(n;results_name::String="",description::String="no description given")
+ results_dir = string(n.r.main_dir,"/results/",results_name)  # define directories
+ n.r.results_dir=results_dir;
 
- if isdir(r.results_dir)
-   rm(r.results_dir; recursive=true)
+ if isdir(n.r.results_dir)
+   rm(n.r.results_dir; recursive=true)
    print("\n The old results have all been deleted! \n \n")
  end
- mkdir(r.results_dir)# create directory
+ mkdir(n.r.results_dir)# create directory
 
  description_str = string(
  "In this test: \n
   RESULTS DISCUSSION:  \n
   * " , description )
 
- cd(r.results_dir)
+ cd(n.r.results_dir)
    write("description.txt", description_str)
- cd(r.main_dir)
+ cd(n.r.main_dir)
  nothing
 end
 
@@ -453,25 +452,25 @@ Date Create: 3/26/2017, Last Modified: 4/27/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 
-function savePlantData(n,r)
+function savePlantData!(n)
   dfs=DataFrame();
-  temp = [r.dfs_plant[jj][:t][1:end-1,:] for jj in 1:length(r.dfs_plant)]; # time
+  temp = [n.r.dfs_plant[jj][:t][1:end-1,:] for jj in 1:length(n.r.dfs_plant)]; # time
   U=[idx for tempM in temp for idx=tempM]; dfs[:t]=U;
 
   for st in 1:n.numStates # state
-    temp = [r.dfs_plant[jj][n.state.name[st]][1:end-1,:] for jj in 1:length(r.dfs_plant)];
+    temp = [n.r.dfs_plant[jj][n.state.name[st]][1:end-1,:] for jj in 1:length(n.r.dfs_plant)];
     U=[idx for tempM in temp for idx=tempM];
     dfs[n.state.name[st]]=U;
   end
 
   for ctr in 1:n.numControls # control
-    temp = [r.dfs_plant[jj][n.control.name[ctr]][1:end-1,:] for jj in 1:length(r.dfs_plant)];
+    temp = [n.r.dfs_plant[jj][n.control.name[ctr]][1:end-1,:] for jj in 1:length(n.r.dfs_plant)];
     U=[idx for tempM in temp for idx=tempM];
     dfs[n.control.name[ctr]]=U;
   end
-  cd(r.results_dir)
+  cd(n.r.results_dir)
     writetable("plant_data.csv",dfs);
-  cd(r.main_dir)
+  cd(n.r.main_dir)
   return nothing
 end
 

@@ -1,27 +1,27 @@
 """
-n,r=OCPdef(mdl,n,s)
+OCPdef!(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/14/2017, Last Modified: 5/4/2017 \n
+Date Create: 1/14/2017, Last Modified: 5/28/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function OCPdef!(mdl::JuMP.Model,n::NLOpt,s::Settings,args...)
+function OCPdef!(n::NLOpt,args...)
 
   if length(args)==1; params=args[1]; paramsON=true; else paramsON=false; end
-  r = Result();
+  n.r=Result();
 
   # state variables
-  @variable(mdl, x[1:n.numStatePoints,1:n.numStates]);
+  @variable(n.mdl,x[1:n.numStatePoints,1:n.numStates]); n.r.x=x;
   for st in 1:n.numStates
     # lower state constraint
     if !isnan(n.XL[st])
       if n.mXL[st]==false
         for j in 1:n.numStatePoints
-          setlowerbound(x[j,st], n.XL[st])
+          setlowerbound(n.r.x[j,st], n.XL[st])
         end
       else
         for j in 1:n.numStatePoints
-          setlowerbound(x[j,st],n.XL_var[st,j])
+          setlowerbound(n.r.x[j,st],n.XL_var[st,j])
         end
       end
     end
@@ -30,76 +30,76 @@ function OCPdef!(mdl::JuMP.Model,n::NLOpt,s::Settings,args...)
       if !isnan(n.XU[st])
         if n.XU[st]!=false
           for j in 1:n.numStatePoints
-            setupperbound(x[j,st], n.XU[st])
+            setupperbound(n.r.x[j,st], n.XU[st])
           end
         else
           for j in 1:n.numStatePoints
-            setlowerbound(x[j,st],n.XU_var[st,j])
+            setlowerbound(n.r.x[j,st],n.XU_var[st,j])
           end
         end
       end
   end
 
   # control variables
-  @variable(mdl, u[1:n.numControlPoints,1:n.numControls]);
+@variable(n.mdl,u[1:n.numControlPoints,1:n.numControls]);n.r.u=u;
   for ctr in 1:n.numControls
     if !isnan(n.CL[ctr])
       for j in 1:n.numControlPoints
-        setlowerbound(u[j,ctr], n.CL[ctr])
+        setlowerbound(n.r.u[j,ctr], n.CL[ctr])
       end
     end
     if !isnan(n.CU[ctr])
       for j in 1:n.numControlPoints
-        setupperbound(u[j,ctr], n.CU[ctr])
+        setupperbound(n.r.u[j,ctr], n.CU[ctr])
       end
     end
   end
 
   # boundary constraints
-  xf_con=[]; # currently modifying the final state constraint (with tolerance) is not needed, can easily ad this functionlity though
+  n.r.xf_con=[]; # currently modifying the final state constraint (with tolerance) is not needed, can easily ad this functionlity though
   if any(!isnan(n.X0_tol))           # create handles for constraining the enire initial state
-    x0_con=Array(Any,n.numStates,2); # this is so they can be easily reference when doing MPC
+    n.r.x0_con=Array(Any,n.numStates,2); # this is so they can be easily reference when doing MPC
   else
-    x0_con=[];
+    n.r.x0_con=[];
   end
 
   for st in 1:n.numStates
     if !isnan(n.X0[st]) # could have a bool for this
       if any(!isnan(n.X0_tol)) #NOTE in JuMP: Modifying range constraints is currently unsupported.
-        x0_con[st,1]=@constraint(mdl, x[1,st] <=  (n.X0[st]+n.X0_tol[st]));
-        x0_con[st,2]=@constraint(mdl,-x[1,st] <= -(n.X0[st]-n.X0_tol[st]));
+        n.r.x0_con[st,1]=@constraint(n.mdl, n.r.x[1,st] <=  (n.X0[st]+n.X0_tol[st]));
+        n.r.x0_con[st,2]=@constraint(n.mdl,-n.r.x[1,st] <= -(n.X0[st]-n.X0_tol[st]));
       else
-        x0_con=[x0_con; @constraint(mdl, x[1,st]==n.X0[st])]
+        n.r.x0_con=[n.r.x0_con; @constraint(n.mdl, n.r.x[1,st]==n.X0[st])]
       end
     end
     if !isnan(n.XF[st])
       if isnan(n.XF_tol[st])
-        xf_con=[xf_con; @constraint(mdl, x[end,st]==n.XF[st])];
+        n.r.xf_con=[n.r.xf_con; @constraint(n.mdl, n.r.x[end,st]==n.XF[st])];
       else #TODO fix this as well
-        xf_con=[xf_con; @constraint(mdl, n.XF[st]-n.XF_tol[st] <= x[end,st] <= n.XF[st]+n.XF_tol[st])];
+        n.r.xf_con=[n.r.xf_con; @constraint(n.mdl, n.XF[st]-n.XF_tol[st] <= n.r.x[end,st] <= n.XF[st]+n.XF_tol[st])];
       end
     end
   end
 
-  @NLparameter(mdl, t0_param==0.0);   # for now we just start at zero
+  @NLparameter(n.mdl,t0_param==0.0);   # for now we just start at zero
   n.mpc.t0_param=t0_param;
 
-  if n.integrationMethod==:ps
-    dyn_con=[Array(Any,n.Nck[int],n.numStates) for int in 1:n.Ni];
+  if n.s.integrationMethod==:ps
+    n.r.dyn_con=[Array(Any,n.Nck[int],n.numStates) for int in 1:n.Ni];
     Nck_full=[0;cumsum(n.Nck+1)]; Nck_vars=[0;cumsum(n.Nck)];
     dynamics_expr=[Array(Any,n.Nck[int],n.numStates) for int in 1:n.Ni];
 
-    if n.finalTimeDV
-      @variable(mdl, 0.001 <= tf <=  n.tf_max)
+    if n.s.finalTimeDV
+      @variable(n.mdl, 0.001 <= tf <=  n.tf_max)
       n.tf=tf;
-      create_tV!(mdl,n) # make a time vector
+      create_tV!(n) # make a time vector
     end
 
     for int in 1:n.Ni
       # states
       x_int=Array(Any,length(Nck_full[int]+1:Nck_full[int+1]),n.numStates);
       for st in 1:n.numStates # +1 adds the DV in the next interval
-        x_int[:,st]=x[Nck_vars[int]+1:Nck_vars[int+1]+1,st];
+        x_int[:,st]=n.r.x[Nck_vars[int]+1:Nck_vars[int+1]+1,st];
       end
 
       # controls
@@ -111,58 +111,57 @@ function OCPdef!(mdl::JuMP.Model,n::NLOpt,s::Settings,args...)
 
       for ctr in 1:n.numControls
         if int!=n.Ni # +1 adds the DV in the next interval
-          u_int[:,ctr]=u[Nck_vars[int]+1:Nck_vars[int+1]+1,ctr]; # NOTE this +1 is a test 5/4/2017
+          u_int[:,ctr]=n.r.u[Nck_vars[int]+1:Nck_vars[int+1]+1,ctr];
         else
-          u_int[:,ctr]=u[Nck_vars[int]+1:Nck_vars[int+1],ctr];  # TODO check this against old code
+          u_int[:,ctr]=n.r.u[Nck_vars[int]+1:Nck_vars[int+1],ctr];
         end
       end
       # dynamics
       if paramsON
-        dx=n.stateEquations(mdl,n,r,x_int,u_int,params);
+        dx=n.stateEquations(n,x_int,u_int,params);
       else
-        dx=n.stateEquations(mdl,n,r,x_int,u_int);
+        dx=n.stateEquations(n,x_int,u_int);
       end
       for st in 1:n.numStates
-        if n.integrationScheme==:lgrExplicit
-          dynamics_expr[int][:,st]=@NLexpression(mdl, [j in 1:n.Nck[int]], sum(n.DMatrix[int][j,i]*x_int[i,st] for i in 1:n.Nck[int]+1) - ((n.tf)/2)*dx[j,st]  )
+        if n.s.integrationScheme==:lgrExplicit
+          dynamics_expr[int][:,st]=@NLexpression(n.mdl, [j in 1:n.Nck[int]], sum(n.DMatrix[int][j,i]*x_int[i,st] for i in 1:n.Nck[int]+1) - ((n.tf)/2)*dx[j,st]  )
         end
         for j in 1:n.Nck[int]
-          dyn_con[int][j,st]=@NLconstraint(mdl, 0==dynamics_expr[int][j,st])
+          n.r.dyn_con[int][j,st]=@NLconstraint(n.mdl, 0==dynamics_expr[int][j,st])
         end
       end
 
     end
-  elseif n.integrationMethod==:tm
-    dyn_con=Array(Any,n.N,n.numStates);
+  elseif n.s.integrationMethod==:tm
+    n.r.dyn_con=Array(Any,n.N,n.numStates);
     if n.finalTimeDV
      #@variable( mdl, 0.00001 <= dt[1:n.N] <= 0.2) #TODO allow for an varaible array of dts
-     @variable(mdl, 0.001 <= tf <= n.tf_max)
+     @variable(n.mdl, 0.001 <= tf <= n.tf_max)
      n.tf = tf;
     end
     n.dt = n.tf/n.N*ones(n.N,);
     if paramsON
-      dx = n.stateEquations(mdl,n,r,x,u,params);
+      dx = n.stateEquations(n,n.r.x,n.r.u,params);
     else
-      dx = n.stateEquations(mdl,n,r,x,u);
+      dx = n.stateEquations(n,n.r.x,n.r.u); # TODO for now leaving the reduntant terms so that the diff eq functions are consistent
     end
-    if n.integrationScheme==:bkwEuler
+    if n.s.integrationScheme==:bkwEuler
       for st in 1:n.numStates
-        dyn_con[:,st] = @NLconstraint(mdl, [j in 1:n.N], 0 == x[j+1,st] - x[j,st] - dx[j+1,st]*n.tf/(n.N) );
+        n.r.dyn_con[:,st] = @NLconstraint(n.mdl, [j in 1:n.N], 0 == n.r.x[j+1,st]-n.r.x[j,st] - dx[j+1,st]*n.tf/(n.N) );
       end
-    elseif n.integrationScheme==:trapezoidal
+    elseif n.s.integrationScheme==:trapezoidal
       for st in 1:n.numStates
-        dyn_con[:,st] = @NLconstraint(mdl, [j in 1:n.N], 0 == x[j+1,st] - x[j,st] - 0.5*(dx[j,st] + dx[j+1,st])*n.tf/(n.N) )
+        n.r.dyn_con[:,st] = @NLconstraint(n.mdl, [j in 1:n.N], 0 == n.r.x[j+1,st]-n.r.x[j,st] - 0.5*(dx[j,st] + dx[j+1,st])*n.tf/(n.N) )
       end
     end
   end
 
-  # store results
-  r.x=x; r.u=u; r.x0_con=x0_con; r.xf_con=xf_con; r.dyn_con=dyn_con;
-  newConstraint!(r,x0_con,:x0_con); #TODO consider getting ride of redundancy
-  newConstraint!(r,xf_con,:xf_con);
-  newConstraint!(r,dyn_con,:dyn_con);
+  # save constraint data
+  newConstraint!(n.r,n.r.x0_con,:x0_con);
+  newConstraint!(n.r,n.r.xf_con,:xf_con);
+  newConstraint!(n.r,n.r.dyn_con,:dyn_con);
 
   # save the current working directory for navigation purposes
-  r.main_dir=pwd();
-  return r
+  n.r.main_dir=pwd();
+  nothing
 end
