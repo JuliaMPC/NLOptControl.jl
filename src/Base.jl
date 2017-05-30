@@ -12,7 +12,8 @@ export
   opt2dfs,
   postProcess!,
   optimize!,
-  scale_tau
+  scale_tau,
+  try_import
 
 """
 scale_tau(τ,x₀,xₙ)
@@ -52,7 +53,7 @@ function plant2dfs!(n,sol)
   else
     push!(n.r.dfs_plant,dfs_plant);
   end
-  nothing
+  return nothing
 end
 
 """
@@ -81,15 +82,14 @@ function dvs2dfs(n)
 end
 
 """
-opt2dfs(r)
-
+opt2dfs(n)
 # funtionality to save optimization data
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/10/2017, Last Modified: 5/28/2017 \n
+Date Create: 2/10/2017, Last Modified: 5/29/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function opt2dfs(r;kwargs...)
+function opt2dfs(n;kwargs...)
 
   kw = Dict(kwargs);
   # check to see if the user is initializing while compensating for control delay
@@ -99,10 +99,10 @@ function opt2dfs(r;kwargs...)
   dfs_opt=DataFrame()
 
   if !Init
-    dfs_opt[:t_solve]=r.t_solve
-    dfs_opt[:obj_val]=r.obj_val
-    dfs_opt[:status]=r.status
-    dfs_opt[:iter_num]=r.iter_nums
+    dfs_opt[:t_solve]=n.r.t_solve
+    dfs_opt[:obj_val]=n.r.obj_val
+    dfs_opt[:status]=n.r.status
+    dfs_opt[:iter_num]=n.r.iter_nums
   else
     dfs_opt[:t_solve]=0.0
     dfs_opt[:obj_val]=0.0
@@ -114,17 +114,17 @@ function opt2dfs(r;kwargs...)
 end
 
 """
-con2dfs(r)
+con2dfs(n)
 
 # funtionality to save constraint data
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/20/2017, Last Modified: 5/28/2017 \n
+Date Create: 2/20/2017, Last Modified: 5/29/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function con2dfs(r)
+function con2dfs(n)
   dfs_con=DataFrame()
-  dfs_con[:con_val]=r.constraint.value;
+  dfs_con[:con_val]=n.r.constraint.value;
   return dfs_con
 end
 
@@ -149,8 +149,8 @@ function postProcess!(n;kwargs...)
       else
         t = [scale_tau(n.ts[int],0.0,n.tf) for int in 1:n.Ni];
       end
-      r.t_ctr= [idx for tempM in t for idx = tempM[1:end-1]];
-      r.t_st = [n.r.t_ctr;t[end][end]];
+      n.r.t_ctr= [idx for tempM in t for idx = tempM[1:end-1]];
+      n.r.t_st = [n.r.t_ctr;t[end][end]];
 
     elseif n.s.integrationMethod==:tm
       warn("NaN not test in postProcess!() for :tm methods")
@@ -176,102 +176,100 @@ function postProcess!(n;kwargs...)
 
     if n.s.save
       push!(n.r.dfs,dvs2dfs(n));
-      push!(n.r.dfs_con,con2dfs(n.r));
-      push!(n.r.dfs_opt,opt2dfs(n.r));
+      push!(n.r.dfs_con,con2dfs(n));
+      push!(n.r.dfs_opt,opt2dfs(n));
     end
-  elseif s.save  # no optimization run -> somtimes you drive straight to get started
-    push!(r.dfs,nothing);
-    push!(r.dfs_con,nothing);
-    push!(r.dfs_opt,opt2dfs(r,;(:Init=>true)));
+  elseif n.s.save  # no optimization run -> somtimes you drive straight to get started
+    push!(n.r.dfs,nothing);
+    push!(n.r.dfs_con,nothing);
+    push!(n.r.dfs_opt,opt2dfs(n,;(:Init=>true)));
   else
     warn("postProcess.jl did not do anything")
   end
-  nothing
+  return nothing
 end
 
 
 """
-
-status=optimize!(mdl,n,r,s)
+optimize!(n)
 
 # solves JuMP model and saves optimization data
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/6/2017, Last Modified: 2/20/2017 \n
+Date Create: 2/6/2017, Last Modified: 5/29/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function optimize!(mdl,n,r,s;Iter::Int64=0)
-  t1 = time(); status=JuMP.solve(mdl); t2 = time();
-  if s.save
-    r.status=status;
-    r.t_solve=t2-t1;
-    r.obj_val=getobjectivevalue(mdl);
-    r.iter_nums=Iter; # iteration number for a higher level algorithm
-    r.eval_num=r.eval_num+1;
+function optimize!(n;Iter::Int64=0)
+  t1=time(); status=JuMP.solve(n.mdl); t2=time();
+  if n.s.save
+    n.r.status=status;
+    n.r.t_solve=t2-t1;
+    n.r.obj_val=getobjectivevalue(n.mdl);
+    n.r.iter_nums=Iter; # possible iteration number for a higher level algorithm
+    n.r.eval_num=n.r.eval_num+1;
   end
-  postProcess!(n,r,s);  # temporarily save data
-  return status
+  postProcess!(n);      # temporarily save data
+  return nothing
 end
 
 """
 
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/7/2017, Last Modified: 4/7/2017 \n
+Date Create: 2/7/2017, Last Modified: 5/29/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 
-function evalConstraints!(n,r)
-  r.constraint.value=[];   # reset values
-  r.constraint.nums=[]; s=1;
+function evalConstraints!(n)
+  n.r.constraint.value=[];   # reset values
+  n.r.constraint.nums=[]; s=1;
   for i = 1:length(r.constraint.handle)
-    if r.constraint.name[i]==:dyn_con  # state constraits
+    if n.r.constraint.name[i]==:dyn_con  # state constraits
       dfs=Vector{DataFrame}(n.numStates);
       con=DataFrame(step=1);
       l=0;
       for st in 1:n.numStates
         if n.integrationMethod==:ps
-          temp=[getdual(r.constraint.handle[i][int][:,st]) for int in 1:n.Ni];
+          temp=[getdual(n.r.constraint.handle[i][int][:,st]) for int in 1:n.Ni];
           vals=[idx for tempM in temp for idx=tempM];
           dfs[st]=DataFrame(step=1:sum(n.Nck);Dict(n.state.name[st] => vals)...);
           l=l+length(vals);
         else
-          dfs[st]=DataFrame(step=1:n.N;Dict(n.state.name[st] => getdual(r.constraint.handle[i][:,st]))...);
-          l=l+length(r.constraint.handle[i][:,st]);
+          dfs[st]=DataFrame(step=1:n.N;Dict(n.state.name[st] => getdual(n.r.constraint.handle[i][:,st]))...);
+          l=l+length(n.r.constraint.handle[i][:,st]);
         end
         if st==1; con=dfs[st]; else; con=join(con,dfs[st],on=:step); end
       end
     else
       S=0;
       try
-        S=JuMP.size(r.constraint.handle[i])
+        S=JuMP.size(n.r.constraint.handle[i])
       catch
         error("\n For now, the constraints cannot be in this form: \n
-        con=@NLconstraint(mdl,r.u[1,1]==param); \n
+        con=@NLconstraint(mdl,n.r.u[1,1]==param); \n
         Write it in array form: \n
-          con=@NLconstraint(mdl,[i=1],r.u[i,1]==param); \n")
+          con=@NLconstraint(mdl,[i=1],n.r.u[i,1]==param); \n")
       end
       if length(S)==1
-        con = DataFrame(step=1:length(r.constraint.handle[i]);Dict(r.constraint.name[i] => getdual(r.constraint.handle[i][:]))...);
+        con = DataFrame(step=1:length(n.r.constraint.handle[i]);Dict(n.r.constraint.name[i] => getdual(n.r.constraint.handle[i][:]))...);
         l=S[1];
       elseif length(S)==2
         dfs=Vector{DataFrame}(S[1]);
         con=DataFrame(step=1);
         for idx in 1:S[1]
-          dfs[idx] = DataFrame(step=1:S[2];Dict(r.constraint.name[i] => getdual(r.constraint.handle[i][idx,:]))...);
+          dfs[idx] = DataFrame(step=1:S[2];Dict(n.r.constraint.name[i] => getdual(n.r.constraint.handle[i][idx,:]))...);
           if idx==1; con=dfs[idx]; else; con=join(con,dfs[idx],on=:step); end
         end
         l=S[1]*S[2];
       end
     end
     f=s+l-1;
-    num=(i,r.constraint.name[i],@sprintf("length = %0.0f",l),string("indecies in g(x) = "),(s,f));
-    push!(r.constraint.nums,num);
-    push!(r.constraint.value,con);
+    num=(i,n.r.constraint.name[i],@sprintf("length = %0.0f",l),string("indecies in g(x) = "),(s,f));
+    push!(n.r.constraint.nums,num);
+    push!(n.r.constraint.value,con);
     s=f+1;
   end
-  nothing
+  return nothing
 end
-
 
 end # module

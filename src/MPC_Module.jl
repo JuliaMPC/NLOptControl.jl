@@ -170,7 +170,7 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 4/7/2017, Last Modified: 4/9/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function predictX0!(n,pa,r)
+function predictX0!(n,pa)
   if n.mpc.tf==n.mpc.t0
     error("n.mpc.tf==n.mpc.t0")
   end
@@ -193,14 +193,14 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 4/9/2017, Last Modified: 4/9/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function driveStraight!(n,pa,r,s;t0::Float64=n.mpc.t0,tf::Float64=n.mpc.tf)
+function driveStraight!(n,pa;t0::Float64=n.mpc.t0,tf::Float64=n.mpc.tf)
   # add these signals to r so that they can be used for predictions during optimization
-  r.U=0*Matrix{Float64}(n.numControlPoints,n.numControls);
-  r.t_ctr=Vector(Ranges.linspace(t0,tf,n.numControlPoints)); # gives a bunch of points
-  postProcess!(n,r,s;(:Init=>true)); r.eval_num=1;          # to make solutions line up
+  n.r.U=0*Matrix{Float64}(n.numControlPoints,n.numControls);
+  n.r.t_ctr=Vector(Ranges.linspace(t0,tf,n.numControlPoints)); # gives a bunch of points
+  postProcess!(n;(:Init=>true)); r.eval_num=1;          # to make solutions line up
 
   # simulate the "actual vehicle" response
-  simPlant!(n,r,s,pa,n.X0,r.t_ctr+n.mpc.t0,r.U,t0,tf)
+  simPlant!(n,pa,n.X0,r.t_ctr+n.mpc.t0,r.U,t0,tf)
   nothing
 end
 
@@ -209,12 +209,12 @@ end
 
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 3/6/2017, Last Modified: 4/9/2017 \n
+Date Create: 3/6/2017, Last Modified: 5/29/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function mpcUpdate!(n,pa,r)
+function mpcUpdate!(n,pa)
   if n.mpc.PredictX0        # predict where X0 will be when optimized signal is actually sent to the vehicle
-    t0p=predictX0!(n,pa,r); # predicted start time -> important for time varying constraints
+    t0p=predictX0!(n,pa);   # predicted start time -> important for time varying constraints
   else
     t0p=0; n.mpc.X0p=n.mpc.X0[end];  # current "known" plant states  TODO make sure the plant is never simulated ahead
   end
@@ -224,29 +224,29 @@ function mpcUpdate!(n,pa,r)
   if n.mpc.t0_param!=Any
     setvalue(n.mpc.t0_param,copy(n.mpc.t0));
   end
-  nothing
+  return nothing
 end
 
 """
 status=autonomousControl(mdl,n,r,s,pa)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/1/2017, Last Modified: 4/9/2017 \n
+Date Create: 2/1/2017, Last Modified: 5/29/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function autonomousControl!(mdl,n,r,s,pa)
+function autonomousControl!(n,pa)
   mpcUpdate!(n,pa,r)
 
   for st in 1:n.numStates   # update states based off of n.mpc.X0p
     if any(!isnan(n.X0_tol[st]))
-      JuMP.setRHS(r.x0_con[st,1], (n.mpc.X0p[st]+n.X0_tol[st]));
-      JuMP.setRHS(r.x0_con[st,2],-(n.mpc.X0p[st]-n.X0_tol[st]));
+      JuMP.setRHS(n.r.x0_con[st,1], (n.mpc.X0p[st]+n.X0_tol[st]));
+      JuMP.setRHS(n.r.x0_con[st,2],-(n.mpc.X0p[st]-n.X0_tol[st]));
     else
-      JuMP.setRHS(r.x0_con[st],n.mpc.X0p[st]);
+      JuMP.setRHS(n.r.x0_con[st],n.mpc.X0p[st]);
     end
   end
-
-  return optimize!(mdl,n,r,s)
+  optimize!(n)
+  return n.r.status
  end
 
 end # module

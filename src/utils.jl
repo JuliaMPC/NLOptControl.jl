@@ -1,83 +1,4 @@
 
-# credit JuMP.jl
-function try_import(name::Symbol)
- try
-      @eval import $name
-      return true
-  catch e
-      return false
-  end
-end
-"""
-defineSolver!(n;(:name=>:Ipopt))
-# To debug KNITRO turn up the output level
-# Try to tune KNITRO
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/9/2017, Last Modified: 5/28/2017 \n
--------------------------------------------------------------------------------------\n
-"""
-function defineSolver!(n::NLOpt;kwargs...)
-  kw=Dict(kwargs);
-
-  # get the name of the solver
-  if haskey(kw,:name); n.solver.name=get(kw,:name,0); end
-
-  # modify defaults
-  for (key,value) in kw
-    if haskey(n.solver.settings,key)
-      n.solver.settings[key]=value
-    elseif key!=:name # ignore the name
-      error("Unknown key: ", kw)
-    end
-  end
-
-  if try_import(n.solver.name)
-  else (string("\n could not import ",n.solver.name,"\n"))
-  end
-  if n.solver.name==:Ipopt
-    NLPsolver=Ipopt.IpoptSolver(n.solver.settings)
-      #=
-      NLPsolver=Ipopt.IpoptSolver(max_cpu_time=max_cpu_time,
-                                 print_level=0,
-                                 warm_start_init_point="yes",
-                                 max_iter=max_iter,
-                                 tol=infeastol,
-                                 dual_inf_tol=1.,
-                                 constr_viol_tol=0.0001,
-                                 compl_inf_tol=1e-6,
-                                 acceptable_tol=1e-6,
-                                 acceptable_constr_viol_tol=0.01,
-                                 acceptable_dual_inf_tol=1e10,
-                                 acceptable_compl_inf_tol=0.01,
-                                 acceptable_obj_change_tol=1e20,
-                                 diverging_iterates_tol=1e20)
-                                 =#
-  elseif n.solve.name==:KNITRO
-      NLPsolver=KNITRO.KnitroSolver(outlev=0,
-                                   maxit=max_iter,
-                                   maxtime_real=max_cpu_time,
-                                   infeastol=infeastol, #1e-2
-                                   feastol=1.0e20,
-                                   feastol_abs=feastol_abs,#7e-2
-                                   opttol=1.0e20,
-                                   opttol_abs=opttol_abs,#5e-1
-                                   algorithm=1,
-                                   bar_initpt=3,
-                                   bar_murule=4,
-                                   bar_penaltycons=1,
-                                   bar_penaltyrule =2,
-                                   bar_switchrule=2,
-                                   linesearch=1,
-                                   linsolver=2)
-  else
-    error("the :name key needs to be set to either :KNITRO or :IPOPT in defineSolver!()\n ")
-  end
-  n.mdl=Model(solver=NLPsolver)
-  return nothing
-end  # function
-
-
 """
 linearStateTolerances!(n)
 # the purpose of this function is to taper the tolerances on the constant state constraints
@@ -173,14 +94,14 @@ function create_tV!(n::NLOpt)
 end
 
 """
-# integrating JuMP variables
+# for integrating JuMP variables
 Expr=integrate!(n,u;(:mode=>:control))
 Expr=integrate!(n,u,idx=1;C=0.5,(:variable=>:control),(:integrand=>:squared))
 Expr=integrate!(n,n.r.u[:,1];D=rand(n.numStatePoints),(:variable=>:control),(:integrand=>:squared),(:integrandAlgebra=>:subtract))
 #TODO fix D  ::Array{JuMP.NonlinearParameter,1}
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/2/2017, Last Modified: 4/12/2017 \n
+Date Create: 1/2/2017, Last Modified: 5/29/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function integrate!(n::NLOpt,V::Array{JuMP.Variable,1}, args...; C=1.0,D=zeros(n.numStatePoints,),kwargs...)
@@ -263,10 +184,10 @@ function integrate!(n::NLOpt,V::Array{JuMP.Variable,1}, args...; C=1.0,D=zeros(n
       if mode == :quadrature
         if integrand == :default      # integrate V
           @NLexpression(n.mdl, temp[int=1:n.Ni], ((n.tf-n.t0)/2)*sum((n.ωₛ[int])[j]*(V[Nck_cum[int]+1:Nck_cum[int+1]])[j] for j = 1:n.Nck[int]));
-          Expr =  @NLexpression(n.mdl, C*sum(temp[int] for int = 1:n.Ni));
+          Expr=@NLexpression(n.mdl, C*sum(temp[int] for int = 1:n.Ni));
         elseif integrand == :squared # integrate V^2
           @NLexpression(n.mdl, temp[int=1:n.Ni],((n.tf-n.t0)/2)*C*sum((n.ωₛ[int])[j]*(V[Nck_cum[int]+1:Nck_cum[int+1]])[j]*(V[Nck_cum[int] + 1:Nck_cum[int+1]])[j] for j = 1:n.Nck[int]));
-          Expr =  @NLexpression(n.mdl, sum(temp[int] for int = 1:n.Ni));
+          Expr=@NLexpression(n.mdl, sum(temp[int] for int = 1:n.Ni));
         else
           error("\n Check :integrand \n")
         end
@@ -415,16 +336,16 @@ end
 description = string(
 " *  \n ")
 
-setupResults(r;results_name,description=description)
+resultsDir!(r;results_name,description=description)
 # removes results folder and creates a new one
-
+# TODO consider putting in a warning or some sort of an interaction with user
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 3/26/2017, Last Modified: 5/19/2017 \n
+Date Create: 3/26/2017, Last Modified: 5/29/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function resultsDir!(n;results_name::String="",description::String="no description given")
- results_dir = string(n.r.main_dir,"/results/",results_name)  # define directories
+ results_dir=string(n.r.main_dir,"/results/",results_name)  # define directories
  n.r.results_dir=results_dir;
 
  if isdir(n.r.results_dir)
@@ -441,7 +362,7 @@ function resultsDir!(n;results_name::String="",description::String="no descripti
  cd(n.r.results_dir)
    write("description.txt", description_str)
  cd(n.r.main_dir)
- nothing
+ return nothing
 end
 
 
@@ -508,4 +429,15 @@ function maxDF(dfs,varb)
     end
   end
   maximum(tmp)  # find the minimum
+end
+
+
+# credit JuMP.jl
+function try_import(name::Symbol)
+ try
+      @eval import $name
+      return true
+  catch e
+      return false
+  end
 end

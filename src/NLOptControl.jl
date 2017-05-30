@@ -121,46 +121,48 @@ Result( Vector{Any}[], # time vector for control
         nothing,       # handle for intial state constraints
         nothing,       # handle for final state constraints
         nothing,       # dynamics constraint
-        Constraint(),  # constraint data  TODO consider moving this
+        Constraint(),  # constraint data
         0,             # number of times optimization has been run
         [],            # mics. data, perhaps an iteration number for a higher level algorithm
-        Symbol,      # optimization status
-        Float64,     # solve time for optimization
-        Float64,     # objective function value
+        Symbol,        # optimization status
+        Float64,       # solve time for optimization
+        Float64,       # objective function value
         [],            # results in DataFrame for plotting
         [],            # optimization information in DataFrame for plotting
         [],            # plant data
         [],            # constraint data
-        "./results/",  # string that defines results folder
-        ""             # string that defines main folder
+        string(pwd(),"/results/"),  # string that defines results folder
+        pwd()                       # string that defines main folder
       );
 end
 
 # Settings Class
 abstract AbstractNLOpt
 type Settings <: AbstractNLOpt  # options
-  solver::Solver             # solver information
+  solver::Solver                # solver information
   finalTimeDV::Bool
   integrationMethod::Symbol
   integrationScheme::Symbol
-  MPC::Bool                  # bool for doing MPC
-  save::Bool                 # bool for saving data
-  reset::Bool                # bool for reseting data
-  evalConstraints::Bool      # bool for evaluating duals of the constraints
+  MPC::Bool                     # bool for doing MPC
+  save::Bool                    # bool for saving data
+  reset::Bool                   # bool for reseting data
+  evalConstraints::Bool         # bool for evaluating duals of the constraints
+  tf_max::Any                   # maximum final time
 end
 
 # Default Constructor
-function Settings(;MPC::Bool=false,save::Bool=true,reset::Bool=false,evalConstraints::Bool=false)  # consider moving these plotting settings to PrettyPlots.jl
-Settings(
+function Settings()
+        Settings(
          Solver(),           # default solver
          false,              # finalTimeDV
-         :ts,                # integrtionMethod
+         :ts,                # integrationMethod
          :bkwEuler,          # integrationScheme
-         MPC,                # bool for doing MPC
-         save,               # bool for saving data
-         reset,              # bool for reseting data
-         evalConstraints     # bool for evaluating duals of the constraints
-        );
+         false,              # bool for doing MPC
+         true,               # bool for saving data
+         false,              # bool for reseting data
+         false,              # bool for evaluating duals of the constraints
+         400.0               # maximum final time
+                );
 end
 
 ################################################################################
@@ -180,7 +182,6 @@ type NLOpt <: AbstractNLOpt
   lengthDV::Int64           # total number of dv discretizations per variables
   tf::Any                   # final time
   t0::Any                   # initial time TODO consider getting ride of this! or replace it with n.mpc.t0_param
-  tf_max::Any               # maximum final time
   tV::Any                   # vector for use with time varying constraints
 
   # boundary constraits
@@ -196,8 +197,8 @@ type NLOpt <: AbstractNLOpt
   # variables for linear bounds on state variables
   mXL::Array{Any,1}           # slope on XL -> time always starts at zero
   mXU::Array{Any,1}           # slope on XU -> time always starts at zero
-  XL_var::Any      # time varying lower bounds on states
-  XU_var::Any      # time varying upper bounds on states
+  XL_var::Any                 # time varying lower bounds on states
+  XU_var::Any                 # time varying upper bounds on states
 
   # constant bounds on control variables
   CL::Array{Float64,1}
@@ -236,8 +237,7 @@ NLOpt(Any,                # state equations
       0,                  # number of dvs per control
       0,                  # total number of dv discretizations per variables
       Any,                # final time
-      0.0,                  # initial time
-      Any,                # maximum final time
+      0.0,                # initial time
       Any,                # optional vector for use with time varying constraints
       Float64[],          # initial state conditions
       Float64[],          # tolerances on inital state constraint
@@ -270,9 +270,8 @@ end
 
 # scripts
 include("utils.jl");
-include("setup.jl")
+include("setup.jl");
 include("ps.jl");
-include("ocp.jl")
 
 export
        # Base functions
@@ -281,7 +280,6 @@ export
        optimize!,
 
        # setup functions
-       NLOpt,
        define!,
        configure!,
 
@@ -315,6 +313,6 @@ export
        NLOpt,
 
        # results
-       resultsDir!  # a function to make a results folder
+       resultsDir!  # function to make a results folder
 
 end # module
