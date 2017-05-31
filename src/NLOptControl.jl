@@ -223,6 +223,9 @@ type NLOpt <: AbstractNLOpt
   mdl::JuMP.Model               # JuMP model
   s::Settings                   # settings
   r::Result                     # results
+
+  # problem state
+  define::Bool                  # a bool to tell if define!() has been called
 end
 
 # Default Constructor
@@ -265,6 +268,7 @@ NLOpt(Any,                # state equations
       JuMP.Model(),       # JuMP model
       Settings(),
       Result(),
+      false
     );
 end
 

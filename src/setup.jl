@@ -63,6 +63,7 @@ function define!(;stateEquations::Function=[],
   n.XU = XU;
   n.CL = CL;
   n.CU = CU;
+  n.define=true;
   return n
 end
 
@@ -271,7 +272,7 @@ function OCPdef!(n::NLOpt,args...)
     end
   elseif n.s.integrationMethod==:tm
     n.r.dyn_con=Array(Any,n.N,n.numStates);
-    if n.finalTimeDV
+    if n.s.finalTimeDV
      #@variable( mdl, 0.00001 <= dt[1:n.N] <= 0.2) #TODO allow for an varaible array of dts
      @variable(n.mdl, 0.001 <= tf <= n.s.tf_max)
      n.tf = tf;
