@@ -10,6 +10,8 @@ TODO
 # Medium Priority #
 ===================
 17) make a better way to define diff eqs
+18) add ! to allPlots()
+19) add params to n.params
 
 =================
 # Low Priority #

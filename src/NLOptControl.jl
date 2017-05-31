@@ -272,6 +272,7 @@ end
 include("utils.jl");
 include("setup.jl");
 include("ps.jl");
+include("macros.jl");
 
 export
        # Base functions
@@ -313,6 +314,9 @@ export
        NLOpt,
 
        # results
-       resultsDir!  # function to make a results folder
+       resultsDir!,  # function to make a results folder
+
+       # macros
+       @DiffEq
 
 end # module
