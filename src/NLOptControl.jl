@@ -223,6 +223,7 @@ type NLOpt <: AbstractNLOpt
   mdl::JuMP.Model               # JuMP model
   s::Settings                   # settings
   r::Result                     # results
+  params                        # parameters for the models
 
   # problem state
   define::Bool                  # a bool to tell if define!() has been called
@@ -268,6 +269,7 @@ NLOpt(Any,                # state equations
       JuMP.Model(),       # JuMP model
       Settings(),
       Result(),
+      Any,
       false
     );
 end

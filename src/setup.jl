@@ -20,6 +20,7 @@ function define!(;stateEquations::Function=[],
                 CU::Array{Float64,1}=zeros(Float64,numControls,1)
                 )
   n=NLOpt();
+  n.stateEquations=stateEquations;
   # validate input
   if  numStates <= 0
       error("\n numStates must be > 0","\n",
@@ -50,7 +51,6 @@ function define!(;stateEquations::Function=[],
     error(string("\n Length of CU must match number of controls \n"));
   end
 
-  n.stateEquations = stateEquations;
   n.numStates = numStates;
   n.numControls = numControls;
   n.state=initStateNames(n);
@@ -140,12 +140,10 @@ end  # function
 OCPdef!(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/14/2017, Last Modified: 5/28/2017 \n
+Date Create: 1/14/2017, Last Modified: 5/31/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function OCPdef!(n::NLOpt,args...)
-
-  if length(args)==1; params=args[1]; paramsON=true; else paramsON=false; end
+function OCPdef!(n::NLOpt)
   n.r=Result();
 
   # state variables
@@ -178,7 +176,7 @@ function OCPdef!(n::NLOpt,args...)
       end
   end
 
-  # control variables
+# control variables
 @variable(n.mdl,u[1:n.numControlPoints,1:n.numControls]);n.r.u=u;
   for ctr in 1:n.numControls
     if !isnan(n.CL[ctr])
@@ -235,18 +233,17 @@ function OCPdef!(n::NLOpt,args...)
 
     for int in 1:n.Ni
       # states
-      x_int=Array(Any,length(Nck_full[int]+1:Nck_full[int+1]),n.numStates);
+      x_int=Array(JuMP.Variable,length(Nck_full[int]+1:Nck_full[int+1]),n.numStates);
       for st in 1:n.numStates # +1 adds the DV in the next interval
         x_int[:,st]=n.r.x[Nck_vars[int]+1:Nck_vars[int+1]+1,st];
       end
 
       # controls
       if int!=n.Ni
-        u_int=Array(Any,length(Nck_full[int]+1:Nck_full[int+1]),n.numControls);
+        u_int=Array(JuMP.Variable,length(Nck_full[int]+1:Nck_full[int+1]),n.numControls);
       else # -1 -> removing control in last mesh interval
-        u_int=Array(Any,length(Nck_full[int]+1:Nck_full[int+1]-1),n.numControls);
+        u_int=Array(JuMP.Variable,length(Nck_full[int]+1:Nck_full[int+1]-1),n.numControls);
       end
-
       for ctr in 1:n.numControls
         if int!=n.Ni # +1 adds the DV in the next interval
           u_int[:,ctr]=n.r.u[Nck_vars[int]+1:Nck_vars[int+1]+1,ctr];
@@ -254,12 +251,10 @@ function OCPdef!(n::NLOpt,args...)
           u_int[:,ctr]=n.r.u[Nck_vars[int]+1:Nck_vars[int+1],ctr];
         end
       end
+
       # dynamics
-      if paramsON
-        dx=n.stateEquations(n,x_int,u_int,params);
-      else
-        dx=n.stateEquations(n,x_int,u_int);
-      end
+      dx=n.stateEquations(n,x_int,u_int);
+
       for st in 1:n.numStates
         if n.s.integrationScheme==:lgrExplicit
           dynamics_expr[int][:,st]=@NLexpression(n.mdl, [j in 1:n.Nck[int]], sum(n.DMatrix[int][j,i]*x_int[i,st] for i in 1:n.Nck[int]+1) - ((n.tf)/2)*dx[j,st]  )
@@ -278,11 +273,8 @@ function OCPdef!(n::NLOpt,args...)
      n.tf = tf;
     end
     n.dt = n.tf/n.N*ones(n.N,);
-    if paramsON
-      dx = n.stateEquations(n,n.r.x,n.r.u,params);
-    else
-      dx = n.stateEquations(n,n.r.x,n.r.u); # TODO for now leaving the reduntant terms so that the diff eq functions are consistent
-    end
+    dx = n.stateEquations(n,n.r.x,n.r.u); # TODO for now leaving the reduntant terms so that the diff eq functions are consistent
+
     if n.s.integrationScheme==:bkwEuler
       for st in 1:n.numStates
         n.r.dyn_con[:,st] = @NLconstraint(n.mdl, [j in 1:n.N], 0 == n.r.x[j+1,st]-n.r.x[j,st] - dx[j+1,st]*n.tf/(n.N) );

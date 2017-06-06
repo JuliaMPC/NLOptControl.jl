@@ -1,4 +1,3 @@
-
 """
 linearStateTolerances!(n)
 # the purpose of this function is to taper the tolerances on the constant state constraints

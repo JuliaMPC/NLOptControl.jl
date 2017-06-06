@@ -13,6 +13,11 @@ macro DiffEq(name,eq)
       dx=Array(Any,L,n.numStates);
         for st in 1:n.numStates
           dx[:,st]=@NLexpression(n.mdl,[j=1:L], $(eq)[st] )
+          #=
+          for j in 1:L
+            dx[j,st]=JuMP.NonlinearExpression($n.mdl,JuMP.@processNLExpr($n.mdl, $(esc(eq))[j,st] ))
+          end
+          =#
         end
       return dx
     end
