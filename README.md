@@ -1,15 +1,19 @@
 # NLOptControl.jl
 
-[![Latest](https://img.shields.io/badge/docs-latest-blue.svg)](http://nloptcontroljl.readthedocs.io/en/latest/)
+
+[![Travis](https://travis-ci.org/JuliaMPC/NLOptControl.jl.svg?branch=master)](https://travis-ci.org/JuliaMPC/NLOptControl.jl)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliampc.github.io/MPCDocs.jl/stable/)
+[![Latest](https://img.shields.io/badge/docs-latest-blue.svg)](https://juliampc.github.io/MPCDocs.jl/latest/)
+
 
 A current limitation of optimization modeling software, such as [JuMP](https://github.com/JuliaOpt/JuMP.jl) is that it does not allow for ease of adding integral constraint equations. The aim of this package is to provide functionality to:
-  * Allow the user to write a system of coupled ODEs that governs the dynamic behavior of the model such as:
+  * Allow the user to write a system of coupled ODEs that governs the dynamic behavior of the model
 
   * provide an implementation of the [hp-pseudospectral method](http://vdol.mae.ufl.edu/JournalPublications/TOMS-GPOPS-II-August-2013.pdf) written in written in the [Julia-language](http://julialang.org/)
 
 ## Documentation
 
-The full documentation can be found [here](http://nloptcontroljl.readthedocs.io/en/latest/).
+The full documentation can be found [here](https://juliampc.github.io/MPCDocs.jl/stable/).
 
 ## Installation
 
@@ -22,6 +26,7 @@ Pkg.clone("https://github.com/JuliaMPC/NLOptControl.jl")
 
 ## Tutorial
 
+-> currently out of date!
 All Examples can be:
 
   *  Viewed remotely on  using the [jupyter nbviewer](http://nbviewer.jupyter.org/github/huckl3b3rry87/NLOptControl.jl/blob/master/examples/).
