@@ -138,31 +138,30 @@ Date Create: 1/27/2017, Last Modified: 5/28/2017 \n
 function postProcess!(n;kwargs...)
   kw = Dict(kwargs);
   # check to see if the user is initializing while compensating for control delay
-  if !haskey(kw,:Init); kw_ = Dict(:Init => false); Init = get(kw_,:Init,0);
-  else; Init = get(kw,:Init,0);
+  if !haskey(kw,:Init);Init=false;
+  else; Init=get(kw,:Init,0);
   end
 
   if !Init
     if n.s.integrationMethod==:ps
       if n.s.finalTimeDV
-        t = [scale_tau(n.ts[int],0.0,getvalue(n.tf)) for int in 1:n.Ni];     # scale time from [-1,1] to [t0,tf]
+        t=[scale_tau(n.ts[int],0.0,getvalue(n.tf)) for int in 1:n.Ni];     # scale time from [-1,1] to [t0,tf]
       else
-        t = [scale_tau(n.ts[int],0.0,n.tf) for int in 1:n.Ni];
+        t=[scale_tau(n.ts[int],0.0,n.tf) for int in 1:n.Ni];
       end
-      n.r.t_ctr= [idx for tempM in t for idx = tempM[1:end-1]];
-      n.r.t_st = [n.r.t_ctr;t[end][end]];
+      n.r.t_ctr=[idx for tempM in t for idx = tempM[1:end-1]];
+      n.r.t_st=[n.r.t_ctr;t[end][end]];
 
     elseif n.s.integrationMethod==:tm
-      warn("NaN not test in postProcess!() for :tm methods")
       if n.s.finalTimeDV
-        n.r.t_ctr =  append!([NaN],cumsum(getvalue(n.dt)));
+        n.r.t_ctr=append!([n.t0],cumsum(getvalue(n.dt)));
       else
-        n.r.t_ctr =  append!([NaN],cumsum(n.dt));
+        n.r.t_ctr=append!([n.t0],cumsum(n.dt));
       end
       n.r.t_st = n.r.t_ctr;
     end
-    n.r.X =zeros(Float64,n.numStatePoints,n.numStates);
-    n.r.U =zeros(Float64,n.numControlPoints,n.numControls);
+    n.r.X=zeros(Float64,n.numStatePoints,n.numStates);
+    n.r.U=zeros(Float64,n.numControlPoints,n.numControls);
     for st in 1:n.numStates
       n.r.X[:,st] = getvalue(n.r.x[:,st]);
     end

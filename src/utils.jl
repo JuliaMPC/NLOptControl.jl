@@ -134,7 +134,7 @@ function integrate!(n::NLOpt,V::Array{JuMP.Variable,1}, args...; C=1.0,D=zeros(n
       else; mode  = get(kw,:mode,0);
       end
       variable = get(kw,:variable,0);
-      if variable == :state; Nck_cum  = [0;cumsum(n.Nck+1)];
+      if variable == :state; Nck_cum=[0;cumsum(n.Nck)];Nck_cum=[0;cumsum(n.Nck)];Nck_cum[end]=Nck_cum[end]+1;
       elseif variable == :control; Nck_cum = [0;cumsum(n.Nck)];
       else; error("\n Set the variable to either (:variable => :state) or (:variable => :control). \n")
       end
@@ -175,7 +175,7 @@ function integrate!(n::NLOpt,V::Array{JuMP.Variable,1}, args...; C=1.0,D=zeros(n
       else; mode  = get(kw,:mode,0);
       end
       variable = get(kw,:variable,0);
-      if variable == :state; Nck_cum  = [0;cumsum(n.Nck+1)];
+      if variable == :state; Nck_cum=[0;cumsum(n.Nck)];Nck_cum=[0;cumsum(n.Nck)];Nck_cum[end]=Nck_cum[end]+1;
       elseif variable == :control; Nck_cum = [0;cumsum(n.Nck)];
       else; error("\n Set the variable to either (:variable => :state) or (:variable => :control). \n")
       end
@@ -185,8 +185,8 @@ function integrate!(n::NLOpt,V::Array{JuMP.Variable,1}, args...; C=1.0,D=zeros(n
           @NLexpression(n.mdl, temp[int=1:n.Ni], ((n.tf-n.t0)/2)*sum((n.ωₛ[int])[j]*(V[Nck_cum[int]+1:Nck_cum[int+1]])[j] for j = 1:n.Nck[int]));
           Expr=@NLexpression(n.mdl, C*sum(temp[int] for int = 1:n.Ni));
         elseif integrand == :squared # integrate V^2
-          @NLexpression(n.mdl, temp[int=1:n.Ni],((n.tf-n.t0)/2)*C*sum((n.ωₛ[int])[j]*(V[Nck_cum[int]+1:Nck_cum[int+1]])[j]*(V[Nck_cum[int] + 1:Nck_cum[int+1]])[j] for j = 1:n.Nck[int]));
-          Expr=@NLexpression(n.mdl, sum(temp[int] for int = 1:n.Ni));
+          @NLexpression(n.mdl, temp[int=1:n.Ni],((n.tf-n.t0)/2)*sum(n.ωₛ[int][j]*(V[Nck_cum[int]+1:Nck_cum[int+1]])[j]*(V[Nck_cum[int]+1:Nck_cum[int+1]])[j] for j = 1:n.Nck[int]));
+          Expr=@NLexpression(n.mdl, C*sum(temp[int] for int = 1:n.Ni));
         else
           error("\n Check :integrand \n")
         end

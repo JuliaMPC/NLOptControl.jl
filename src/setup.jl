@@ -307,8 +307,8 @@ function configure!(n::NLOpt, args...; kwargs... )
   kw = Dict(kwargs);
 
   # final time
-  if !haskey(kw,:finalTimeDV); kw_ = Dict(:finalTimeDV => false); n.finalTimeDV = get(kw_,:finalTimeDV,0);
-  else; n.s.finalTimeDV  = get(kw,:finalTimeDV,0);
+  if !haskey(kw,:finalTimeDV);n.s.finalTimeDV=false;
+  else; n.s.finalTimeDV=get(kw,:finalTimeDV,0);
   end
 
   if !haskey(kw,:tf) && !n.s.finalTimeDV
@@ -358,14 +358,14 @@ function configure!(n::NLOpt, args...; kwargs... )
     if haskey(kw,:Nck) || haskey(kw,:Ni)
       error(" \n Nck and Ni are not appropriate kwargs for :tm methods \n")
     end
-    if !haskey(kw,:N); kw_ = Dict(:N => 10); n.N=get(kw_,:N,0); # default
+    if !haskey(kw,:N);n.N=100; # default
     else; n.N = get(kw,:N,0);
     end
-    if !haskey(kw,:integrationScheme); kw_ = Dict(:integrationScheme => :bkwEuler);  n.s.integrationScheme=get(kw_,:integrationScheme,0); # default
-    else;  n.s.integrationScheme=get(kw,:integrationScheme,0);
+    if !haskey(kw,:integrationScheme); n.s.integrationScheme=:bkwEuler; # default
+    else; n.s.integrationScheme=get(kw,:integrationScheme,0);
     end
-    n.numStatePoints = n.N+1;
-    n.numControlPoints = n.N+1;
+    n.numStatePoints=n.N+1;
+    n.numControlPoints=n.N+1;
   end
   n.mXL=falses(n.numStates);
   n.mXU=falses(n.numStates);

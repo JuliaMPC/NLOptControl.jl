@@ -5,13 +5,14 @@ TODO
 ==================
 2) Make test functions
 3) fix the solver options
-
+4) fix integration of states for :ps methods
 ===================
 # Medium Priority #
 ===================
 17) make a better way to define diff eqs
 18) add ! to allPlots()
 19) add params to n.params
+20) when integrating using :tm :trapezoidal method and minimizing the square of something it may ossilate
 
 =================
 # Low Priority #
