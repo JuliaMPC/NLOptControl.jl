@@ -6,9 +6,6 @@ os:
 julia:
   - 0.5
   - release
-matrix:
-  allow_failures:
-    - julia: nightly
 notifications:
   email: false
 addons:
@@ -17,4 +14,6 @@ addons:
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia -e 'Pkg.clone(pwd())'
+  - julia -e 'Pkg.add("Ipopt")'
+  - julia -e 'Pkg.build("Ipopt")'
   - julia -e 'Pkg.test("NLOptControl")'

@@ -40,7 +40,7 @@ All Examples can be:
 
 ## Citation
 
-If you find this package useful, please cite this paper (accepted but not yet released to public)
+If you find this package useful, please cite this paper:
 
 ```
 @Conference{Febbo2017,
