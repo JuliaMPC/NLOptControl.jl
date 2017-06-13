@@ -16,6 +16,12 @@ export
       MPC
 
 type MPC
+  # models
+  plantExpr
+  plant
+  controllerExpr
+  controller
+
   # constants
   tp::Float64          # predication time (if finalTimeDV == true -> this is not known before optimization)
   tex::Float64         # execution horizon time
@@ -36,7 +42,11 @@ type MPC
 end
 
 function MPC()
-  MPC(0.0,
+  MPC(Any,
+      Any,
+      Any,
+      Any,
+      0.0,
       0.0,
       0,
       false,

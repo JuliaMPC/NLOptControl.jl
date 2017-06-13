@@ -3,7 +3,7 @@ isdefined(Base, :__precompile__) && __precompile__()
 module NLOptControl
 
 using FastGaussQuadrature
-using JuMP
+importall JuMP
 using DataFrames
 using Ranges
 
@@ -150,7 +150,7 @@ type Settings <: AbstractNLOpt  # options
   tf_max::Any                   # maximum final time
 end
 
-# Default Constructor
+# Default Constructor NOTE currently not using these, they get overriden
 function Settings()
         Settings(
          Solver(),           # default solver
@@ -224,6 +224,7 @@ type NLOpt <: AbstractNLOpt
   s::Settings                   # settings
   r::Result                     # results
   params                        # parameters for the models
+  DXexpr
 
   # problem state
   define::Bool                  # a bool to tell if define!() has been called
@@ -270,6 +271,7 @@ NLOpt(Any,                # state equations
       Settings(),
       Result(),
       Any,
+      Any[],
       false
     );
 end
@@ -279,6 +281,8 @@ include("utils.jl");
 include("setup.jl");
 include("ps.jl");
 include("macros.jl");
+include("diffeq.jl")
+include("replace.jl")
 
 export
        # Base functions
@@ -289,6 +293,7 @@ export
        # setup functions
        define!,
        configure!,
+       DiffEq!,
 
        # math functions
        integrate!,
@@ -322,7 +327,15 @@ export
        # results
        resultsDir!,  # function to make a results folder
 
+       # temp exports
+       parse_DiffEq,
+       create_DiffEq,
+       rePlace,
+
        # macros
-       @DiffEq
+       @DiffEq,
+       #JuMP
+       @NLexpression
+
 
 end # module

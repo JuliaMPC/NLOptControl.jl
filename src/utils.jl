@@ -89,7 +89,7 @@ function create_tV!(n::NLOpt)
 
     end
   end
-  nothing
+  return nothing
 end
 
 """

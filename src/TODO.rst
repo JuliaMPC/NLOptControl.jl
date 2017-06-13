@@ -6,6 +6,7 @@ TODO
 2) Make test functions
 3) fix the solver options
 4) fix integration of states for :ps methods
+
 ===================
 # Medium Priority #
 ===================
@@ -13,6 +14,12 @@ TODO
 18) add ! to allPlots()
 19) add params to n.params
 20) when integrating using :tm :trapezoidal method and minimizing the square of something it may ossilate
+21) consider making dummy variables for state and control variables x1 x2, u1, u2 etc.
+22) provide an initial guess
+23) using the macro make two functions, one for JuMP and one for DiffEq
+24) error checking in the DiffEq function
+25) parse_DiffEq works OK except when in module
+26) adding the NLexpression still does not work
 
 =================
 # Low Priority #
@@ -24,3 +31,6 @@ TODO
 15) implement method with variable time steps for :tm methods, that is how it was before!
 try to register functions with JuMP
 17) change warning from Pkg.add(`` ...) to ""
+18) allow for an variable array of dts
+19) fix pgfplots in mpcdocs
+20) fix OCPdef

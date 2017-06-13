@@ -2,7 +2,7 @@
 n=define!(;numStates=2,numControls=1,X0=[0.,1],XF=[0.,-1.],XL=[0.,-Inf],XU=[1/9,Inf],CL=[-Inf],CU=[Inf])
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/1/2017, Last Modified: 5/29/2017 \n
+Date Create: 1/1/2017, Last Modified: 6/9/2017 \n
 Citations: \n
 ----------\n
 Initially Influenced by: S. Hughes.  steven.p.hughes@nasa.gov
@@ -20,7 +20,7 @@ function define!(;stateEquations::Function=[],
                 CU::Array{Float64,1}=zeros(Float64,numControls,1)
                 )
   n=NLOpt();
-  n.stateEquations=stateEquations;
+  n.stateEquations=stateEquations; #stateEquations::Function=[],
   # validate input
   if  numStates <= 0
       error("\n numStates must be > 0","\n",
@@ -113,26 +113,14 @@ function defineSolver!(n::NLOpt;kwargs...)
                                  diverging_iterates_tol=1e20)
                                  =#
   elseif n.s.solver.name==:KNITRO
-      NLPsolver=KNITRO.KnitroSolver(outlev=0,
-                                   maxit=max_iter,
-                                   maxtime_real=max_cpu_time,
-                                   infeastol=infeastol, #1e-2
-                                   feastol=1.0e20,
-                                   feastol_abs=feastol_abs,#7e-2
-                                   opttol=1.0e20,
-                                   opttol_abs=opttol_abs,#5e-1
-                                   algorithm=1,
-                                   bar_initpt=3,
-                                   bar_murule=4,
-                                   bar_penaltycons=1,
-                                   bar_penaltyrule =2,
-                                   bar_switchrule=2,
-                                   linesearch=1,
-                                   linsolver=2)
+      NLPsolver=KNITRO.KnitroSolver(outlev=0)
   else
     error("the :name key needs to be set to either :KNITRO or :Ipopt in defineSolver!()\n ")
   end
   n.mdl=JuMP.Model(solver=NLPsolver)
+
+  # optimal control problem
+  OCPdef!(n);
   return nothing
 end  # function
 
@@ -253,7 +241,8 @@ function OCPdef!(n::NLOpt)
       end
 
       # dynamics
-      dx=n.stateEquations(n,x_int,u_int);
+       dx=n.stateEquations(n,x_int,u_int);
+      #dx=dx_EQ(n,x_int,u_int);
 
       for st in 1:n.numStates
         if n.s.integrationScheme==:lgrExplicit
@@ -274,14 +263,15 @@ function OCPdef!(n::NLOpt)
     end
     n.dt = n.tf/n.N*ones(n.N,);
     dx = n.stateEquations(n,n.r.x,n.r.u); # TODO for now leaving the reduntant terms so that the diff eq functions are consistent
+     #dx=dx_EQ(n,n.r.x,n.r.u);
 
     if n.s.integrationScheme==:bkwEuler
       for st in 1:n.numStates
-        n.r.dyn_con[:,st] = @NLconstraint(n.mdl, [j in 1:n.N], 0 == n.r.x[j+1,st]-n.r.x[j,st] - dx[j+1,st]*n.tf/(n.N) );
+        n.r.dyn_con[:,st] = @NLconstraint(n.mdl, [j in 1:n.N], n.r.x[j+1,st] - n.r.x[j,st] ==  dx[j+1,st]*n.tf/(n.N) );
       end
     elseif n.s.integrationScheme==:trapezoidal
       for st in 1:n.numStates
-        n.r.dyn_con[:,st] = @NLconstraint(n.mdl, [j in 1:n.N], 0 == n.r.x[j+1,st]-n.r.x[j,st] - 0.5*(dx[j,st] + dx[j+1,st])*n.tf/(n.N) )
+        n.r.dyn_con[:,st] = @NLconstraint(n.mdl, [j in 1:n.N], n.r.x[j+1,st] - n.r.x[j,st] == 0.5*(dx[j,st] + dx[j+1,st])*n.tf/(n.N) )
       end
     end
   end
@@ -374,9 +364,6 @@ function configure!(n::NLOpt, args...; kwargs... )
 
   # default solver
   defineSolver!(n;name=:Ipopt);
-
-  # optimal control problem
-  OCPdef!(n);
 
   return nothing
 end
