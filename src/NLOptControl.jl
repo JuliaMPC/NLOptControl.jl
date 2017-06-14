@@ -280,9 +280,7 @@ end
 include("utils.jl");
 include("setup.jl");
 include("ps.jl");
-include("macros.jl");
 include("diffeq.jl")
-include("replace.jl")
 
 export
        # Base functions
@@ -327,15 +325,7 @@ export
        # results
        resultsDir!,  # function to make a results folder
 
-       # temp exports
-       parse_DiffEq,
-       create_DiffEq,
-       rePlace,
-
-       # macros
-       @DiffEq,
-       #JuMP
-       @NLexpression
-
-
+       #JuMP macros
+       @NLexpression,
+       @NLobjective
 end # module

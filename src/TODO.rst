@@ -1,5 +1,20 @@
 TODO
 
+# today
+1) use the DiffEq macro
+2) modify examples
+  - get ride of using Plots etc.
+3) start a julia notebook
+4) get juliaBox working
+
+# tomorrow
+1) finish julia notebook for meeting
+2) get a simple MPC example working?
+3) email group to make sure they bring their laptops
+
+# after
+1) clean up website
+
 ==================
 # High Priority #
 ==================

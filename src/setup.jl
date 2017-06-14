@@ -9,7 +9,7 @@ Initially Influenced by: S. Hughes.  steven.p.hughes@nasa.gov
 Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/264a12acad195e6a2467cfdc68abdcee801f73fc/tree/prototype/OptimalControl/LowThrust/@DecisionVector/)
 -------------------------------------------------------------------------------------\n
 """
-function define!(;stateEquations::Function=[],
+function define!(de;
                 numStates::Int64=0,
                 numControls::Int64=0,
                 X0::Array{Float64,1}=zeros(Float64,numStates,1),
@@ -20,7 +20,13 @@ function define!(;stateEquations::Function=[],
                 CU::Array{Float64,1}=zeros(Float64,numControls,1)
                 )
   n=NLOpt();
-  n.stateEquations=stateEquations; #stateEquations::Function=[],
+  if isa(de,Array)
+    n.DXexpr=de;
+    n.stateEquations=DiffEq;
+  else
+    n.stateEquations=de;
+  end
+
   # validate input
   if  numStates <= 0
       error("\n numStates must be > 0","\n",
@@ -128,7 +134,7 @@ end  # function
 OCPdef!(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/14/2017, Last Modified: 5/31/2017 \n
+Date Create: 1/14/2017, Last Modified: 6/14/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function OCPdef!(n::NLOpt)
@@ -150,22 +156,22 @@ function OCPdef!(n::NLOpt)
       end
     end
 
-      # upper state constraint
-      if !isnan(n.XU[st])
-        if n.XU[st]!=false
-          for j in 1:n.numStatePoints
-            setupperbound(n.r.x[j,st], n.XU[st])
-          end
-        else
-          for j in 1:n.numStatePoints
-            setlowerbound(n.r.x[j,st],n.XU_var[st,j])
-          end
+    # upper state constraint
+    if !isnan(n.XU[st])
+      if n.XU[st]!=false
+        for j in 1:n.numStatePoints
+          setupperbound(n.r.x[j,st], n.XU[st])
+        end
+      else
+        for j in 1:n.numStatePoints
+          setlowerbound(n.r.x[j,st],n.XU_var[st,j])
         end
       end
+    end
   end
 
-# control variables
-@variable(n.mdl,u[1:n.numControlPoints,1:n.numControls]);n.r.u=u;
+  # control variables
+  @variable(n.mdl,u[1:n.numControlPoints,1:n.numControls]);n.r.u=u;
   for ctr in 1:n.numControls
     if !isnan(n.CL[ctr])
       for j in 1:n.numControlPoints
@@ -241,8 +247,15 @@ function OCPdef!(n::NLOpt)
       end
 
       # dynamics
-       dx=n.stateEquations(n,x_int,u_int);
-      #dx=dx_EQ(n,x_int,u_int);
+      if isempty(n.DXexpr)
+        dx=n.stateEquations(n,x_int,u_int);
+      else
+        L=size(x_int)[1]-1;
+        dx=Array(Any,L,n.numStates)
+        for st in 1:n.numStates
+          dx[:,st]=n.stateEquations(n,x_int,u_int,L,st);
+        end
+      end
 
       for st in 1:n.numStates
         if n.s.integrationScheme==:lgrExplicit
@@ -262,8 +275,16 @@ function OCPdef!(n::NLOpt)
      n.tf = tf;
     end
     n.dt = n.tf/n.N*ones(n.N,);
-    dx = n.stateEquations(n,n.r.x,n.r.u); # TODO for now leaving the reduntant terms so that the diff eq functions are consistent
-     #dx=dx_EQ(n,n.r.x,n.r.u);
+
+    if isempty(n.DXexpr)
+      dx = n.stateEquations(n,n.r.x,n.r.u);
+    else
+      L=size(n.r.x)[1];
+      dx=Array(Any,L,n.numStates)
+      for st in 1:n.numStates
+        dx[:,st]=n.stateEquations(n,n.r.x,n.r.u,L,st);
+      end
+    end
 
     if n.s.integrationScheme==:bkwEuler
       for st in 1:n.numStates
@@ -287,13 +308,13 @@ function OCPdef!(n::NLOpt)
 end
 
 """
-configure!(n,Ni=4,Nck=[3, 3, 7, 2];(:integrationMethod => :ps),(:integrationScheme => :lgrExplicit),(:finalTimeDV => false),(:tf => 1))
+
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/1/2017, Last Modified: 5/29/2017 \n
+Date Create: 1/1/2017, Last Modified: 6/14/2017 \n
 -------------------------------------------------------------------------------------\n
 """
-function configure!(n::NLOpt, args...; kwargs... )
+function configure!(n::NLOpt; kwargs... )
   kw = Dict(kwargs);
 
   # final time
@@ -317,7 +338,7 @@ function configure!(n::NLOpt, args...; kwargs... )
 
   if n.s.integrationMethod==:ps
     if haskey(kw,:N)
-      error(" \n N is not an appropriate kwargs for :tm methods \n")
+      error(" \n N is not an appropriate kwargs for :ps methods \n")
     end
     if !haskey(kw,:Nck);n.Nck=[10,10,10,10]; # default
     else; n.Nck = get(kw,:Nck,0);
