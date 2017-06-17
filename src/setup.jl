@@ -331,9 +331,17 @@ function configure!(n::NLOpt; kwargs... )
     n.tf = Any;
   end
 
-  # integration method
-  if !haskey(kw,:integrationMethod); n.s.integrationMethod=:ps
-  else; n.s.integrationMethod  = get(kw,:integrationMethod,0);
+  # integrationScheme
+  if !haskey(kw,:integrationScheme); n.s.integrationScheme=:lgrExplicit; # default
+  else; n.s.integrationScheme=get(kw,:integrationScheme,0);
+  end
+
+  if n.s.integrationScheme==:lgrExplicit
+    n.s.integrationMethod=:ps;
+  elseif (n.s.integrationScheme==:trapezoidal) || (n.s.integrationScheme==:bkwEuler)
+    n.s.integrationMethod=:tm;
+  else
+    error("the :integrationScheme that you specified is not currently implemeted \n")
   end
 
   if n.s.integrationMethod==:ps
@@ -344,9 +352,7 @@ function configure!(n::NLOpt; kwargs... )
     else; n.Nck = get(kw,:Nck,0);
     end
     n.Ni=length(n.Nck);
-    if !haskey(kw,:integrationScheme); n.s.integrationScheme=:lgrExplicit # default
-    else;  n.s.integrationScheme=get(kw,:integrationScheme,0);
-    end
+
     for int in 1:n.Ni
         if (n.Nck[int]<0)
             error("\n Nck must be > 0");
@@ -366,14 +372,11 @@ function configure!(n::NLOpt; kwargs... )
     DMatrix!(n);
 
   elseif n.s.integrationMethod==:tm
-    if haskey(kw,:Nck) || haskey(kw,:Ni)
-      error(" \n Nck and Ni are not appropriate kwargs for :tm methods \n")
+    if haskey(kw,:Nck)
+      error(" \n Nck is not appropriate kwargs for :tm methods \n")
     end
     if !haskey(kw,:N);n.N=100; # default
     else; n.N = get(kw,:N,0);
-    end
-    if !haskey(kw,:integrationScheme); n.s.integrationScheme=:bkwEuler; # default
-    else; n.s.integrationScheme=get(kw,:integrationScheme,0);
     end
     n.numStatePoints=n.N+1;
     n.numControlPoints=n.N+1;
