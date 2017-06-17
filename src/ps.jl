@@ -29,7 +29,7 @@ function DMatrix!(n::NLOpt, kwargs...)         #TODO make IMatrix and option
     for int in 1:n.Ni
         n.DMatrix[int] = D[int][1:end-1,:]; # [Nck]X[Nck+1]
         DM[int] = D[int][1:end-1,2:end];    # [Nck]X[Nck]
-      #  IMatrix[int] = inv(DM[int]);        # I = inv[D_{2:N_k+1}]
+        #IMatrix[int] = inv(DM[int]);        # I = inv[D_{2:N_k+1}]
     end
   elseif mode==:symbolic # for validation only, too slow otherwise
     error(" \n cannot precompile with SymPy \n
@@ -50,7 +50,7 @@ function DMatrix!(n::NLOpt, kwargs...)         #TODO make IMatrix and option
         for idx in 1:n.Nck[int]+1
             for j in 1:n.Nck[int]
                 f = lagrange_basis_poly(tf, test[int], n.Nck[int], idx)
-                Dsym[int][j,idx] = diff(f,tf) # symbolic differentiation --> slow but useful
+                Dsym[int][j,idx] = diff(f,tf) # symbolic differentiation --> slow but useful TODO include this in test functions
                 n.DMatrix[int][j,idx] = Dsym[int][j,idx](tf=>test[int][j])
             end
         end
@@ -199,6 +199,8 @@ D = polyDiff(x);
 Last modifed for julia on 1/25/2016 by Huckleberry Febbo\n
 Original Author: JJ.A.C. Weideman, S.C. Reddy 1998\n
 Original Function Name: poldif.m  |  Source: [matlabcentral](https://www.mathworks.com/matlabcentral/fileexchange/29-dmsuite)\n
+https://pdfs.semanticscholar.org/bae2/1eb9458f194887bc8d7808383f56d7f4dca0.pdf
+https://math.stackexchange.com/questions/1105160/evaluate-derivative-of-lagrange-polynomials-at-construction-points
 --------------------------------------------------------------------------\n
 # Input Arguments
 * `x::Vector`: Vector of N distinct nodes.
