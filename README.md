@@ -8,7 +8,7 @@
 
 This software solves **nonlinear control problems** at a **high-level** very **quickly**.
 
-It added to [juliaOpt](http://www.juliaopt.org/) community by:
+It can add to [juliaOpt](http://www.juliaopt.org/) community by:
  * Providing an implementation of of the [hp-pseudospectral method](http://vdol.mae.ufl.edu/JournalPublications/TOMS-GPOPS-II-August-2013.pdf) written in julia
  * Solving nonlinear optimal control problems at a high-level
  * Automatically visualizing the solution
@@ -44,7 +44,7 @@ Pkg.add("PyPlot");Pkg.build("PyPlot")       # also a good option
 
 If you find [NLOptControl.jl](https://github.com/JuliaMPC/NLOptControl.jl) useful, please cite it:
 ```
-@software{hadoop,
+@software{nlopt,
   author = {{Huckleberry Febbo}},
   title = {NLOptControl.jl},
   url = {https://github.com/JuliaMPC/NLOptControl.jl},

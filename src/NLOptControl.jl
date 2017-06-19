@@ -289,7 +289,7 @@ export
        optimize!,
 
        # setup functions
-       define!,
+       define,
        configure!,
        DiffEq!,
 

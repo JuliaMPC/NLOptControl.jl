@@ -1,5 +1,5 @@
 """
-n=define!(;numStates=2,numControls=1,X0=[0.,1],XF=[0.,-1.],XL=[0.,-Inf],XU=[1/9,Inf],CL=[-Inf],CU=[Inf])
+n=define(;numStates=2,numControls=1,X0=[0.,1],XF=[0.,-1.],XL=[0.,-Inf],XU=[1/9,Inf],CL=[-Inf],CU=[Inf])
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 1/1/2017, Last Modified: 6/9/2017 \n
@@ -9,15 +9,15 @@ Initially Influenced by: S. Hughes.  steven.p.hughes@nasa.gov
 Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/264a12acad195e6a2467cfdc68abdcee801f73fc/tree/prototype/OptimalControl/LowThrust/@DecisionVector/)
 -------------------------------------------------------------------------------------\n
 """
-function define!(de;
+function define(de;
                 numStates::Int64=0,
                 numControls::Int64=0,
-                X0::Array{Float64,1}=zeros(Float64,numStates,1),
-                XF::Array{Float64,1}=zeros(Float64,numStates,1),
-                XL::Array{Float64,1}=zeros(Float64,numStates,1),
-                XU::Array{Float64,1}=zeros(Float64,numStates,1),
-                CL::Array{Float64,1}=zeros(Float64,numControls,1),
-                CU::Array{Float64,1}=zeros(Float64,numControls,1)
+                X0=fill(NaN,numStates,),
+                XF=fill(NaN,numStates,),
+                XL=fill(NaN,numStates,),
+                XU=fill(NaN,numStates,),
+                CL=fill(NaN,numControls,),
+                CU=fill(NaN,numControls,)
                 )
   n=NLOpt();
   if isa(de,Array)
