@@ -2,6 +2,7 @@ isdefined(Base, :__precompile__) && __precompile__()
 
 module NLOptControl
 
+using Ipopt # temp fix for 0.6
 using FastGaussQuadrature
 importall JuMP
 using DataFrames

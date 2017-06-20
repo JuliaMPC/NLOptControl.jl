@@ -5,6 +5,7 @@ os:
   - linux
 julia:
   - 0.5
+  - 0.6
   - release
 notifications:
   email: false
