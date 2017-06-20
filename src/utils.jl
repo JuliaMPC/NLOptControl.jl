@@ -34,7 +34,7 @@ function linearStateTolerances!(n::NLOpt;
       end
     end
   end
-  nothing
+  return nothing
 end
 
 """
@@ -48,7 +48,7 @@ function defineTolerances!(n::NLOpt;
                           X0_tol::Array{Float64,1}=0.05*ones(Float64,n.numStates,),
                           XF_tol::Array{Float64,1}=0.05*ones(Float64,n.numStates,))
   n.X0_tol=X0_tol; n.XF_tol=XF_tol;
-  nothing
+  return nothing
 end
 
 """
@@ -114,7 +114,7 @@ function integrate!(n::NLOpt,V::Array{JuMP.Variable,1}; C=1.0,D=zeros(n.numState
       if n.s.integrationScheme==:bkwEuler
         Expr =  @NLexpression(n.mdl,C*sum( (V[j+1]-D[j])*n.tf/(n.N) for j = 1:n.N));
       elseif n.s.integrationScheme==:trapezoidal
-        Expr =  @NLexpression(n.mdl,C*sum( 0.5*((V[j]-D[j]+V[j+1]-D[j])*n.tf/(n.N) for j = 1:n.N)));
+        Expr =  @NLexpression(n.mdl,C*sum( 0.5*(V[j]-D[j]+V[j+1]-D[j])*n.tf/(n.N) for j = 1:n.N));
       end
     elseif integrand == :cos      # integrate cos(V)
         if n.s.integrationScheme==:bkwEuler
@@ -206,7 +206,7 @@ function evalMaxDualInf(n::NLOpt)
       if n.r.constraint.name[i]==:dyn_con  # state constraits
         temp1=zeros(n.numStates);
         for st in 1:n.numStates
-          if n.r.integrationMethod==:ps
+          if n.s.integrationMethod==:ps
             temp=[getdual(n.r.constraint.handle[i][int][:,st]) for int in 1:n.Ni];
             vals=[idx for tempM in temp for idx=tempM];
             temp1[st]=maximum(vals);
@@ -291,7 +291,7 @@ function controlNames!(n::NLOpt,names,descriptions)
     push!(n.control.name,names[i])
     push!(n.control.description,descriptions[i])
   end
-  nothing
+  return nothing
 end
 
 ########################################################################################

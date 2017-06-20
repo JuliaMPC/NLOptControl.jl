@@ -90,7 +90,6 @@ Date Create: 2/10/2017, Last Modified: 5/29/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function opt2dfs(n;kwargs...)
-
   kw = Dict(kwargs);
   # check to see if the user is initializing while compensating for control delay
   if !haskey(kw,:Init); kw_ = Dict(:Init => false); Init = get(kw_,:Init,0);
@@ -109,7 +108,6 @@ function opt2dfs(n;kwargs...)
     dfs_opt[:status]=:Init
     dfs_opt[:iter_num]=0
   end
-
   return dfs_opt
 end
 
@@ -215,20 +213,20 @@ end
 
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/7/2017, Last Modified: 5/29/2017 \n
+Date Create: 2/7/2017, Last Modified: 6/19/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 
 function evalConstraints!(n)
   n.r.constraint.value=[];   # reset values
   n.r.constraint.nums=[]; s=1;
-  for i = 1:length(r.constraint.handle)
+  for i = 1:length(n.r.constraint.handle)
     if n.r.constraint.name[i]==:dyn_con  # state constraits
       dfs=Vector{DataFrame}(n.numStates);
       con=DataFrame(step=1);
       l=0;
       for st in 1:n.numStates
-        if n.integrationMethod==:ps
+        if n.s.integrationMethod==:ps
           temp=[getdual(n.r.constraint.handle[i][int][:,st]) for int in 1:n.Ni];
           vals=[idx for tempM in temp for idx=tempM];
           dfs[st]=DataFrame(step=1:sum(n.Nck);Dict(n.state.name[st] => vals)...);

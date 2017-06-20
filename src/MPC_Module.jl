@@ -16,6 +16,10 @@ export
       MPC
 
 type MPC
+  # models
+  plantEquations
+  modelEquations
+
   # constants
   tp::Float64          # predication time (if finalTimeDV == true -> this is not known before optimization)
   tex::Float64         # execution horizon time
@@ -37,6 +41,8 @@ end
 
 function MPC()
   MPC(
+      Any,
+      Any,
       0.0,
       0.0,
       0,
@@ -77,7 +83,7 @@ function initializeMPC!(n;FixedTp::Bool=true,PredictX0::Bool=true,tp::Float64=5.
   n.mpc.t0=0.0;
   n.mpc.t0_actual=0.0;
   n.mpc.tf=tex;
-  nothing
+  return nothing
 end
 #initializeMPC!(n,r,c)=initializeMPC!(n,r;FixedTp=c.m.FixedTp,PredictX0=c.m.PredictX0,tp=c.m.tp,tex=c.m.tex,max_iter=c.m.mpc_max_iter);
 
@@ -91,8 +97,8 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/14/2017, Last Modified: 4/7/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function simModel(n,pa,X0,t,U,t0,tf)
-  n.stateEquations(pa,X0,t,U,t0,tf);
+function simModel(n,X0,t,U,t0,tf)
+  n.mpc.modelEquations(X0,t,U,t0,tf;n.params[1]);
 end
 
 """
@@ -152,14 +158,14 @@ simPlant(pa,X0,t,U,t0,tf)
 # TODO eventually the "plant" will be different from the "model"
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/14/2017, Last Modified: 5/28/2017 \n
+Date Create: 2/14/2017, Last Modified: 6/19/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function simPlant!(n,pa,X0,t,U,t0,tf)
-  sol=n.stateEquations(pa,X0,t,U,t0,tf);
+function simPlant!(n,X0,t,U,t0,tf)
+  sol=n.mpc.plantEquations(X0,t,U,t0,tf;n.params[1]);
   plant2dfs!(n,U,sol);
   t0p=updateX0!(n);
-  nothing
+  return nothing
 end
 
 """
@@ -182,7 +188,7 @@ function predictX0!(n,pa)
     t0p=r.dfs_opt[end][:t_solve][1]
   end
   # based off of "current X0". Even though we may have the next X0 we should not (i.e.look at @show length(n.mpc.X0)). It is because it is a simulation (in reality they would be running in parallel)
-  sol=simModel(n,pa,n.mpc.X0[r.eval_num],r.t_ctr+n.mpc.t0,r.U,n.mpc.t0,n.mpc.t0+t0p)
+  sol=simModel(n,n.mpc.X0[r.eval_num],r.t_ctr+n.mpc.t0,r.U,n.mpc.t0,n.mpc.t0+t0p)
   n.mpc.X0p=sol(n.mpc.t0+t0p)[:];
 
   return t0p
@@ -202,7 +208,7 @@ function driveStraight!(n,pa;t0::Float64=n.mpc.t0,tf::Float64=n.mpc.tf)
 
   # simulate the "actual vehicle" response
   simPlant!(n,pa,n.X0,r.t_ctr+n.mpc.t0,r.U,t0,tf)
-  nothing
+  return nothing
 end
 
 
@@ -248,6 +254,6 @@ function autonomousControl!(n,pa)
   end
   optimize!(n)
   return n.r.status
- end
+end
 
 end # module

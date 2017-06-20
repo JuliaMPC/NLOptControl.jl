@@ -270,7 +270,7 @@ NLOpt(Any,                # state equations
       JuMP.Model(),       # JuMP model
       Settings(),
       Result(),
-      Any,
+      Any[],
       Any[],
       false
     );

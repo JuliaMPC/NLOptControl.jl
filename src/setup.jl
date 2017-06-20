@@ -2,7 +2,7 @@
 n=define(;numStates=2,numControls=1,X0=[0.,1],XF=[0.,-1.],XL=[0.,-Inf],XU=[1/9,Inf],CL=[-Inf],CU=[Inf])
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/1/2017, Last Modified: 6/9/2017 \n
+Date Create: 1/1/2017, Last Modified: 6/18/2017 \n
 Citations: \n
 ----------\n
 Initially Influenced by: S. Hughes.  steven.p.hughes@nasa.gov
