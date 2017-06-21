@@ -4,3 +4,4 @@ FastGaussQuadrature
 JuMP
 DataFrames
 Ranges
+Ipopt  #  added this as a temp fix
