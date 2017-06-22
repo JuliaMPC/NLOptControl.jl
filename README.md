@@ -1,5 +1,6 @@
 # NLOptControl.jl
 
+[![Build Status](https://ci.appveyor.com/api/projects/status/f480ahs29c85m6ne?svg=true)](https://ci.appveyor.com/project/huckl3b3rry87/nloptcontrol-jl)
 [![Travis](https://travis-ci.org/JuliaMPC/NLOptControl.jl.svg?branch=master)](https://travis-ci.org/JuliaMPC/NLOptControl.jl)
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliampc.github.io/MPCDocs.jl/stable/)
 [![Latest](https://img.shields.io/badge/docs-latest-blue.svg)](https://juliampc.github.io/MPCDocs.jl/latest/)
