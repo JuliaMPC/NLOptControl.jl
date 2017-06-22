@@ -10,16 +10,18 @@ Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/26
 -------------------------------------------------------------------------------------\n
 """
 function define(de;
+                numStates::Int64=0,
                 numControls::Int64=0,
-                X0=fill(NaN,length(de),),
-                XF=fill(NaN,length(de),),
-                XL=fill(NaN,length(de),),
-                XU=fill(NaN,length(de),),
+                X0=fill(NaN,numStates,),
+                XF=fill(NaN,numStates,),
+                XL=fill(NaN,numStates,),
+                XU=fill(NaN,numStates,),
                 CL=fill(NaN,numControls,),
                 CU=fill(NaN,numControls,)
                 )
+
   n=NLOpt();
-  n.numStates=length(de);
+
   if isa(de,Array)
     n.DXexpr=de;
     n.stateEquations=DiffEq;
@@ -28,21 +30,22 @@ function define(de;
   end
 
   # validate input
-  if  numControls <= 0
-      error("eventually numControls must be > 0","\n",
-            "default value = 0","\n",
-            );
+  if numControls <= 0
+      error("numControls must be > 0","\n");
   end
-  if length(X0) != n.numStates
+  if numStates <= 0
+      error("numStates must be > 0","\n");
+  end
+  if length(X0) != numStates
     error(string("\n Length of X0 must match number of states \n"));
   end
-  if length(XF) != n.numStates
+  if length(XF) != numStates
     error(string("\n Length of XF must match number of states \n"));
   end
-  if length(XL) != n.numStates
+  if length(XL) != numStates
     error(string("\n Length of XL must match number of states \n"));
   end
-  if length(XU) != n.numStates
+  if length(XU) != numStates
     error(string("\n Length of XU must match number of states \n"));
   end
   if length(CL) != numControls
@@ -52,6 +55,7 @@ function define(de;
     error(string("\n Length of CU must match number of controls \n"));
   end
 
+  n.numStates=numStates;
   n.numControls = numControls;
   n.state=initStateNames(n);
   n.control=initControlNames(n);
