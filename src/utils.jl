@@ -66,7 +66,7 @@ function create_tV!(n::NLOpt)
       # create mesh points, interval size = tf_var/Ni
       tm = @NLexpression(n.mdl, [idx=1:n.Ni+1], (idx-1)*n.tf/n.Ni);
       # go through each mesh interval creating time intervals; [t(i-1),t(i)] --> [-1,1]
-      ts = [Array(Any,n.Nck[int]+1,) for int in 1:n.Ni];
+      ts = [Array{Any}(n.Nck[int]+1,) for int in 1:n.Ni];
       for int in 1:n.Ni
         ts[int][1:end-1]=@NLexpression(n.mdl,[j=1:n.Nck[int]], (tm[int+1]-tm[int])/2*n.τ[int][j] +  (tm[int+1]+tm[int])/2);
         ts[int][end]=@NLexpression(n.mdl, n.tf/n.Ni*int) # append +1 at end of each interval
@@ -82,7 +82,7 @@ function create_tV!(n::NLOpt)
 
     if n.s.finalTimeDV
       # vector with the design variable in it
-      t = Array(Any,n.N+1,1);
+      t = Array{Any}(n.N+1,1);
       tmp = [0;cumsum(n.dt)];
       n.tV = @NLexpression(n.mdl,[j=1:n.numStatePoints], n.t0 + tmp[j]);
     else

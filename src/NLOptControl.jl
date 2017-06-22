@@ -86,8 +86,7 @@ function Solver()
 end
 
 # Result Class
-abstract AbstractNLOpt
-type Result <: AbstractNLOpt
+type Result
   t_ctr                       # time vector for control
   t_st                        # time vector for state
   x                           # JuMP states
@@ -138,8 +137,7 @@ Result( Vector{Any}[], # time vector for control
 end
 
 # Settings Class
-abstract AbstractNLOpt
-type Settings <: AbstractNLOpt  # options
+type Settings   # options
   solver::Solver                # solver information
   finalTimeDV::Bool
   integrationMethod::Symbol
@@ -169,7 +167,7 @@ end
 ################################################################################
 # Model Class
 ################################################################################
-abstract AbstractNLOpt
+abstract type AbstractNLOpt end
 type NLOpt <: AbstractNLOpt
   # general properties
   stateEquations

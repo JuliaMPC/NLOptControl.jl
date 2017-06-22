@@ -1,5 +1,5 @@
 """
-n=define(;numStates=2,numControls=1,X0=[0.,1],XF=[0.,-1.],XL=[0.,-Inf],XU=[1/9,Inf],CL=[-Inf],CU=[Inf])
+n=define(;numControls=1,X0=[0.,1],XF=[0.,-1.],XL=[0.,-Inf],XU=[1/9,Inf],CL=[-Inf],CU=[Inf])
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 1/1/2017, Last Modified: 6/18/2017 \n
@@ -10,16 +10,16 @@ Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/26
 -------------------------------------------------------------------------------------\n
 """
 function define(de;
-                numStates::Int64=0,
                 numControls::Int64=0,
-                X0=fill(NaN,numStates,),
-                XF=fill(NaN,numStates,),
-                XL=fill(NaN,numStates,),
-                XU=fill(NaN,numStates,),
+                X0=fill(NaN,length(de),),
+                XF=fill(NaN,length(de),),
+                XL=fill(NaN,length(de),),
+                XU=fill(NaN,length(de),),
                 CL=fill(NaN,numControls,),
                 CU=fill(NaN,numControls,)
                 )
   n=NLOpt();
+  n.numStates=length(de);
   if isa(de,Array)
     n.DXexpr=de;
     n.stateEquations=DiffEq;
@@ -28,26 +28,21 @@ function define(de;
   end
 
   # validate input
-  if  numStates <= 0
-      error("\n numStates must be > 0","\n",
-              "default value = 0","\n",
-            );
-  end
   if  numControls <= 0
       error("eventually numControls must be > 0","\n",
             "default value = 0","\n",
             );
   end
-  if length(X0) != numStates
+  if length(X0) != n.numStates
     error(string("\n Length of X0 must match number of states \n"));
   end
-  if length(XF) != numStates
+  if length(XF) != n.numStates
     error(string("\n Length of XF must match number of states \n"));
   end
-  if length(XL) != numStates
+  if length(XL) != n.numStates
     error(string("\n Length of XL must match number of states \n"));
   end
-  if length(XU) != numStates
+  if length(XU) != n.numStates
     error(string("\n Length of XU must match number of states \n"));
   end
   if length(CL) != numControls
@@ -57,7 +52,6 @@ function define(de;
     error(string("\n Length of CU must match number of controls \n"));
   end
 
-  n.numStates = numStates;
   n.numControls = numControls;
   n.state=initStateNames(n);
   n.control=initControlNames(n);
@@ -144,7 +138,7 @@ function OCPdef!(n::NLOpt)
   @variable(n.mdl,x[1:n.numStatePoints,1:n.numStates]); n.r.x=x;
   for st in 1:n.numStates
     # lower state constraint
-    if !isnan(n.XL[st])
+    if !isnan.(n.XL[st])
       if n.mXL[st]==false
         for j in 1:n.numStatePoints
           setlowerbound(n.r.x[j,st], n.XL[st])
@@ -157,7 +151,7 @@ function OCPdef!(n::NLOpt)
     end
 
     # upper state constraint
-    if !isnan(n.XU[st])
+    if !isnan.(n.XU[st])
       if n.XU[st]!=false
         for j in 1:n.numStatePoints
           setupperbound(n.r.x[j,st], n.XU[st])
@@ -173,12 +167,12 @@ function OCPdef!(n::NLOpt)
   # control variables
   @variable(n.mdl,u[1:n.numControlPoints,1:n.numControls]);n.r.u=u;
   for ctr in 1:n.numControls
-    if !isnan(n.CL[ctr])
+    if !isnan.(n.CL[ctr])
       for j in 1:n.numControlPoints
         setlowerbound(n.r.u[j,ctr], n.CL[ctr])
       end
     end
-    if !isnan(n.CU[ctr])
+    if !isnan.(n.CU[ctr])
       for j in 1:n.numControlPoints
         setupperbound(n.r.u[j,ctr], n.CU[ctr])
       end
@@ -187,23 +181,23 @@ function OCPdef!(n::NLOpt)
 
   # boundary constraints
   n.r.xf_con=[]; # currently modifying the final state constraint (with tolerance) is not needed, can easily ad this functionlity though
-  if any(!isnan(n.X0_tol))           # create handles for constraining the enire initial state
-    n.r.x0_con=Array(Any,n.numStates,2); # this is so they can be easily reference when doing MPC
+  if any(.!isnan.(n.X0_tol))           # create handles for constraining the enire initial state
+    n.r.x0_con=Array{Any}(n.numStates,2); # this is so they can be easily reference when doing MPC
   else
     n.r.x0_con=[];
   end
 
   for st in 1:n.numStates
-    if !isnan(n.X0[st]) # could have a bool for this
-      if any(!isnan(n.X0_tol)) #NOTE in JuMP: Modifying range constraints is currently unsupported.
+    if .!isnan.(n.X0[st]) # could have a bool for this
+      if any(.!isnan.(n.X0_tol)) #NOTE in JuMP: Modifying range constraints is currently unsupported.
         n.r.x0_con[st,1]=@constraint(n.mdl, n.r.x[1,st] <=  (n.X0[st]+n.X0_tol[st]));
         n.r.x0_con[st,2]=@constraint(n.mdl,-n.r.x[1,st] <= -(n.X0[st]-n.X0_tol[st]));
       else
         n.r.x0_con=[n.r.x0_con; @constraint(n.mdl, n.r.x[1,st]==n.X0[st])]
       end
     end
-    if !isnan(n.XF[st])
-      if isnan(n.XF_tol[st])
+    if .!isnan.(n.XF[st])
+      if isnan.(n.XF_tol[st])
         n.r.xf_con=[n.r.xf_con; @constraint(n.mdl, n.r.x[end,st]==n.XF[st])];
       else #TODO fix this as well
         n.r.xf_con=[n.r.xf_con; @constraint(n.mdl, n.XF[st]-n.XF_tol[st] <= n.r.x[end,st] <= n.XF[st]+n.XF_tol[st])];
@@ -215,9 +209,9 @@ function OCPdef!(n::NLOpt)
   n.mpc.t0_param=t0_param;
 
   if n.s.integrationMethod==:ps
-    n.r.dyn_con=[Array(Any,n.Nck[int],n.numStates) for int in 1:n.Ni];
+    n.r.dyn_con=[Array{Any}(n.Nck[int],n.numStates) for int in 1:n.Ni];
     Nck_full=[0;cumsum(n.Nck+1)]; Nck_vars=[0;cumsum(n.Nck)];
-    dynamics_expr=[Array(Any,n.Nck[int],n.numStates) for int in 1:n.Ni];
+    dynamics_expr=[Array{Any}(n.Nck[int],n.numStates) for int in 1:n.Ni];
 
     if n.s.finalTimeDV
       @variable(n.mdl, 0.001 <= tf <=  n.s.tf_max)
@@ -227,16 +221,16 @@ function OCPdef!(n::NLOpt)
 
     for int in 1:n.Ni
       # states
-      x_int=Array(JuMP.Variable,length(Nck_full[int]+1:Nck_full[int+1]),n.numStates);
+      x_int=Array{JuMP.Variable}(length(Nck_full[int]+1:Nck_full[int+1]),n.numStates);
       for st in 1:n.numStates # +1 adds the DV in the next interval
         x_int[:,st]=n.r.x[Nck_vars[int]+1:Nck_vars[int+1]+1,st];
       end
 
       # controls
       if int!=n.Ni
-        u_int=Array(JuMP.Variable,length(Nck_full[int]+1:Nck_full[int+1]),n.numControls);
+        u_int=Array{JuMP.Variable}(length(Nck_full[int]+1:Nck_full[int+1]),n.numControls);
       else # -1 -> removing control in last mesh interval
-        u_int=Array(JuMP.Variable,length(Nck_full[int]+1:Nck_full[int+1]-1),n.numControls);
+        u_int=Array{JuMP.Variable}(length(Nck_full[int]+1:Nck_full[int+1]-1),n.numControls);
       end
       for ctr in 1:n.numControls
         if int!=n.Ni # +1 adds the DV in the next interval
@@ -251,7 +245,7 @@ function OCPdef!(n::NLOpt)
         dx=n.stateEquations(n,x_int,u_int);
       else
         L=size(x_int)[1]-1;
-        dx=Array(Any,L,n.numStates)
+        dx=Array{Any}(L,n.numStates)
         for st in 1:n.numStates
           dx[:,st]=n.stateEquations(n,x_int,u_int,L,st);
         end
@@ -268,7 +262,7 @@ function OCPdef!(n::NLOpt)
 
     end
   elseif n.s.integrationMethod==:tm
-    n.r.dyn_con=Array(Any,n.N,n.numStates);
+    n.r.dyn_con=Array{Any}(n.N,n.numStates);
     if n.s.finalTimeDV
      #@variable( mdl, 0.00001 <= dt[1:n.N] <= 0.2) #TODO allow for an varaible array of dts
      @variable(n.mdl, 0.001 <= tf <= n.s.tf_max)
@@ -280,7 +274,7 @@ function OCPdef!(n::NLOpt)
       dx = n.stateEquations(n,n.r.x,n.r.u);
     else
       L=size(n.r.x)[1];
-      dx=Array(Any,L,n.numStates)
+      dx=Array{Any}(L,n.numStates)
       for st in 1:n.numStates
         dx[:,st]=n.stateEquations(n,n.r.x,n.r.u,L,st);
       end

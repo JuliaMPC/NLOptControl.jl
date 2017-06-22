@@ -35,9 +35,9 @@ function DMatrix!(n::NLOpt, kwargs...)         #TODO make IMatrix and option
     error(" \n cannot precompile with SymPy \n
              so this fucntion was turned off for typical use!! \n
                -> do a (using SymPy) in NLOptControl.jl then remove this error message and rerun \n")
-    Dsym = [Array(Any,n.Nck[int],n.Nck[int]+1) for int in 1:n.Ni];
-    n.DMatrix = [Array(Any,n.Nck[int],n.Nck[int]+1) for int in 1:n.Ni]
-    test = [Array(Any,n.Nck[int]+1) for int in 1:n.Ni];
+    Dsym = [Array{Any}(n.Nck[int],n.Nck[int]+1) for int in 1:n.Ni];
+    n.DMatrix = [Array{Any}(n.Nck[int],n.Nck[int]+1) for int in 1:n.Ni]
+    test = [Array{Any}(n.Nck[int]+1) for int in 1:n.Ni];
     val = 1; # since this is always = 1 this funtion is useful for testing, without scaling the problem from [-1,1] this was useful becuase tf was a design variable
     tf = Sym("tf")
     createIntervals!(n,tf); # gives symbolic expression

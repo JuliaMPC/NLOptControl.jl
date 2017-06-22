@@ -34,17 +34,17 @@ Date Create: 6/11/2017, Last Modified: 6/11/2017 \n
 function parse_DiffEq{T<:Any}(n::NLOpt,x::Array{T,2},u::Array{T,2})
   if n.s.integrationMethod==:tm; L=size(x)[1]; else; L=size(x)[1]-1; end
 
-  dx=Array(Expr,L,n.numStates);
+  dx=Array{Expr}(L,n.numStates);
   for qq in 1:L
     dx[qq,:]=deepcopy(n.DXexpr)
   end
 
   #TODO use the statenames here! -> currently running too often!
-  state=Array(Symbol,n.numStates,1)
+  state=Array{Symbol}(n.numStates,1)
   for st in 1:n.numStates
     state[st]=Symbol(string("x",:($(st))))
   end
-  control=Array(Symbol,n.numControls,1)
+  control=Array{Symbol}(n.numControls,1)
   for ctr in 1:n.numControls
     control[ctr]=Symbol(string("u",:($(ctr))))
   end
