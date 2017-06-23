@@ -89,35 +89,35 @@ end
 
 """
 # for simulating the model of the plant given control commands
-simModel(pa,X0,t,U,t0,tf)
+simModel(n,X0,t,U,t0,tf)
 
 # TODO eventually the "plant" will be different from the "model"
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/14/2017, Last Modified: 4/7/2017 \n
+Date Create: 2/14/2017, Last Modified: 6/22/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function simModel(n,X0,t,U,t0,tf)
-  n.mpc.modelEquations(X0,t,U,t0,tf;n.params[1]);
+  n.mpc.modelEquations(n,X0,t,U,t0,tf);
 end
 
 """
 updateStates!(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/17/2017, Last Modified: 5/28/2017 \n
+Date Create: 2/17/2017, Last Modified: 6/22/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function updateStates!(n)
   for st in 1:n.numStates   # update states
     if any(!isnan(n.X0_tol[st]))
-      JuMP.setRHS(n.r.x0_con[st,1], (n.X0[st]+n.X0_tol[st]));
-      JuMP.setRHS(n.r.x0_con[st,2],-(n.X0[st]-n.X0_tol[st]));
+      JuMP.setRHS(n.r.x0_con[st], (n.X0[st]+n.X0_tol[st]));
+      JuMP.setRHS(n.r.x0_con[st],-(n.X0[st]-n.X0_tol[st]));
    else
      JuMP.setRHS(n.r.x0_con[st],n.X0[st]);
    end
   end
-  nothing
+  return nothing
 end
 
 """
@@ -125,7 +125,7 @@ end
 updateX0!(n,X0;(:userUpdate=>true))    # user defined update of X0
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 3/6/2017, Last Modified: 5/28/2017 \n
+Date Create: 3/6/2017, Last Modified: 6/22/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function updateX0!(n,args...;kwargs...)
@@ -148,7 +148,7 @@ function updateX0!(n,args...;kwargs...)
   end
   updateStates!(n)
   append!(n.mpc.X0,[copy(n.X0)])
-  nothing
+  return nothing
 end
 
 """
@@ -158,26 +158,26 @@ simPlant(pa,X0,t,U,t0,tf)
 # TODO eventually the "plant" will be different from the "model"
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/14/2017, Last Modified: 6/19/2017 \n
+Date Create: 2/14/2017, Last Modified: 6/22/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function simPlant!(n,X0,t,U,t0,tf)
-  sol=n.mpc.plantEquations(X0,t,U,t0,tf;n.params[1]);
-  plant2dfs!(n,U,sol);
+  sol=n.mpc.plantEquations(n,X0,t,U,t0,tf);
+  plant2dfs!(n,sol);  #TODO consider passing U, t0 etc..
   t0p=updateX0!(n);
   return nothing
 end
 
 """
 # TODO eventually the "plant" will be different from the "model"
-t0p=predictX0(n,pa,r)
+t0p=predictX0(n)
 # also shifts the intial time, but this is accounted for in updateMPC()
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 4/7/2017, Last Modified: 4/9/2017 \n
+Date Create: 4/7/2017, Last Modified: 6/22/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function predictX0!(n,pa)
+function predictX0!(n)
   if n.mpc.tf==n.mpc.t0
     error("n.mpc.tf==n.mpc.t0")
   end
@@ -188,7 +188,7 @@ function predictX0!(n,pa)
     t0p=r.dfs_opt[end][:t_solve][1]
   end
   # based off of "current X0". Even though we may have the next X0 we should not (i.e.look at @show length(n.mpc.X0)). It is because it is a simulation (in reality they would be running in parallel)
-  sol=simModel(n,n.mpc.X0[r.eval_num],r.t_ctr+n.mpc.t0,r.U,n.mpc.t0,n.mpc.t0+t0p)
+  sol=simModel(n,n.mpc.X0[n.r.eval_num],n.r.t_ctr+n.mpc.t0,n.r.U,n.mpc.t0,n.mpc.t0+t0p)
   n.mpc.X0p=sol(n.mpc.t0+t0p)[:];
 
   return t0p
@@ -197,17 +197,17 @@ end
 # this function currently only works when the "actual model"==simPlant()
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 4/9/2017, Last Modified: 4/9/2017 \n
+Date Create: 4/9/2017, Last Modified: 6/22/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function driveStraight!(n,pa;t0::Float64=n.mpc.t0,tf::Float64=n.mpc.tf)
+function driveStraight!(n;t0::Float64=n.mpc.t0,tf::Float64=n.mpc.tf)
   # add these signals to r so that they can be used for predictions during optimization
   n.r.U=0*Matrix{Float64}(n.numControlPoints,n.numControls);
   n.r.t_ctr=Vector(Ranges.linspace(t0,tf,n.numControlPoints)); # gives a bunch of points
-  postProcess!(n;(:Init=>true)); r.eval_num=1;          # to make solutions line up
+  postProcess!(n;(:Init=>true)); n.r.eval_num=1;          # to make solutions line up
 
   # simulate the "actual vehicle" response
-  simPlant!(n,pa,n.X0,r.t_ctr+n.mpc.t0,r.U,t0,tf)
+  simPlant!(n,n.X0,n.r.t_ctr+n.mpc.t0,n.r.U,t0,tf)
   return nothing
 end
 
@@ -216,12 +216,12 @@ end
 
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 3/6/2017, Last Modified: 5/29/2017 \n
+Date Create: 3/6/2017, Last Modified: 6/22/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function mpcUpdate!(n,pa)
+function mpcUpdate!(n)
   if n.mpc.PredictX0        # predict where X0 will be when optimized signal is actually sent to the vehicle
-    t0p=predictX0!(n,pa);   # predicted start time -> important for time varying constraints
+    t0p=predictX0!(n);   # predicted start time -> important for time varying constraints
   else
     t0p=0; n.mpc.X0p=n.mpc.X0[end];  # current "known" plant states  TODO make sure the plant is never simulated ahead
   end
@@ -235,19 +235,20 @@ function mpcUpdate!(n,pa)
 end
 
 """
-status=autonomousControl(mdl,n,r,s,pa)
+status=autonomousControl(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/1/2017, Last Modified: 5/29/2017 \n
+Date Create: 2/1/2017, Last Modified: 6/22/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function autonomousControl!(n,pa)
-  mpcUpdate!(n,pa,r)
-
+function autonomousControl!(n)
+  mpcUpdate!(n)
+ # update states based off of n.mpc.X0p
+  # updateStates!(n)  TODO update this function so it does the following code
   for st in 1:n.numStates   # update states based off of n.mpc.X0p
     if any(!isnan(n.X0_tol[st]))
-      JuMP.setRHS(n.r.x0_con[st,1], (n.mpc.X0p[st]+n.X0_tol[st]));
-      JuMP.setRHS(n.r.x0_con[st,2],-(n.mpc.X0p[st]-n.X0_tol[st]));
+      JuMP.setRHS(n.r.x0_con[st], (n.mpc.X0p[st]+n.X0_tol[st]));
+      JuMP.setRHS(n.r.x0_con[st],-(n.mpc.X0p[st]-n.X0_tol[st]));
     else
       JuMP.setRHS(n.r.x0_con[st],n.mpc.X0p[st]);
     end
@@ -255,5 +256,6 @@ function autonomousControl!(n,pa)
   optimize!(n)
   return n.r.status
 end
+
 
 end # module

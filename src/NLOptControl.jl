@@ -326,5 +326,8 @@ export
 
        #JuMP macros
        @NLexpression,
-       @NLobjective
+       @NLobjective,
+       @NLparameter,
+       @NLconstraint,
+       setvalue
 end # module

@@ -4,4 +4,4 @@ FastGaussQuadrature
 JuMP
 DataFrames
 Ranges
-Ipopt 
+Ipopt

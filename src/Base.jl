@@ -31,7 +31,7 @@ plant2dfs!(n,sol)
 # TODO: sometimes plant control models have different states and controls - > take this into account
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/14/2017, Last Modified: 5/28/2017 \n
+Date Create: 2/14/2017, Last Modified: 6/22/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function plant2dfs!(n,sol)
@@ -45,7 +45,7 @@ function plant2dfs!(n,sol)
   end
 
   for ctr in 1:n.numControls
-    dfs_plant[n.control.name[ctr]]= n.r.u[ctr];
+    dfs_plant[n.control.name[ctr]]= n.r.U[ctr];
   end
 
   if n.s.reset
