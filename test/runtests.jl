@@ -6,7 +6,7 @@ using Base.Test
 const tol=1e-2;
 const integrationConfigs=[:lgrExplicit,:trapezoidal,:bkwEuler]
 
-include(Pkg.dir("NLOptControl/test/ocp.jl"))
+include("ocp.jl")
 
 
 #using NBInclude
