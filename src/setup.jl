@@ -121,7 +121,8 @@ function defineSolver!(n::NLOpt;kwargs...)
   else
     error("the :name key needs to be set to either :KNITRO or :Ipopt in defineSolver!()\n ")
   end
-  n.mdl=JuMP.Model(solver=NLPsolver)
+  #n.mdl=JuMP.Model(solver=NLPsolver)
+  n.mdl=Model(solver=NLPsolver)
 
   # optimal control problem
   OCPdef!(n);
@@ -185,7 +186,7 @@ function OCPdef!(n::NLOpt)
 
   # boundary constraints
   n.r.xf_con=[]; # currently modifying the final state constraint (with tolerance) is not needed, can easily ad this functionlity though
-  @show if any(.!isnan.(n.X0_tol))           # create handles for constraining the entire initial state
+  if any(.!isnan.(n.X0_tol))           # create handles for constraining the entire initial state
     n.r.x0_con=Array{Any}(n.numStates,2); # this is so they can be easily reference when doing MPC
   else
     n.r.x0_con=[];

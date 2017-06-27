@@ -104,6 +104,7 @@ Date Create: 1/2/2017, Last Modified: 6/16/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function integrate!(n::NLOpt,V::Array{JuMP.Variable,1}; C=1.0,D=zeros(n.numStatePoints,),kwargs...)
+
   kw = Dict(kwargs);
   if !haskey(kw,:integrand); integrand = :default;
   else; integrand = get(kw,:integrand,0);

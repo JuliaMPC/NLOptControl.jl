@@ -2,12 +2,12 @@ isdefined(Base, :__precompile__) && __precompile__()
 
 module NLOptControl
 
+using JuMP
+#import JuMP: @NLexpression, @NLobjective, @NLparameter, @NLconstraint, @constraint, @variable, setvalue, Model, setupperbound, setlowerbound
 using Ipopt # temp fix for 0.6
 using FastGaussQuadrature
-importall JuMP
 using DataFrames
 using Ranges
-
 include("Base.jl")
 using .Base
 
