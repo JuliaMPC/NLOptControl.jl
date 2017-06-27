@@ -185,7 +185,7 @@ function OCPdef!(n::NLOpt)
 
   # boundary constraints
   n.r.xf_con=[]; # currently modifying the final state constraint (with tolerance) is not needed, can easily ad this functionlity though
-  if any(.!isnan.(n.X0_tol))           # create handles for constraining the enire initial state
+  @show if any(.!isnan.(n.X0_tol))           # create handles for constraining the entire initial state
     n.r.x0_con=Array{Any}(n.numStates,2); # this is so they can be easily reference when doing MPC
   else
     n.r.x0_con=[];

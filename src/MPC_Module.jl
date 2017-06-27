@@ -111,8 +111,8 @@ Date Create: 2/17/2017, Last Modified: 6/22/2017 \n
 function updateStates!(n)
   for st in 1:n.numStates   # update states
     if any(!isnan(n.X0_tol[st]))
-      JuMP.setRHS(n.r.x0_con[st], (n.X0[st]+n.X0_tol[st]));
-      JuMP.setRHS(n.r.x0_con[st],-(n.X0[st]-n.X0_tol[st]));
+      JuMP.setRHS(n.r.x0_con[st,1], (n.X0[st]+n.X0_tol[st]));
+      JuMP.setRHS(n.r.x0_con[st,2],-(n.X0[st]-n.X0_tol[st]));
    else
      JuMP.setRHS(n.r.x0_con[st],n.X0[st]);
    end
@@ -247,8 +247,8 @@ function autonomousControl!(n)
   # updateStates!(n)  TODO update this function so it does the following code
   for st in 1:n.numStates   # update states based off of n.mpc.X0p
     if any(!isnan(n.X0_tol[st]))
-      JuMP.setRHS(n.r.x0_con[st], (n.mpc.X0p[st]+n.X0_tol[st]));
-      JuMP.setRHS(n.r.x0_con[st],-(n.mpc.X0p[st]-n.X0_tol[st]));
+      JuMP.setRHS(n.r.x0_con[st,1], (n.mpc.X0p[st]+n.X0_tol[st]));
+      JuMP.setRHS(n.r.x0_con[st,2],-(n.mpc.X0p[st]-n.X0_tol[st]));
     else
       JuMP.setRHS(n.r.x0_con[st],n.mpc.X0p[st]);
     end
