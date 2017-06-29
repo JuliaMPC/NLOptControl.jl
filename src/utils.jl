@@ -180,7 +180,7 @@ function initConstraint!(n)
   if n.r.constraint==nothing
     n.r.constraint=Constraint()
   end
-  nothing
+  return nothing
 end
 
 function newConstraint!(n,handle,name::Symbol)
@@ -188,7 +188,7 @@ function newConstraint!(n,handle,name::Symbol)
   n.r.constraint::Constraint=n.r.constraint
   push!(n.r.constraint.handle,handle)
   push!(n.r.constraint.name,name)
-  nothing
+  return nothing
 end
 
 
@@ -303,7 +303,7 @@ end
 description = string(
 " *  \n ")
 
-resultsDir!(r;results_name,description=description)
+Dir!(r;results_name,description=description)
 # removes results folder and creates a new one
 # TODO consider putting in a warning or some sort of an interaction with user
 --------------------------------------------------------------------------------------\n

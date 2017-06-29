@@ -1,14 +1,8 @@
 TODO
 
-# tomorrow
-1) finish julia notebook for meeting
-2) get a simple MPC example working?
-
 ==================
 # High Priority #
 ==================
-3) fix the solver options
-4) fix integration of states for :ps methods
 
 ===================
 # Medium Priority #
@@ -20,6 +14,7 @@ TODO
 23) using the macro make two functions, one for JuMP and one for DiffEq
 24) error checking in the DiffEq function
 25) parse_DiffEq works OK except when in module
+26) what does n.s.reset do
 
 =================
 # Low Priority #
@@ -33,3 +28,4 @@ try to register functions with JuMP
 17) change warning from Pkg.add(`` ...) to ""
 18) allow for an variable array of dts
 19) fix pgfplots in mpcdocs
+20) get a simple MPC example working?

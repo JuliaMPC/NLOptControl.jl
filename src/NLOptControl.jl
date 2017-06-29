@@ -8,6 +8,7 @@ using Ipopt # temp fix for 0.6
 using FastGaussQuadrature
 using DataFrames
 using Ranges
+
 include("Base.jl")
 using .Base
 
@@ -23,7 +24,7 @@ const _Ipopt_defaults=Dict(
    :tol                        =>1e-8,
    :max_iter                   =>3000,
    :max_cpu_time               =>1e6,
-   :dual_inf_tol               =>1,
+   :dual_inf_tol               =>1.,
    :constr_viol_tol            =>0.0001,
    :compl_inf_tol              =>0.0001,
    :acceptable_tol             =>1e-6,
@@ -33,7 +34,42 @@ const _Ipopt_defaults=Dict(
    :acceptable_obj_change_tol  =>1e20,
    :diverging_iterates_tol     =>1e20
 )
+const _Ipopt_MPC=Dict(
+   :print_level                =>0,
+   :warm_start_init_point      =>"yes",
+   :tol                        =>5e-1,
+   :max_iter                   =>500,
+   :max_cpu_time               =>0.47,
+   :dual_inf_tol               =>5.,
+   :constr_viol_tol            =>1e-1,
+   :compl_inf_tol              =>1e-1,
+   :acceptable_tol             =>1e-2,
+   :acceptable_constr_viol_tol =>0.01,
+   :acceptable_dual_inf_tol    =>1e10,
+   :acceptable_compl_inf_tol   =>0.01,
+   :acceptable_obj_change_tol  =>1e20,
+   :diverging_iterates_tol     =>1e20
+)
 # TODO list KNITRO defaults
+
+const _KNITRO_MPC=Dict(
+  :outlev                       =>0,
+  :maxit                        =>500,
+  :maxtime_real                 =>0.47,
+  :infeastol                    =>1e-2,
+  :feastol                      =>1.0e20,
+  :feastol_abs                  =>7e-2,
+  :opttol                       =>1.0e20,
+  :opttol_abs                   =>5e-1,
+  :algorithm                    =>1,
+  :bar_initpt                   =>3,
+  :bar_murule                   =>4,
+  :bar_penaltycons              =>1,
+  :bar_penaltyrule              =>2,
+  :bar_switchrule               =>2,
+  :linesearch                   =>1,
+  :linsolver                    =>2
+)
 
 ################################################################################
 # Basic Types

@@ -1,3 +1,4 @@
+
 """
 n=define(;numControls=1,X0=[0.,1],XF=[0.,-1.],XL=[0.,-Inf],XU=[1/9,Inf],CL=[-Inf],CU=[Inf])
 --------------------------------------------------------------------------------------\n
@@ -77,7 +78,7 @@ defineSolver!(n;(:name=>:Ipopt))
 # Try to tune KNITRO
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/9/2017, Last Modified: 5/29/2017 \n
+Date Create: 2/9/2017, Last Modified: 6/28/2017 \n
 -------------------------------------------------------------------------------------\n
 """
 function defineSolver!(n::NLOpt;kwargs...)
@@ -85,47 +86,70 @@ function defineSolver!(n::NLOpt;kwargs...)
 
   # get the name of the solver
   if haskey(kw,:name); n.s.solver.name=get(kw,:name,0); end
+  if try_import(n.s.solver.name)
+  else error(string("\n could not import ",n.s.solver.name,"\n consider adding it with: \n Pkg.add(``",n.s.solver.name,``")") )
+  end
 
-  # modify defaults
-  for (key,value) in kw
-    if haskey(n.s.solver.settings,key)
-      n.s.solver.settings[key]=value
-    elseif key!=:name # ignore the name
-      error("Unknown key: ", kw)
+  # see if the user would like to use a standard set of solver settings for mpc
+  if haskey(kw,:mpc_defaults); mpc_defaults=get(kw,:mpc_defaults,0); else mpc_defaults=false; end
+  if mpc_defaults
+    if n.s.solver.name==:Ipopt
+      n.s.solver.settings=_Ipopt_MPC;
+    elseif n.s.solver.name==:KNITRO
+      n.s.solver.settings=_KNITRO_MPC;
+    else
+      error(string("solver ",n.s.sover.name, " not defined"))
     end
   end
 
-  if try_import(n.s.solver.name)
-  else error(string("\n could not import ",n.s.solver.name,"\n consider adding it with: \n Pkg.add(``",n.solver.name,``")") )
+  # modify additional defaults individually
+  for (key,value) in kw
+    if haskey(n.s.solver.settings,key)
+      n.s.solver.settings[key]=value
+    elseif key!=:name && key!=:mpc_defaults # ignore the name and default settings option TODO could remove them from the Dict
+      error(string("Unknown key: ", kw, " for ", n.s.solver.name))
+    end
   end
-  if n.s.solver.name==:Ipopt
-    NLPsolver=Ipopt.IpoptSolver(print_level=0)
-      #=
-      NLPsolver=Ipopt.IpoptSolver(max_cpu_time=max_cpu_time,
-                                 print_level=0,
-                                 warm_start_init_point="yes",
-                                 max_iter=max_iter,
-                                 tol=infeastol,
-                                 dual_inf_tol=1.,
-                                 constr_viol_tol=0.0001,
-                                 compl_inf_tol=1e-6,
-                                 acceptable_tol=1e-6,
-                                 acceptable_constr_viol_tol=0.01,
-                                 acceptable_dual_inf_tol=1e10,
-                                 acceptable_compl_inf_tol=0.01,
-                                 acceptable_obj_change_tol=1e20,
-                                 diverging_iterates_tol=1e20)
-                                 =#
-  elseif n.s.solver.name==:KNITRO
-      NLPsolver=KNITRO.KnitroSolver(outlev=0)
-  else
-    error("the :name key needs to be set to either :KNITRO or :Ipopt in defineSolver!()\n ")
-  end
-  #n.mdl=JuMP.Model(solver=NLPsolver)
-  n.mdl=Model(solver=NLPsolver)
 
-  # optimal control problem
-  OCPdef!(n);
+  if n.s.solver.name==:Ipopt
+    NLPsolver=Ipopt.IpoptSolver(max_cpu_time=n.s.solver.settings[:max_cpu_time],
+                               print_level=n.s.solver.settings[:print_level],
+                               warm_start_init_point=n.s.solver.settings[:warm_start_init_point],
+                               max_iter=n.s.solver.settings[:max_iter],
+                               tol=n.s.solver.settings[:tol],
+                               dual_inf_tol=n.s.solver.settings[:dual_inf_tol],
+                               constr_viol_tol=n.s.solver.settings[:constr_viol_tol],
+                               compl_inf_tol=n.s.solver.settings[:compl_inf_tol],
+                               acceptable_tol=n.s.solver.settings[:acceptable_tol],
+                               acceptable_constr_viol_tol=n.s.solver.settings[:acceptable_constr_viol_tol],
+                               acceptable_dual_inf_tol=n.s.solver.settings[:acceptable_dual_inf_tol],
+                               acceptable_compl_inf_tol=n.s.solver.settings[:acceptable_compl_inf_tol],
+                               acceptable_obj_change_tol=n.s.solver.settings[:acceptable_obj_change_tol],
+                               diverging_iterates_tol=n.s.solver.settings[:diverging_iterates_tol])
+  elseif n.s.solver.name==:KNITRO
+    NLPsolver=KNITRO.KnitroSolver(outlev=n.s.solver.settings[:outlev],
+                                   maxit=n.s.solver.settings[:maxit],
+                                   maxtime_real=n.s.solver.settings[:maxtime_real],
+                                   infeastol=n.s.solver.settings[:infeastol],
+                                   feastol=n.s.solver.settings[:feastol],
+                                   feastol_abs=n.s.solver.settings[:feastol_abs],
+                                   opttol=n.s.solver.settings[:opttol],
+                                   opttol_abs=n.s.solver.settings[:opttol_abs],
+                                   algorithm=n.s.solver.settings[:algorithm],
+                                   bar_initpt=n.s.solver.settings[:bar_initpt],
+                                   bar_murule=n.s.solver.settings[:bar_murule],
+                                   bar_penaltycons=n.s.solver.settings[:bar_penaltycons],
+                                   bar_penaltyrule=n.s.solver.settings[:bar_penaltyrule],
+                                   bar_switchrule=n.s.solver.settings[:bar_switchrule],
+                                   linesearch=n.s.solver.settings[:linesearch],
+                                   linsolver=n.s.solver.settings[:linsolver])
+
+  else
+    error(string("solver ",n.s.sover.name, " not defined"))
+  end
+  n.mdl=JuMP.Model(solver=NLPsolver)
+
+  OCPdef!(n);   # optimal control problem
   return nothing
 end  # function
 

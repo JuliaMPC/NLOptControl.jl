@@ -74,6 +74,7 @@ function initializeMPC!(n;FixedTp::Bool=true,PredictX0::Bool=true,tp::Float64=5.
   if n.mpc.t0_param!=Any
     error("\n initializeMPC!() must be called before OCPdef!() \n")
   end
+  n.s.MPC=true;
   n.mpc::MPC=MPC();
   n.mpc.FixedTp=FixedTp;
   n.mpc.PredictX0=PredictX0;
@@ -91,7 +92,6 @@ end
 # for simulating the model of the plant given control commands
 simModel(n,X0,t,U,t0,tf)
 
-# TODO eventually the "plant" will be different from the "model"
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/14/2017, Last Modified: 6/22/2017 \n
@@ -152,16 +152,13 @@ function updateX0!(n,args...;kwargs...)
 end
 
 """
-# for simulating the plant model given control commands
-simPlant(pa,X0,t,U,t0,tf)
-
-# TODO eventually the "plant" will be different from the "model"
+simPlant(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/14/2017, Last Modified: 6/22/2017 \n
+Date Create: 2/14/2017, Last Modified: 6/27/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function simPlant!(n,X0,t,U,t0,tf)
+function simPlant!(n;X0=n.X0,t=n.r.t_ctr+n.mpc.t0,U=n.r.U,t0=n.mpc.t0_actual,tf=n.r.eval_num*n.mpc.tex)
   sol=n.mpc.plantEquations(n,X0,t,U,t0,tf);
   plant2dfs!(n,sol);  #TODO consider passing U, t0 etc..
   t0p=updateX0!(n);
@@ -197,7 +194,7 @@ end
 # this function currently only works when the "actual model"==simPlant()
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 4/9/2017, Last Modified: 6/22/2017 \n
+Date Create: 4/9/2017, Last Modified: 6/27/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function driveStraight!(n;t0::Float64=n.mpc.t0,tf::Float64=n.mpc.tf)
@@ -207,7 +204,7 @@ function driveStraight!(n;t0::Float64=n.mpc.t0,tf::Float64=n.mpc.tf)
   postProcess!(n;(:Init=>true)); n.r.eval_num=1;          # to make solutions line up
 
   # simulate the "actual vehicle" response
-  simPlant!(n,n.X0,n.r.t_ctr+n.mpc.t0,n.r.U,t0,tf)
+  simPlant!(n;X0=n.X0,t=n.r.t_ctr+n.mpc.t0,U=n.r.U,t0=t0,tf=tf)
   return nothing
 end
 
