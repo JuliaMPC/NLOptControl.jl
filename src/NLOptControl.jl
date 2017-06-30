@@ -209,7 +209,6 @@ type NLOpt <: AbstractNLOpt
   state::State              # state data
   numControls::Int64        # number of controls
   control::Control          # control data
-  numPoints::Array{Int64,1} # number of dv discretization within each interval
   numStatePoints::Int64     # number of dvs per state
   numControlPoints::Int64   # numer of dvs per control
   lengthDV::Int64           # total number of dv discretizations per variables
@@ -239,6 +238,8 @@ type NLOpt <: AbstractNLOpt
 
   # ps method data
   Nck::Array{Int64,1}           # number of collocation points per interval
+  Nck_cum::Array{Int64,1}       # cumulative number of points per interval
+  Nck_full::Array{Int64,1}      # [0;cumsum(n.Nck+1)]
   Ni::Int64                     # number of intervals
   τ::Array{Array{Float64,1},1}  # Node points ---> Nc increasing and distinct numbers ∈ [-1,1]
   ts::Array{Array{Float64,1},1} # time scaled based off of τ
@@ -270,7 +271,6 @@ NLOpt(Any,                # state equations
       State(),            # state data
       0,                  # number of controls
       Control(),          # control data
-      Int[],              # number of dv discretization within each interval
       0,                  # number of dvs per state
       0,                  # number of dvs per control
       0,                  # total number of dv discretizations per variables
@@ -290,6 +290,8 @@ NLOpt(Any,                # state equations
       Float64[],          # CL
       Float64[],          # CU
       Int[],              # number of collocation points per interval
+      Int[],              # Nck_cum
+      Int[],              # Nck_full
       0,                  # number of intervals
       Vector{Float64}[],  # τ
       Vector{Any}[],      # ts

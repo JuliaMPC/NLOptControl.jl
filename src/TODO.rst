@@ -3,13 +3,12 @@ TODO
 ==================
 # High Priority #
 ==================
-1) add more complicated integrate!()
 
 ===================
 # Medium Priority #
 ===================
 18) add ! to allPlots()
-20) when integrating using :tm :trapezoidal method and minimizing the square of something it may ossilate
+20) when integrating using :tm :trapezoidal method and minimizing the square of something it may oscillate
 22) provide an initial guess
 25) parse_DiffEq works OK except when in module
 26) what does n.s.reset do
@@ -27,4 +26,4 @@ try to register functions with JuMP
 20) get a simple MPC example working?
 21) get ride of the index: de=[:(v[j]),:(T[j]-1.625)]
 22) make it stop recompiling VehicleModels when it runs PrettyPlots
-23) TODO see the number of constraints can be reduced for :ps methods
+23) see the number of constraints can be reduced for :ps methods

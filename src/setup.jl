@@ -147,6 +147,36 @@ function defineSolver!(n::NLOpt;kwargs...)
 end  # function
 
 """
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 6/29/2017, Last Modified: 6/29/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+function intervals(n,int)
+
+  # states
+  x_int=Array{JuMP.Variable}(length(n.Nck_full[int]+1:n.Nck_full[int+1]),n.numStates);
+  for st in 1:n.numStates # +1 adds the DV in the next interval
+    x_int[:,st]=n.r.x[n.Nck_cum[int]+1:n.Nck_cum[int+1]+1,st];
+  end
+
+  # controls
+  if int!=n.Ni
+    u_int=Array{JuMP.Variable}(length(n.Nck_full[int]+1:n.Nck_full[int+1]),n.numControls);
+  else                    # -1 -> removing control in last mesh interval
+    u_int=Array{JuMP.Variable}(length(n.Nck_full[int]+1:n.Nck_full[int+1]-1),n.numControls);
+  end
+  for ctr in 1:n.numControls
+    if int!=n.Ni          # +1 adds the DV in the next interval
+      u_int[:,ctr]=n.r.u[n.Nck_cum[int]+1:n.Nck_cum[int+1]+1,ctr];
+    else
+      u_int[:,ctr]=n.r.u[n.Nck_cum[int]+1:n.Nck_cum[int+1],ctr];
+    end
+  end
+
+  return x_int,u_int
+end
+"""
 OCPdef!(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
@@ -232,7 +262,6 @@ function OCPdef!(n::NLOpt)
 
   if n.s.integrationMethod==:ps
     n.r.dyn_con=[Array{Any}(n.Nck[int],n.numStates) for int in 1:n.Ni];
-    Nck_full=[0;cumsum(n.Nck+1)]; Nck_vars=[0;cumsum(n.Nck)];
     dynamics_expr=[Array{Any}(n.Nck[int],n.numStates) for int in 1:n.Ni];
 
     if n.s.finalTimeDV
@@ -242,25 +271,7 @@ function OCPdef!(n::NLOpt)
     end
 
     for int in 1:n.Ni
-      # states
-      x_int=Array{JuMP.Variable}(length(Nck_full[int]+1:Nck_full[int+1]),n.numStates);
-      for st in 1:n.numStates # +1 adds the DV in the next interval
-        x_int[:,st]=n.r.x[Nck_vars[int]+1:Nck_vars[int+1]+1,st];
-      end
-
-      # controls
-      if int!=n.Ni
-        u_int=Array{JuMP.Variable}(length(Nck_full[int]+1:Nck_full[int+1]),n.numControls);
-      else                    # -1 -> removing control in last mesh interval
-        u_int=Array{JuMP.Variable}(length(Nck_full[int]+1:Nck_full[int+1]-1),n.numControls);
-      end
-      for ctr in 1:n.numControls
-        if int!=n.Ni          # +1 adds the DV in the next interval
-          u_int[:,ctr]=n.r.u[Nck_vars[int]+1:Nck_vars[int+1]+1,ctr];
-        else
-          u_int[:,ctr]=n.r.u[Nck_vars[int]+1:Nck_vars[int+1],ctr];
-        end
-      end
+      x_int,u_int=intervals(n,int);
 
       # dynamics
       if isempty(n.DXexpr)
@@ -377,9 +388,10 @@ function configure!(n::NLOpt; kwargs... )
             error("\n Nck must be > 0");
         end
     end
-     n.numPoints = [n.Nck[int] for int in 1:n.Ni];  # number of design variables per interval
-     n.numStatePoints=sum(n.Nck)+1;
-     n.numControlPoints=sum(n.Nck);
+    n.numStatePoints=sum(n.Nck)+1;
+    n.numControlPoints=sum(n.Nck);
+    n.Nck_full=[0;cumsum(n.Nck+1)];
+    n.Nck_cum=[0;cumsum(n.Nck)];
 
     # initialize node data
     if n.s.integrationScheme==:lgrExplicit ||  n.s.integrationScheme==:lgrImplicit

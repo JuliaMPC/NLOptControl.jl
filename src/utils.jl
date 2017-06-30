@@ -93,76 +93,35 @@ function create_tV!(n::NLOpt)
 end
 
 """
-expression=integrate!(n,n.r.u[:,1];(:mode=>:control))
-expression=integrate!(n,n.r.u[:,1];C=0.5,(:variable=>:control),(:integrand=>:squared))
-expression=integrate!(n,n.r.u[:,1];D=rand(n.numStatePoints),(:variable=>:control),(:integrand=>:squared),(:integrandAlgebra=>:subtract))
+obj=integrate!(n,:(u1))
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 1/2/2017, Last Modified: 6/29/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function integrate!(n::NLOpt,V;C=1.0,D=zeros(n.numStatePoints,),kwargs...)
-
-  if typeof(V)==Expr
-
+function integrate!(n::NLOpt,V::Expr)
+  if n.s.integrationMethod==:ps
+    integral_expr=[Array{Any}(n.Nck[int]) for int in 1:n.Ni];
+    for int in 1:n.Ni
+      x_int,u_int=intervals(n,int);
+      L=size(x_int)[1]-1;
+      integral_expr[int][:]=NLExpr(n,V,x_int,u_int,L)
+    end
+    @NLexpression(n.mdl, temp[int=1:n.Ni], (n.tf-n.t0)/2*sum(n.ωₛ[int][j]*integral_expr[int][j] for j = 1:n.Nck[int]) );
+    expression=@NLexpression(n.mdl, sum(temp[int] for int = 1:n.Ni));
+  elseif n.s.integrationMethod==:tm
+    L=size(n.r.x)[1];
+    temp=NLExpr(n,V,n.r.x,n.r.u,L);
+    if n.s.integrationScheme==:bkwEuler
+      expression=@NLexpression(n.mdl,sum(temp[j+1]*n.tf/n.N for j = 1:n.N) );
+    elseif n.s.integrationScheme==:trapezoidal
+      expression=@NLexpression(n.mdl,sum(0.5*(temp[j]+temp[j+1])*n.tf/n.N for j = 1:n.N) );
+    else
+      error("\n $(n.s.integrationScheme) not defined in integrationSchemes\n")
+    end
   else
-    kw = Dict(kwargs);
-    if !haskey(kw,:integrand); integrand = :default;
-    else; integrand = get(kw,:integrand,0);
-    end
-    ##############################
-    if n.s.integrationMethod==:tm
-      if integrand == :default      # integrate V
-        if n.s.integrationScheme==:bkwEuler
-          expression =  @NLexpression(n.mdl,C*sum( (V[j+1]-D[j])*n.tf/(n.N) for j = 1:n.N));
-        elseif n.s.integrationScheme==:trapezoidal
-          expression =  @NLexpression(n.mdl,C*sum( 0.5*(V[j]-D[j]+V[j+1]-D[j])*n.tf/(n.N) for j = 1:n.N));
-        end
-      elseif integrand == :cos      # integrate cos(V)
-          if n.s.integrationScheme==:bkwEuler
-            expression =  @NLexpression(n.mdl,C*sum( (cos(V[j+1])-D[j])*n.tf/(n.N) for j = 1:n.N));
-          elseif n.s.integrationScheme==:trapezoidal
-            expression =  @NLexpression(n.mdl,C*sum( 0.5*(cos(V[j])-D[j]+cos(V[j+1])-D[j])*n.tf/(n.N) for j = 1:n.N));
-          end
-      elseif integrand == :sin      # integrate sin(V)
-          if n.s.integrationScheme==:bkwEuler
-            expression =  @NLexpression(n.mdl,C*sum( (sin(V[j+1])-D[j])*n.tf/(n.N) for j = 1:n.N));
-          elseif n.s.integrationScheme==:trapezoidal
-            expression =  @NLexpression(n.mdl,C*sum( 0.5*(sin(V[j])-D[j]+sin(V[j+1])-D[j])*n.tf/(n.N) for j = 1:n.N));
-          end
-      elseif integrand == :squared  # integrate V^2
-        if n.s.integrationScheme==:bkwEuler
-          expression =  @NLexpression(n.mdl, C*sum( ((V[j+1]-D[j])^2)*n.tf/(n.N) for j = 1:n.N));
-        elseif n.s.integrationScheme==:trapezoidal
-          expression =  @NLexpression(n.mdl, C*sum( 0.5*((V[j]-D[j])^2+(V[j+1]-D[j])^2)*n.tf/(n.N) for j = 1:n.N));
-        end
-      else
-        error("\n $integrand key not one of the implemented methods\n")
-      end
-    ####################################
-    elseif n.s.integrationMethod==:ps
-      variable = get(kw,:variable,0);
-      if variable == :state; Nck_cum=[0;cumsum(n.Nck)];Nck_cum=[0;cumsum(n.Nck)];Nck_cum[end]=Nck_cum[end]+1;
-      elseif variable == :control; Nck_cum = [0;cumsum(n.Nck)];
-      else; error("\n Set the variable to either (:variable => :state) or (:variable => :control). \n")
-      end
-
-      if integrand == :default      # integrate V
-        @NLexpression(n.mdl, temp[int=1:n.Ni], ((n.tf-n.t0)/2)*sum((n.ωₛ[int])[j]*((V[Nck_cum[int]+1:Nck_cum[int+1]])[j]-D[j]) for j = 1:n.Nck[int]));
-      elseif integrand == :cos      # integrate cos(V)
-        @NLexpression(n.mdl, temp[int=1:n.Ni], ((n.tf-n.t0)/2)*sum((n.ωₛ[int])[j]*(cos((V[Nck_cum[int]+1:Nck_cum[int+1]])[j])-D[j]) for j = 1:n.Nck[int]));
-      elseif integrand == :sin      # integrate sin(V)
-        @NLexpression(n.mdl, temp[int=1:n.Ni], ((n.tf-n.t0)/2)*sum((n.ωₛ[int])[j]*(sin((V[Nck_cum[int]+1:Nck_cum[int+1]])[j])-D[j]) for j = 1:n.Nck[int]));
-      elseif integrand == :squared  # integrate V^2
-        @NLexpression(n.mdl, temp[int=1:n.Ni],((n.tf-n.t0)/2)*sum((n.ωₛ[int])[j]*((V[Nck_cum[int]+1:Nck_cum[int+1]])[j]-D[j])*((V[Nck_cum[int] + 1:Nck_cum[int+1]])[j]-D[j]) for j = 1:n.Nck[int]));
-      else
-        error("\n $integrand key not one of the implemented methods\n")
-      end
-      expression =  @NLexpression(n.mdl, C*sum(temp[int] for int = 1:n.Ni));
-
-    end
+    error("\n $(n.s.integrationMethod) not defined in integrationMethods \n")
   end
-
   return expression
 end
 

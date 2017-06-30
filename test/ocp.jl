@@ -11,7 +11,7 @@ L=1/6;
   n=define(numStates=2,numControls=1,X0=[0.,1],XF=[0.,-1.],XL=[0.,NaN],XU=[L,NaN]);
   dynamics!(n,BrysonDenham)
   configure!(n;(:integrationScheme=>integrationConfig),(:finalTimeDV=>false),(:tf=>1.0));
-  obj=integrate!(n,n.r.u[:,1];C=0.5,(:variable=>:control),(:integrand=>:squared));
+  obj=integrate!(n,:(0.5*u1[j]^2));
   @NLobjective(n.mdl,Min,obj);
   optimize!(n);
   @show n.r.dfs_opt[1][:t_solve][1]
@@ -23,7 +23,7 @@ BrysonDenham_EXP=[:(x2[j]),:(u1[j])]; L=1/6;
   n=define(numStates=2,numControls=1,X0=[0.,1],XF=[0.,-1.],XL=[0.,NaN],XU=[L,NaN]);
   dynamics!(n,BrysonDenham_EXP)
   configure!(n;(:integrationScheme=>integrationConfig),(:finalTimeDV=>false),(:tf=>1.0));
-  obj=integrate!(n,n.r.u[:,1];C=0.5,(:variable=>:control),(:integrand=>:squared));
+  obj=integrate!(n,:(0.5*u1[j]^2));
   @NLobjective(n.mdl,Min,obj);
   optimize!(n);
   @show n.r.dfs_opt[1][:t_solve][1]
@@ -35,9 +35,8 @@ de=[:(sin(x2[j])),:(u1[j])]
   n=define(numStates=2,numControls=1,XL=[-0.05,-1.0],XU=[-0.05,1.0]);
   dynamics!(n,de)
   configure!(n;(:integrationScheme=>integrationConfig),(:finalTimeDV=>false),(:tf=>1.0));
-  obj1=integrate!(n,n.r.u[:,1];(:variable=>:control),(:integrand=>:squared));
-  obj2=integrate!(n,n.r.x[:,2];C=350.,(:variable=>:state),(:integrand=>:cos));
-  @NLobjective(n.mdl,Min,obj1+obj2);
+  obj=integrate!(n,:( u1[j]^2 + 350*cos(x2[j]) ) )
+  @NLobjective(n.mdl,Min,obj);
   optimize!(n);
   @show n.r.dfs_opt[1][:t_solve][1]
   @test isapprox(350,n.r.obj_val[1],atol=tol)
@@ -50,7 +49,7 @@ de=[:(v[j]),:(T[j]-1.625)]
   controls!(n,[:T];descriptions=["T(t)"]);
   dynamics!(n,de)
   configure!(n;(:integrationScheme=>integrationConfig),(:finalTimeDV=>true));
-  obj=integrate!(n,n.r.u[:,1];(:variable=>:control));
+  obj=integrate!(n,:(T[j]));
   @NLobjective(n.mdl, Min, obj);
   optimize!(n);
   @show n.r.dfs_opt[1][:t_solve][1]
