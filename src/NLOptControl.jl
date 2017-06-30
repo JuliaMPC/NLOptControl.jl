@@ -326,6 +326,7 @@ export
        define,
        configure!,
        dynamics!,
+       NLExpr,
 
        # math functions
        integrate!,

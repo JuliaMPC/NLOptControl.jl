@@ -29,3 +29,5 @@ try to register functions with JuMP
 23) see the number of constraints can be reduced for :ps methods
 25) update notebook
 27) get ride of n.stateEquations
+29) make lgrImplicit default
+30) if user only passes n and Expr to NLExpr automatically add n.r.x etc.
