@@ -5,16 +5,12 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 6/29/2017, Last Modified: 6/29/2017 \n
 -------------------------------------------------------------------------------------\n
 """
-function dynamics!(n::NLOpt,de)
-  if isa(de,Array)
-    if length(de)!=n.numStates
-      error("\n the number of differential equations must equal numStates \n")
-    end
-    n.DXexpr=de;
-    n.stateEquations=DiffEq;
-  else
-    n.stateEquations=de;
+function dynamics!(n::NLOpt,dx::Array{Expr,1})
+  if length(dx)!=n.numStates
+    error("\n the number of differential equations must equal numStates \n")
   end
+  n.DXexpr=dx;
+  n.stateEquations=DiffEq; 
   return nothing
 end
 """

@@ -27,3 +27,5 @@ try to register functions with JuMP
 21) get ride of the index: de=[:(v[j]),:(T[j]-1.625)]
 22) make it stop recompiling VehicleModels when it runs PrettyPlots
 23) see the number of constraints can be reduced for :ps methods
+25) update notebook
+27) get ride of n.stateEquations
