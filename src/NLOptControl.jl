@@ -3,7 +3,6 @@ isdefined(Base, :__precompile__) && __precompile__()
 module NLOptControl
 
 using JuMP
-#import JuMP: @NLexpression, @NLobjective, @NLparameter, @NLconstraint, @constraint, @variable, setvalue, Model, setupperbound, setlowerbound
 using Ipopt # temp fix for 0.6
 using FastGaussQuadrature
 using DataFrames
@@ -75,7 +74,7 @@ const _KNITRO_MPC=Dict(
 # Basic Types
 ################################################################################
 ############################### control ########################################
-type Control #TODO correlate these with JuMP variables
+type Control
   name::Vector{Any}
   description::Vector{Any}
 end
@@ -85,7 +84,7 @@ function Control()
 end
 
 # ############################# state  ##########################################
-type State #TODO correlate these with JuMP variables
+type State
   # constants
   name::Vector{Any}
   description::Vector{Any}
@@ -117,8 +116,7 @@ end
 
 function Solver()
        Solver(:Ipopt,
-              _Ipopt_defaults
-              );
+              _Ipopt_defaults);
 end
 
 # Result Class
@@ -307,8 +305,7 @@ NLOpt(Any,                # state equations
       Result(),
       Any[],
       Any[],
-      false
-    );
+      false);
 end
 
 # scripts
@@ -326,7 +323,7 @@ export
        # setup functions
        define,
        configure!,
-       DiffEq!,
+       dynamics!,
 
        # math functions
        integrate!,
@@ -339,8 +336,8 @@ export
        # data processing  - utils.jl
        newConstraint!,
        evalMaxDualInf,
-       stateNames!,
-       controlNames!,
+       states!,
+       controls!,
        minDF,
        maxDF,
        savePlantData!,

@@ -9,7 +9,7 @@ Date Create: 1/15/2017, Last Modified: 1/27/2017 \n
 function DMatrix!(n::NLOpt, kwargs...)         #TODO make IMatrix and option
   kw = Dict(kwargs);
 
-  if !haskey(kw,:mode); kw_ = Dict(:mode => :defaut); mode = get(kw_,:mode,0);
+  if !haskey(kw,:mode); mode=:defaut;
   else; mode = get(kw,:mode,0);
   end
 
@@ -26,10 +26,13 @@ function DMatrix!(n::NLOpt, kwargs...)         #TODO make IMatrix and option
     end
     n.DMatrix = [zeros((n.Nck[int]),(n.Nck[int]+1)) for int in 1:n.Ni];
     DM = [zeros((n.Nck[int]),(n.Nck[int])) for int in 1:n.Ni];
+    n.IMatrix = [zeros((n.Nck[int]),(n.Nck[int]+1)) for int in 1:n.Ni];
     for int in 1:n.Ni
-        n.DMatrix[int] = D[int][1:end-1,:]; # [Nck]X[Nck+1]
-        DM[int] = D[int][1:end-1,2:end];    # [Nck]X[Nck]
-        #IMatrix[int] = inv(DM[int]);        # I = inv[D_{2:N_k+1}]
+        n.DMatrix[int] = D[int][1:end-1,:];    # [Nck]X[Nck+1]
+        if n.s.integrationScheme==:lgrImplicit
+          DM[int] = n.DMatrix[int][:,2:end];   # [Nck]X[Nck]
+          n.IMatrix[int] = inv(DM[int]);       # I = inv(D[:,2:N_k+1])
+        end
     end
   elseif mode==:symbolic # for validation only, too slow otherwise
     error(" \n cannot precompile with SymPy \n

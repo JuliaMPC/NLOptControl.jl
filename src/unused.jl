@@ -2,6 +2,23 @@
 
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 6/28/2017, Last Modified: 6/28/2017 \n
+-------------------------------------------------------------------------------------\n
+"""
+macro controlVariable(n,name,num)
+  n=esc(n)
+  return quote
+      $name=$n.r.u[:,num]
+    end
+end
+
+
+
+
+"""
+
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 5/31/2017, Last Modified: 6/14/2017 \n
 -------------------------------------------------------------------------------------\n
 """

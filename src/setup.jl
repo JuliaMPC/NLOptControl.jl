@@ -10,7 +10,7 @@ Initially Influenced by: S. Hughes.  steven.p.hughes@nasa.gov
 Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/264a12acad195e6a2467cfdc68abdcee801f73fc/tree/prototype/OptimalControl/LowThrust/@DecisionVector/)
 -------------------------------------------------------------------------------------\n
 """
-function define(de;
+function define(;
                 numStates::Int64=0,
                 numControls::Int64=0,
                 X0=fill(NaN,numStates,),
@@ -22,13 +22,6 @@ function define(de;
                 )
 
   n=NLOpt();
-
-  if isa(de,Array)
-    n.DXexpr=de;
-    n.stateEquations=DiffEq;
-  else
-    n.stateEquations=de;
-  end
 
   # validate input
   if numControls <= 0
@@ -245,7 +238,7 @@ function OCPdef!(n::NLOpt)
     if n.s.finalTimeDV
       @variable(n.mdl, 0.001 <= tf <=  n.s.tf_max)
       n.tf=tf;
-      create_tV!(n) # make a time vector
+      create_tV!(n)          # make a time vector
     end
 
     for int in 1:n.Ni
@@ -258,11 +251,11 @@ function OCPdef!(n::NLOpt)
       # controls
       if int!=n.Ni
         u_int=Array{JuMP.Variable}(length(Nck_full[int]+1:Nck_full[int+1]),n.numControls);
-      else # -1 -> removing control in last mesh interval
+      else                    # -1 -> removing control in last mesh interval
         u_int=Array{JuMP.Variable}(length(Nck_full[int]+1:Nck_full[int+1]-1),n.numControls);
       end
       for ctr in 1:n.numControls
-        if int!=n.Ni # +1 adds the DV in the next interval
+        if int!=n.Ni          # +1 adds the DV in the next interval
           u_int[:,ctr]=n.r.u[Nck_vars[int]+1:Nck_vars[int+1]+1,ctr];
         else
           u_int[:,ctr]=n.r.u[Nck_vars[int]+1:Nck_vars[int+1],ctr];
@@ -283,6 +276,8 @@ function OCPdef!(n::NLOpt)
       for st in 1:n.numStates
         if n.s.integrationScheme==:lgrExplicit
           dynamics_expr[int][:,st]=@NLexpression(n.mdl, [j in 1:n.Nck[int]], sum(n.DMatrix[int][j,i]*x_int[i,st] for i in 1:n.Nck[int]+1) - ((n.tf)/2)*dx[j,st]  )
+        elseif n.s.integrationScheme==:lgrImplicit
+          dynamics_expr[int][:,st]=@NLexpression(n.mdl, [j in 1:n.Nck[int]], x_int[j+1,st] - x_int[1,st] - ((n.tf)/2)*sum(n.IMatrix[int][j,i]*dx[i,st] for i in 1:n.Nck[int]) )
         end
         for j in 1:n.Nck[int]
           n.r.dyn_con[int][j,st]=@NLconstraint(n.mdl, 0==dynamics_expr[int][j,st])
@@ -306,6 +301,7 @@ function OCPdef!(n::NLOpt)
       dx=Array{Any}(L,n.numStates)
       for st in 1:n.numStates
         dx[:,st]=n.stateEquations(n,n.r.x,n.r.u,L,st);
+        #dx[:,st]=NLExpr(n,n.DXexpr[st],n.r.x,n.r.u,L); #NOTE  works for :tm methods, but fails for :ps method
       end
     end
 
@@ -359,9 +355,9 @@ function configure!(n::NLOpt; kwargs... )
   else; n.s.integrationScheme=get(kw,:integrationScheme,0);
   end
 
-  if n.s.integrationScheme==:lgrExplicit
+  if n.s.integrationScheme==:lgrExplicit ||  n.s.integrationScheme==:lgrImplicit
     n.s.integrationMethod=:ps;
-  elseif (n.s.integrationScheme==:trapezoidal) || (n.s.integrationScheme==:bkwEuler)
+  elseif n.s.integrationScheme==:trapezoidal || n.s.integrationScheme==:bkwEuler
     n.s.integrationMethod=:tm;
   else
     error("the :integrationScheme that you specified is not currently implemeted \n")
@@ -386,7 +382,7 @@ function configure!(n::NLOpt; kwargs... )
      n.numControlPoints=sum(n.Nck);
 
     # initialize node data
-    if n.s.integrationScheme==:lgrExplicit
+    if n.s.integrationScheme==:lgrExplicit ||  n.s.integrationScheme==:lgrImplicit
       taus_and_weights = [gaussradau(n.Nck[int]) for int in 1:n.Ni];
     end
     n.τ=[taus_and_weights[int][1] for int in 1:n.Ni];

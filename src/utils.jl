@@ -93,77 +93,77 @@ function create_tV!(n::NLOpt)
 end
 
 """
-# for integrating JuMP variables
-Expr=integrate!(n,n.r.u[:,1];(:mode=>:control))
-Expr=integrate!(n,n.r.u[:,1];C=0.5,(:variable=>:control),(:integrand=>:squared))
-Expr=integrate!(n,n.r.u[:,1];D=rand(n.numStatePoints),(:variable=>:control),(:integrand=>:squared),(:integrandAlgebra=>:subtract))
-#TODO fix D  ::Array{JuMP.NonlinearParameter,1}
+expression=integrate!(n,n.r.u[:,1];(:mode=>:control))
+expression=integrate!(n,n.r.u[:,1];C=0.5,(:variable=>:control),(:integrand=>:squared))
+expression=integrate!(n,n.r.u[:,1];D=rand(n.numStatePoints),(:variable=>:control),(:integrand=>:squared),(:integrandAlgebra=>:subtract))
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/2/2017, Last Modified: 6/16/2017 \n
+Date Create: 1/2/2017, Last Modified: 6/29/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function integrate!(n::NLOpt,V::Array{JuMP.Variable,1}; C=1.0,D=zeros(n.numStatePoints,),kwargs...)
+function integrate!(n::NLOpt,V;C=1.0,D=zeros(n.numStatePoints,),kwargs...)
 
-  kw = Dict(kwargs);
-  if !haskey(kw,:integrand); integrand = :default;
-  else; integrand = get(kw,:integrand,0);
-  end
-  ##############################
-  if n.s.integrationMethod==:tm
-    if integrand == :default      # integrate V
-      if n.s.integrationScheme==:bkwEuler
-        Expr =  @NLexpression(n.mdl,C*sum( (V[j+1]-D[j])*n.tf/(n.N) for j = 1:n.N));
-      elseif n.s.integrationScheme==:trapezoidal
-        Expr =  @NLexpression(n.mdl,C*sum( 0.5*(V[j]-D[j]+V[j+1]-D[j])*n.tf/(n.N) for j = 1:n.N));
-      end
-    elseif integrand == :cos      # integrate cos(V)
-        if n.s.integrationScheme==:bkwEuler
-          Expr =  @NLexpression(n.mdl,C*sum( (cos(V[j+1])-D[j])*n.tf/(n.N) for j = 1:n.N));
-        elseif n.s.integrationScheme==:trapezoidal
-          Expr =  @NLexpression(n.mdl,C*sum( 0.5*(cos(V[j])-D[j]+cos(V[j+1])-D[j])*n.tf/(n.N) for j = 1:n.N));
-        end
-    elseif integrand == :sin      # integrate sin(V)
-        if n.s.integrationScheme==:bkwEuler
-          Expr =  @NLexpression(n.mdl,C*sum( (sin(V[j+1])-D[j])*n.tf/(n.N) for j = 1:n.N));
-        elseif n.s.integrationScheme==:trapezoidal
-          Expr =  @NLexpression(n.mdl,C*sum( 0.5*(sin(V[j])-D[j]+sin(V[j+1])-D[j])*n.tf/(n.N) for j = 1:n.N));
-        end
-    elseif integrand == :squared # integrate V^2
-      if n.s.integrationScheme==:bkwEuler
-        Expr =  @NLexpression(n.mdl, C*sum( ((V[j+1]-D[j])^2)*n.tf/(n.N) for j = 1:n.N));
-      elseif n.s.integrationScheme==:trapezoidal
-        Expr =  @NLexpression(n.mdl, C*sum( 0.5*((V[j]-D[j])^2+(V[j+1]-D[j])^2)*n.tf/(n.N) for j = 1:n.N));
-      end
-    else
-      error("\n $integrand key not one of the implemented methods\n")
-    end
-  ####################################
-  elseif n.s.integrationMethod==:ps
-    variable = get(kw,:variable,0);
-    if variable == :state; Nck_cum=[0;cumsum(n.Nck)];Nck_cum=[0;cumsum(n.Nck)];Nck_cum[end]=Nck_cum[end]+1;
-    elseif variable == :control; Nck_cum = [0;cumsum(n.Nck)];
-    else; error("\n Set the variable to either (:variable => :state) or (:variable => :control). \n")
-    end
+  if typeof(V)==Expr
 
-    if n.s.integrationScheme == :lgrExplicit
+  else
+    kw = Dict(kwargs);
+    if !haskey(kw,:integrand); integrand = :default;
+    else; integrand = get(kw,:integrand,0);
+    end
+    ##############################
+    if n.s.integrationMethod==:tm
+      if integrand == :default      # integrate V
+        if n.s.integrationScheme==:bkwEuler
+          expression =  @NLexpression(n.mdl,C*sum( (V[j+1]-D[j])*n.tf/(n.N) for j = 1:n.N));
+        elseif n.s.integrationScheme==:trapezoidal
+          expression =  @NLexpression(n.mdl,C*sum( 0.5*(V[j]-D[j]+V[j+1]-D[j])*n.tf/(n.N) for j = 1:n.N));
+        end
+      elseif integrand == :cos      # integrate cos(V)
+          if n.s.integrationScheme==:bkwEuler
+            expression =  @NLexpression(n.mdl,C*sum( (cos(V[j+1])-D[j])*n.tf/(n.N) for j = 1:n.N));
+          elseif n.s.integrationScheme==:trapezoidal
+            expression =  @NLexpression(n.mdl,C*sum( 0.5*(cos(V[j])-D[j]+cos(V[j+1])-D[j])*n.tf/(n.N) for j = 1:n.N));
+          end
+      elseif integrand == :sin      # integrate sin(V)
+          if n.s.integrationScheme==:bkwEuler
+            expression =  @NLexpression(n.mdl,C*sum( (sin(V[j+1])-D[j])*n.tf/(n.N) for j = 1:n.N));
+          elseif n.s.integrationScheme==:trapezoidal
+            expression =  @NLexpression(n.mdl,C*sum( 0.5*(sin(V[j])-D[j]+sin(V[j+1])-D[j])*n.tf/(n.N) for j = 1:n.N));
+          end
+      elseif integrand == :squared  # integrate V^2
+        if n.s.integrationScheme==:bkwEuler
+          expression =  @NLexpression(n.mdl, C*sum( ((V[j+1]-D[j])^2)*n.tf/(n.N) for j = 1:n.N));
+        elseif n.s.integrationScheme==:trapezoidal
+          expression =  @NLexpression(n.mdl, C*sum( 0.5*((V[j]-D[j])^2+(V[j+1]-D[j])^2)*n.tf/(n.N) for j = 1:n.N));
+        end
+      else
+        error("\n $integrand key not one of the implemented methods\n")
+      end
+    ####################################
+    elseif n.s.integrationMethod==:ps
+      variable = get(kw,:variable,0);
+      if variable == :state; Nck_cum=[0;cumsum(n.Nck)];Nck_cum=[0;cumsum(n.Nck)];Nck_cum[end]=Nck_cum[end]+1;
+      elseif variable == :control; Nck_cum = [0;cumsum(n.Nck)];
+      else; error("\n Set the variable to either (:variable => :state) or (:variable => :control). \n")
+      end
+
       if integrand == :default      # integrate V
         @NLexpression(n.mdl, temp[int=1:n.Ni], ((n.tf-n.t0)/2)*sum((n.ωₛ[int])[j]*((V[Nck_cum[int]+1:Nck_cum[int+1]])[j]-D[j]) for j = 1:n.Nck[int]));
       elseif integrand == :cos      # integrate cos(V)
         @NLexpression(n.mdl, temp[int=1:n.Ni], ((n.tf-n.t0)/2)*sum((n.ωₛ[int])[j]*(cos((V[Nck_cum[int]+1:Nck_cum[int+1]])[j])-D[j]) for j = 1:n.Nck[int]));
       elseif integrand == :sin      # integrate sin(V)
         @NLexpression(n.mdl, temp[int=1:n.Ni], ((n.tf-n.t0)/2)*sum((n.ωₛ[int])[j]*(sin((V[Nck_cum[int]+1:Nck_cum[int+1]])[j])-D[j]) for j = 1:n.Nck[int]));
-      elseif integrand == :squared # integrate V^2
+      elseif integrand == :squared  # integrate V^2
         @NLexpression(n.mdl, temp[int=1:n.Ni],((n.tf-n.t0)/2)*sum((n.ωₛ[int])[j]*((V[Nck_cum[int]+1:Nck_cum[int+1]])[j]-D[j])*((V[Nck_cum[int] + 1:Nck_cum[int+1]])[j]-D[j]) for j = 1:n.Nck[int]));
       else
         error("\n $integrand key not one of the implemented methods\n")
       end
-      Expr =  @NLexpression(n.mdl, C*sum(temp[int] for int = 1:n.Ni));
-    else # TODO add in option to allow for integration using IMatrix
-        error("\n $(n.s.integrationScheme) Not implemented yet!! \n")
+      expression =  @NLexpression(n.mdl, C*sum(temp[int] for int = 1:n.Ni));
+
     end
   end
-  return Expr
+
+  return expression
 end
 
 ########################################################################################
@@ -243,26 +243,29 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/7/2017, Last Modified: 3/6/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-
 function initStateNames(n::NLOpt)
   State([Symbol("x$i") for i in 1:n.numStates],
-        [String("x$i") for i in 1:n.numStates],
-       );
+        [String("x$i") for i in 1:n.numStates]);
 end
 
-function stateNames!(n::NLOpt,names,descriptions)
+function states!(n::NLOpt,names;descriptions=[])
   if !n.define
-    error("\n call define() before calling controlNames() \n")
+    error("\n call define() before calling stateNames() \n")
   end
-  if length(names)!=n.numStates || length(descriptions)!=n.numStates
-    error("\n Check sizes of names and descriptions \n")
+  if length(names)!=n.numStates
+    error("\n Check size of names \n")
+  end
+  if !isempty(descriptions) && length(descriptions)!=n.numStates
+    error("\n Check size of descriptions \n")
   end
   n.state::State = State() # reset
   for i in 1:n.numStates
     push!(n.state.name,names[i])
-    push!(n.state.description,descriptions[i])
+    if !isempty(descriptions)
+        push!(n.state.description,descriptions[i])
+    end
   end
-  nothing
+  return nothing
 end
 
 ########################################################################################
@@ -280,17 +283,23 @@ function initControlNames(n::NLOpt)
           [String("u$i") for i in 1:n.numControls]);
 end
 
-function controlNames!(n::NLOpt,names,descriptions)
+function controls!(n::NLOpt,names;descriptions=[])
   if !n.define
     error("\n call define() before calling controlNames() \n")
   end
-  if length(names)!=n.numControls || length(descriptions)!=n.numControls
-    error("\n Check sizes of names and descriptions \n")
+  if length(names)!=n.numControls
+    error("\n Check sizes of names \n")
   end
+  if !isempty(descriptions) && length(descriptions)!=n.numControls
+    error("\n Check size of descriptions \n")
+  end
+
   n.control::Control = Control() # reset
   for i in 1:n.numControls
     push!(n.control.name,names[i])
-    push!(n.control.description,descriptions[i])
+    if !isempty(descriptions)
+      push!(n.control.description,descriptions[i])
+    end
   end
   return nothing
 end
