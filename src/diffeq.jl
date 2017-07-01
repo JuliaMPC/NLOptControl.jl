@@ -16,16 +16,11 @@ end
 
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 6/11/2017, Last Modified2: 6/29/2017 \n
+Date Create: 6/11/2017, Last Modified2: 6/30/2017 \n
 -------------------------------------------------------------------------------------\n
 """
 function DiffEq(n::NLOpt,x::Array{JuMP.Variable,2},u::Array{JuMP.Variable,2},L::Int64,st::Int64)
-  #expr_array=Array{Any}(L,n.numStates);
   expr=n.DXexpr[st]
-  #@show expr
-  #@show typeof(expr)
-  #@show println(st)
-
   return NLExpr(n,expr,x,u,L)
 end
 """
@@ -45,19 +40,19 @@ function NLExpr(n::NLOpt,expr::Expr,args...)
     u=n.r.u
     L=n.numStatePoints
   else
-    error("\n The length of the args must be either 3 or 0 \n")
+    error("\n The length of the args... must be either 3 or 0 \n")
   end
 
   code=quote
     # rename state variables
-    state=Array{Expr}($L,$n.numStates);
+    state=Array{Expr}($n.numStates);
     for st in 1:$n.numStates
       state[st]=Expr(:(=),$n.state.name[st],$x[:,st])
       eval(state[st])
     end
 
     # rename control variables
-    control=Array{Expr}($L,$n.numControls);
+    control=Array{Expr}($n.numControls);
     for ctr in 1:$n.numControls
       control[ctr]=Expr(:(=),$n.control.name[ctr],$u[:,ctr])
       eval(control[ctr])
