@@ -92,8 +92,8 @@ Date Create: 2/10/2017, Last Modified: 5/29/2017 \n
 function opt2dfs(n;kwargs...)
   kw = Dict(kwargs);
   # check to see if the user is initializing while compensating for control delay
-  if !haskey(kw,:Init); kw_ = Dict(:Init => false); Init = get(kw_,:Init,0);
-  else; Init = get(kw,:Init,0);
+  if !haskey(kw,:Init); Init=false;
+  else; Init=get(kw,:Init,0);
   end
   dfs_opt=DataFrame()
 
