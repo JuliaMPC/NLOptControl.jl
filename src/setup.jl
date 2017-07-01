@@ -66,16 +66,12 @@ function define(;
 end
 
 """
-defineSolver!(n;(:name=>:Ipopt))
-# To debug KNITRO turn up the output level
-# Try to tune KNITRO
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/9/2017, Last Modified: 6/28/2017 \n
+Date Create: 2/9/2017, Last Modified: 7/1/2017 \n
 -------------------------------------------------------------------------------------\n
 """
-function defineSolver!(n::NLOpt;kwargs...)
-  kw=Dict(kwargs);
+function defineSolver!(n::NLOpt,kw)
 
   # get the name of the solver
   if haskey(kw,:name); n.s.solver.name=get(kw,:name,0); end
@@ -180,7 +176,7 @@ end
 OCPdef!(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/14/2017, Last Modified: 6/14/2017 \n
+Date Create: 1/14/2017, Last Modified: 7/1/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function OCPdef!(n::NLOpt)
@@ -280,8 +276,6 @@ function OCPdef!(n::NLOpt)
         dx[:,st]=DiffEq(n,x_int,u_int,L,st);
       end
 
-
-      @show typeof(dx[1,1])
       for st in 1:n.numStates
         if n.s.integrationScheme==:lgrExplicit
           dynamics_expr[int][:,st]=@NLexpression(n.mdl, [j in 1:n.Nck[int]], sum(n.DMatrix[int][j,i]*x_int[i,st] for i in 1:n.Nck[int]+1) - ((n.tf)/2)*dx[j,st]  )
@@ -355,7 +349,7 @@ function configure!(n::NLOpt; kwargs... )
   end
 
   # integrationScheme
-  if !haskey(kw,:integrationScheme); n.s.integrationScheme=:lgrImplicit; # default
+  if !haskey(kw,:integrationScheme); n.s.integrationScheme=:lgrExplicit; # default
   else; n.s.integrationScheme=get(kw,:integrationScheme,0);
   end
 
@@ -410,8 +404,11 @@ function configure!(n::NLOpt; kwargs... )
   n.XL_var=Matrix{Float64}(n.numStates,n.numStatePoints);
   n.XU_var=Matrix{Float64}(n.numStates,n.numStatePoints);
 
-  # default solver
-  defineSolver!(n;name=:Ipopt);
+  # solver settings
+  if !haskey(kw,:solverSettings);SS=Dict((:name=>:Ipopt)); # default
+  else; SS=get(kw,:solverSettings,0); SS=Dict(SS);
+  end
+  defineSolver!(n,SS);
 
   return nothing
 end

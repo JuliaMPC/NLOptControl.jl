@@ -333,7 +333,6 @@ export
        # optimization related functions - utils.jl
        defineTolerances!,
        linearStateTolerances!,
-       defineSolver!,
 
        # data processing  - utils.jl
        newConstraint!,
