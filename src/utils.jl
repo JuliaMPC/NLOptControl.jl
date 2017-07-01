@@ -219,6 +219,9 @@ function states!(n::NLOpt,names;descriptions=[])
   end
   n.state::State = State() # reset
   for i in 1:n.numStates
+    if names[i]==:xxx
+      error("xxx is OFF limits for a state name; please choose something else. \n")
+    end
     push!(n.state.name,names[i])
     if !isempty(descriptions)
         push!(n.state.description,descriptions[i])
@@ -255,6 +258,9 @@ function controls!(n::NLOpt,names;descriptions=[])
 
   n.control::Control = Control() # reset
   for i in 1:n.numControls
+    if names[i]==:uuu
+      error("uuu is OFF limits for a control name; please choose something else. \n")
+    end
     push!(n.control.name,names[i])
     if !isempty(descriptions)
       push!(n.control.description,descriptions[i])
