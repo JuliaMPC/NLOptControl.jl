@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 6/29/2017, Last Modified: 6/29/2017 \n
+Date Create: 6/29/2017, Last Modified: 6/30/2017 \n
 -------------------------------------------------------------------------------------\n
 """
 function dynamics!(n::NLOpt,dx::Array{Expr,1})
@@ -10,7 +10,6 @@ function dynamics!(n::NLOpt,dx::Array{Expr,1})
     error("\n the number of differential equations must equal numStates \n")
   end
   n.DXexpr=dx;
-  n.stateEquations=DiffEq;
   return nothing
 end
 """
@@ -21,11 +20,16 @@ Date Create: 6/11/2017, Last Modified2: 6/29/2017 \n
 -------------------------------------------------------------------------------------\n
 """
 function DiffEq(n::NLOpt,x::Array{JuMP.Variable,2},u::Array{JuMP.Variable,2},L::Int64,st::Int64)
+  #expr_array=Array{Any}(L,n.numStates);
   expr=n.DXexpr[st]
+  #@show expr
+  #@show typeof(expr)
+  #@show println(st)
+
   return NLExpr(n,expr,x,u,L)
 end
 """
-
+# returns an array of @NLexpression()
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 6/29/2017, Last Modified2: 6/30/2017 \n

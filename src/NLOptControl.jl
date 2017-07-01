@@ -204,7 +204,6 @@ end
 abstract type AbstractNLOpt end
 type NLOpt <: AbstractNLOpt
   # general properties
-  stateEquations
   numStates::Int64          # number of states
   state::State              # state data
   numControls::Int64        # number of controls
@@ -266,7 +265,7 @@ end
 
 # Default Constructor
 function NLOpt()
-NLOpt(Any,                # state equations
+NLOpt(
       0,                  # number of states
       State(),            # state data
       0,                  # number of controls

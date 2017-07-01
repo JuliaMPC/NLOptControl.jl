@@ -274,16 +274,14 @@ function OCPdef!(n::NLOpt)
       x_int,u_int=intervals(n,int);
 
       # dynamics
-      if isempty(n.DXexpr)
-        dx=n.stateEquations(n,x_int,u_int);
-      else
-        L=size(x_int)[1]-1;
-        dx=Array{Any}(L,n.numStates)
-        for st in 1:n.numStates
-          dx[:,st]=n.stateEquations(n,x_int,u_int,L,st);
-        end
+      L=size(x_int)[1]-1;
+      dx=Array{Any}(L,n.numStates)
+      for st in 1:n.numStates
+        dx[:,st]=DiffEq(n,x_int,u_int,L,st);
       end
 
+
+      @show typeof(dx[1,1])
       for st in 1:n.numStates
         if n.s.integrationScheme==:lgrExplicit
           dynamics_expr[int][:,st]=@NLexpression(n.mdl, [j in 1:n.Nck[int]], sum(n.DMatrix[int][j,i]*x_int[i,st] for i in 1:n.Nck[int]+1) - ((n.tf)/2)*dx[j,st]  )
@@ -305,15 +303,10 @@ function OCPdef!(n::NLOpt)
     end
     n.dt = n.tf/n.N*ones(n.N,);
 
-    if isempty(n.DXexpr)
-      dx = n.stateEquations(n,n.r.x,n.r.u);
-    else
-      L=size(n.r.x)[1];
-      dx=Array{Any}(L,n.numStates)
-      for st in 1:n.numStates
-        dx[:,st]=n.stateEquations(n,n.r.x,n.r.u,L,st);
-        #dx[:,st]=NLExpr(n,n.DXexpr[st],n.r.x,n.r.u,L); #NOTE  works for :tm methods, but fails for :ps method
-      end
+    L=size(n.r.x)[1];
+    dx=Array{Any}(L,n.numStates)
+    for st in 1:n.numStates
+      dx[:,st]=DiffEq(n,n.r.x,n.r.u,L,st);
     end
 
     if n.s.integrationScheme==:bkwEuler
@@ -362,7 +355,7 @@ function configure!(n::NLOpt; kwargs... )
   end
 
   # integrationScheme
-  if !haskey(kw,:integrationScheme); n.s.integrationScheme=:lgrExplicit; # default
+  if !haskey(kw,:integrationScheme); n.s.integrationScheme=:lgrImplicit; # default
   else; n.s.integrationScheme=get(kw,:integrationScheme,0);
   end
 
