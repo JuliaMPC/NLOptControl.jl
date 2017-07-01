@@ -7,7 +7,17 @@ TODO
 2) configure calls define solver and that calls ocp def, so when you call define solver after configure this might be and issue, may just make it slow because you are calling ocpdef twice
 3) why did it slow down!!? implicit?
 4) start benchmarking so we can see the speed changes on a graph
-5) do not export defineSolver!
+5) look at the time horizon for the MAVs problem!!
+6) add an option for tf max or maybe REDUCE IT AT LEAST!!!!
+7) make a better test for MAVs
+8) using NLExpr are we nesting extra expressions? maybe that is why it is slow?
+9) upper acceleration constraint not met...
+10) maybe there needs to be deepcopy() of NLexpr variables?
+11) maybe it has to do with how the NLP is organized? we moved a bunch of constraints to a new part of the problem...
+12) try to return dx[:,1] =
+13) it is strange that when n.evalConstraints==true the solution can change!
+14) put functions back in for vehicle model and compare the results
+ dynamics do not need to be in expressions, just the tire model for the obj function
 ===================
 # Medium Priority #
 ===================
@@ -17,6 +27,8 @@ TODO
 25) parse_DiffEq works OK except when in module
 26) what does n.s.reset do
 27) show difference in solution for explicit and implicit in Brachistochrone
+28) WARNING: Dual solution not available. Check that the model was properly solved and no integer variables are present.
+don;t try to extract if the solution is not feasible
 
 =================
 # Low Priority #
@@ -39,3 +51,4 @@ try to register functions with JuMP
  newConstraint!(n,FZ_rl_con,:FZ_rl_con);
 33) To debug KNITRO turn up the output level
 34) Try to tune KNITRO
+35) put an example of not reducing tf

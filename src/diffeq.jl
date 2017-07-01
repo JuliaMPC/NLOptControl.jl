@@ -12,8 +12,8 @@ function dynamics!(n::NLOpt,dx::Array{Expr,1})
   n.DXexpr=dx;
   return nothing
 end
-"""
 
+"""
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 6/11/2017, Last Modified2: 6/30/2017 \n
@@ -23,6 +23,7 @@ function DiffEq(n::NLOpt,x::Array{JuMP.Variable,2},u::Array{JuMP.Variable,2},L::
   expr=n.DXexpr[st]
   return NLExpr(n,expr,x,u,L)
 end
+
 """
 # returns an array of @NLexpression()
 --------------------------------------------------------------------------------------\n
@@ -57,7 +58,7 @@ function NLExpr(n::NLOpt,expr::Expr,args...)
       control[ctr]=Expr(:(=),$n.control.name[ctr],$uuu[:,ctr])
       eval(control[ctr])
     end
-
+    
     @NLexpression($n.mdl,[j=1:$L],$expr)
   end
   return eval(code)
