@@ -7,7 +7,7 @@ Date Create: 6/29/2017, Last Modified: 6/30/2017 \n
 """
 function dynamics!(n::NLOpt,dx::Array{Expr,1})
   if length(dx)!=n.numStates
-    error("\n the number of differential equations must equal numStates \n")
+    error("\n The number of differential equations must equal numStates. \n")
   end
   n.DXexpr=dx;
   return nothing
@@ -27,17 +27,17 @@ end
 # returns an array of @NLexpression()
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 6/29/2017, Last Modified2: 6/30/2017 \n
+Date Create: 6/29/2017, Last Modified2: 7/1/2017 \n
 -------------------------------------------------------------------------------------\n
 """
 function NLExpr(n::NLOpt,expr::Expr,args...)
   if length(args)==3
-    x=args[1]
-    u=args[2]
+    xxx=args[1]
+    uuu=args[2]
     L=args[3]
   elseif length(args)==0
-    x=n.r.x
-    u=n.r.u
+    xxx=n.r.x
+    uuu=n.r.u
     L=n.numStatePoints
   else
     error("\n The length of the args... must be either 3 or 0 \n")
@@ -47,14 +47,14 @@ function NLExpr(n::NLOpt,expr::Expr,args...)
     # rename state variables
     state=Array{Expr}($n.numStates);
     for st in 1:$n.numStates
-      state[st]=Expr(:(=),$n.state.name[st],$x[:,st])
+      state[st]=Expr(:(=),$n.state.name[st],$xxx[:,st])
       eval(state[st])
     end
 
     # rename control variables
     control=Array{Expr}($n.numControls);
     for ctr in 1:$n.numControls
-      control[ctr]=Expr(:(=),$n.control.name[ctr],$u[:,ctr])
+      control[ctr]=Expr(:(=),$n.control.name[ctr],$uuu[:,ctr])
       eval(control[ctr])
     end
 
