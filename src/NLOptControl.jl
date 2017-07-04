@@ -258,6 +258,7 @@ type NLOpt <: AbstractNLOpt
   r::Result                     # results
   params                        # parameters for the models
   DXexpr
+  NLcon
 
   # problem state
   define::Bool                  # a bool to tell if define!() has been called
@@ -306,6 +307,7 @@ NLOpt(
       Result(),
       Any[],
       Any[],
+      Any[],
       false);
 end
 
@@ -325,6 +327,7 @@ export
        define,
        configure!,
        dynamics!,
+       constraints!,
        NLExpr,
 
        # math functions

@@ -14,6 +14,8 @@ TODO
 9) upper acceleration constraint not met...
 10) maybe there needs to be deepcopy() of NLexpr variables?
 11) maybe it has to do with how the NLP is organized? we moved a bunch of constraints to a new part of the problem...
+try making an additional function where constraints can be added then putting it into configure so that all of the constraints are added up
+
 12) try to return dx[:,1] =
 13) it is strange that when n.evalConstraints==true the solution can change!
 14) put functions back in for vehicle model and compare the results
@@ -52,3 +54,9 @@ try to register functions with JuMP
 33) To debug KNITRO turn up the output level
 34) Try to tune KNITRO
 35) put an example of not reducing tf
+36) NLcon and NLexpr have very similar code, consider merging
+37) add in   newConstraint!(n,FZ_rl_con,:FZ_rl_con);
+38) think about how to make the n object imutable unless it is modified in NLOPtCOntrol using one of it's functions
+39) consider elliminating the NLexpressions and directly using NLconstraints for dynamics
+40) eventually consider adding parameters so that obstacle avouidance constraints can be added in sequence
+41)  @variable( mdl, 0.00001 <= dt[1:n.N] <= 0.2) #TODO allow for an varaible array of dts
