@@ -330,6 +330,9 @@ export
        constraints!,
        NLExpr,
 
+       # extra functions
+       defineSolver!,
+
        # math functions
        integrate!,
 
@@ -361,7 +364,7 @@ export
        # results
        resultsDir!,  # function to make a results folder
 
-       #JuMP macros
+       #JuMP macros and functions
        @NLexpression,
        @NLobjective,
        @NLparameter,

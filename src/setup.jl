@@ -68,11 +68,10 @@ end
 """
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/9/2017, Last Modified: 7/1/2017 \n
+Date Create: 2/9/2017, Last Modified: 7/04/2017 \n
 -------------------------------------------------------------------------------------\n
 """
 function defineSolver!(n::NLOpt,kw)
-
   # get the name of the solver
   if haskey(kw,:name); n.s.solver.name=get(kw,:name,0); end
   if try_import(n.s.solver.name)
@@ -136,9 +135,7 @@ function defineSolver!(n::NLOpt,kw)
   else
     error(string("solver ",n.s.sover.name, " not defined"))
   end
-  n.mdl=JuMP.Model(solver=NLPsolver)
-
-  OCPdef!(n);   # optimal control problem
+    setsolver(n.mdl,NLPsolver)
   return nothing
 end  # function
 
@@ -245,10 +242,13 @@ function OCPdef!(n::NLOpt)
       end
     end
     if .!isnan.(n.XF[st])
-      if isnan.(n.XF_tol[st])
-        n.r.xf_con=[n.r.xf_con; @constraint(n.mdl, n.r.x[end,st]==n.XF[st])];
+      if any(.!isnan.(n.XF_tol))
+        n.r.x0_con[st,1]=@constraint(n.mdl, n.r.x[end,st] <=  (n.XF[st]+n.XF_tol[st]));
+        n.r.x0_con[st,2]=@constraint(n.mdl,-n.r.x[end,st] <= -(n.XF[st]-n.XF_tol[st]));
+    #  n.r.xf_con=[n.r.xf_con; @constraint(n.mdl, n.r.x[end,st]==n.XF[st])];
       else #TODO fix this as well
-        n.r.xf_con=[n.r.xf_con; @constraint(n.mdl, n.XF[st]-n.XF_tol[st] <= n.r.x[end,st] <= n.XF[st]+n.XF_tol[st])];
+        n.r.xf_con=[n.r.xf_con; @constraint(n.mdl, n.r.x[end,st]==n.XF[st])];
+      #  n.r.xf_con=[n.r.xf_con; @constraint(n.mdl, n.XF[st]-n.XF_tol[st] <= n.r.x[end,st] <= n.XF[st]+n.XF_tol[st])];
       end
     end
   end
@@ -331,7 +331,7 @@ end
 
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/1/2017, Last Modified: 6/14/2017 \n
+Date Create: 1/1/2017, Last Modified: 7/04/2017 \n
 -------------------------------------------------------------------------------------\n
 """
 function configure!(n::NLOpt; kwargs... )
@@ -411,7 +411,9 @@ function configure!(n::NLOpt; kwargs... )
   if !haskey(kw,:solverSettings);SS=Dict((:name=>:Ipopt)); # default
   else; SS=get(kw,:solverSettings,0); SS=Dict(SS);
   end
-  defineSolver!(n,SS);
+  defineSolver!(n,SS)
 
+  # optimal control problem
+  OCPdef!(n);
   return nothing
 end
