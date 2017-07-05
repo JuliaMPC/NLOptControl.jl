@@ -167,7 +167,7 @@ function postProcess!(n;kwargs...)
       n.r.U[:,ctr] = getvalue(n.r.u[:,ctr]);
     end
 
-    if n.s.evalConstraints
+    if n.s.evalConstraints && n.r.status==:Optimal  # note may want to remove this && 
       evalConstraints!(n);
     end
 
