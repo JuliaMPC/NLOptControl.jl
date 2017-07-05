@@ -225,15 +225,20 @@ function OCPdef!(n::NLOpt)
   end
 
   # boundary constraints
-  n.r.xf_con=[]; # currently modifying the final state constraint (with tolerance) is not needed, can easily ad this functionlity though
-  if any(.!isnan.(n.X0_tol))           # create handles for constraining the entire initial state
+  if any(.!isnan.(n.X0_tol))              # create handles for constraining the entire initial state
     n.r.x0_con=Array{Any}(n.numStates,2); # this is so they can be easily reference when doing MPC
   else
     n.r.x0_con=[];
   end
 
+  if any(.!isnan.(n.XF_tol))              # create handles for constraining the entire final state
+    n.r.xf_con=Array{Any}(n.numStates,2); # this is so they can be easily reference when doing MPC
+  else
+    n.r.xf_con=[];
+  end
+
   for st in 1:n.numStates
-    if .!isnan.(n.X0[st]) # could have a bool for this
+    if !isnan(n.X0[st]) # could have a bool for this
       if any(.!isnan.(n.X0_tol)) #NOTE in JuMP: Modifying range constraints is currently unsupported.
         n.r.x0_con[st,1]=@constraint(n.mdl, n.r.x[1,st] <=  (n.X0[st]+n.X0_tol[st]));
         n.r.x0_con[st,2]=@constraint(n.mdl,-n.r.x[1,st] <= -(n.X0[st]-n.X0_tol[st]));
@@ -241,14 +246,12 @@ function OCPdef!(n::NLOpt)
         n.r.x0_con=[n.r.x0_con; @constraint(n.mdl, n.r.x[1,st]==n.X0[st])]
       end
     end
-    if .!isnan.(n.XF[st])
+    if !isnan(n.XF[st])
       if any(.!isnan.(n.XF_tol))
-        n.r.x0_con[st,1]=@constraint(n.mdl, n.r.x[end,st] <=  (n.XF[st]+n.XF_tol[st]));
-        n.r.x0_con[st,2]=@constraint(n.mdl,-n.r.x[end,st] <= -(n.XF[st]-n.XF_tol[st]));
-    #  n.r.xf_con=[n.r.xf_con; @constraint(n.mdl, n.r.x[end,st]==n.XF[st])];
-      else #TODO fix this as well
+        n.r.xf_con[st,1]=@constraint(n.mdl, n.r.x[end,st] <=  (n.XF[st]+n.XF_tol[st]));
+        n.r.xf_con[st,2]=@constraint(n.mdl,-n.r.x[end,st] <= -(n.XF[st]-n.XF_tol[st]));
+      else
         n.r.xf_con=[n.r.xf_con; @constraint(n.mdl, n.r.x[end,st]==n.XF[st])];
-      #  n.r.xf_con=[n.r.xf_con; @constraint(n.mdl, n.XF[st]-n.XF_tol[st] <= n.r.x[end,st] <= n.XF[st]+n.XF_tol[st])];
       end
     end
   end

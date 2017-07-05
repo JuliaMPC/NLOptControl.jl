@@ -167,7 +167,7 @@ function postProcess!(n;kwargs...)
       n.r.U[:,ctr] = getvalue(n.r.u[:,ctr]);
     end
 
-    if n.s.evalConstraints && n.r.status==:Optimal  # note may want to remove this && 
+    if n.s.evalConstraints#&& n.r.status==:Optimal  # note may want to remove this &&
       evalConstraints!(n);
     end
 
@@ -254,7 +254,11 @@ function evalConstraints!(n)
         dfs=Vector{DataFrame}(S[1]);
         con=DataFrame(step=1);
         for idx in 1:S[1]
-          dfs[idx] = DataFrame(step=1:S[2];Dict(n.r.constraint.name[i] => getdual(n.r.constraint.handle[i][idx,:]))...);
+          try
+            dfs[idx] = DataFrame(step=1:S[2];Dict(n.r.constraint.name[i] => getdual(n.r.constraint.handle[i][idx,:]))...);
+          catch
+            dfs[idx] = DataFrame(step=1:S[2];Dict(n.r.constraint.name[i] => NaN)...); # fix for case where all of the states are not being constrainted, but some are within some XF_tol
+          end
           if idx==1; con=dfs[idx]; else; con=join(con,dfs[idx],on=:step); end
         end
         l=S[1]*S[2];

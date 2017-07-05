@@ -3,6 +3,7 @@ isdefined(Base, :__precompile__) && __precompile__()
 module NLOptControl
 
 using JuMP
+import JuMP.setRHS
 using Ipopt # temp fix for 0.6
 using FastGaussQuadrature
 using DataFrames
@@ -369,5 +370,6 @@ export
        @NLobjective,
        @NLparameter,
        @NLconstraint,
-       setvalue
+       setvalue,
+       setRHS
 end # module

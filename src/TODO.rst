@@ -15,11 +15,11 @@ TODO
 10) maybe there needs to be deepcopy() of NLexpr variables?
 11) maybe it has to do with how the NLP is organized? we moved a bunch of constraints to a new part of the problem...
 try making an additional function where constraints can be added then putting it into configure so that all of the constraints are added up
-
 12) try to return dx[:,1] =
 13) it is strange that when n.evalConstraints==true the solution can change!
 14) put functions back in for vehicle model and compare the results
  dynamics do not need to be in expressions, just the tire model for the obj function
+15) NaN or -Inf and Inf?
 ===================
 # Medium Priority #
 ===================
@@ -31,6 +31,8 @@ try making an additional function where constraints can be added then putting it
 27) show difference in solution for explicit and implicit in Brachistochrone
 28) WARNING: Dual solution not available. Check that the model was properly solved and no integer variables are present.
 don;t try to extract if the solution is not feasible
+29) add a test for constraints!()
+30) why does the problem solve so poorly using setsolver?
 
 =================
 # Low Priority #
@@ -58,5 +60,10 @@ try to register functions with JuMP
 37) add in   newConstraint!(n,FZ_rl_con,:FZ_rl_con);
 38) think about how to make the n object imutable unless it is modified in NLOPtCOntrol using one of it's functions
 39) consider elliminating the NLexpressions and directly using NLconstraints for dynamics
-40) eventually consider adding parameters so that obstacle avouidance constraints can be added in sequence
+40) eventually consider adding parameters so that obstacle avoidance constraints can be added in sequence
 41)  @variable( mdl, 0.00001 <= dt[1:n.N] <= 0.2) #TODO allow for an varaible array of dts
+41) put this warning in newConstraint
+         error("\n For now, the constraints cannot be in this form: \n
+        con=@NLconstraint(mdl,n.r.u[1,1]==param); \n
+        Write it in array form: \n
+          con=@NLconstraint(mdl,[i=1],n.r.u[i,1]==param); \n")
