@@ -20,6 +20,7 @@ try making an additional function where constraints can be added then putting it
 14) put functions back in for vehicle model and compare the results
  dynamics do not need to be in expressions, just the tire model for the obj function
 15) NaN or -Inf and Inf?
+
 ===================
 # Medium Priority #
 ===================
