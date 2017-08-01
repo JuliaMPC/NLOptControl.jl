@@ -34,6 +34,8 @@ try making an additional function where constraints can be added then putting it
 don;t try to extract if the solution is not feasible
 29) add a test for constraints!()
 30) why does the problem solve so poorly using setsolver?
+31)   if try_import(n.s.solver.name)  #seems broklen
+32) OCP can reverse time, albiet very slightly..
 
 =================
 # Low Priority #
@@ -68,3 +70,5 @@ try to register functions with JuMP
         con=@NLconstraint(mdl,n.r.u[1,1]==param); \n
         Write it in array form: \n
           con=@NLconstraint(mdl,[i=1],n.r.u[i,1]==param); \n")
+41) #TODO consider making references so that the user does not have to be too careful about the key names, useful when switching between KNITRO and IPOPT
+#  solver_time = (c.m.solver==:Ipopt) ? :max_cpu_time : :maxtime_real

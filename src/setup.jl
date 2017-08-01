@@ -74,7 +74,7 @@ Date Create: 2/9/2017, Last Modified: 7/04/2017 \n
 function defineSolver!(n::NLOpt,kw)
   # get the name of the solver
   if haskey(kw,:name); n.s.solver.name=get(kw,:name,0); end
-  if try_import(n.s.solver.name)
+  if try_import(n.s.solver.name)  #seems broklen
   else error(string("\n could not import ",n.s.solver.name,"\n consider adding it with: \n Pkg.add(``",n.s.solver.name,``")") )
   end
 
@@ -95,12 +95,12 @@ function defineSolver!(n::NLOpt,kw)
     if haskey(n.s.solver.settings,key)
       n.s.solver.settings[key]=value
     elseif key!=:name && key!=:mpc_defaults # ignore the name and default settings option TODO could remove them from the Dict
-      error(string("Unknown key: ", kw, " for ", n.s.solver.name))
+      error(string(" \n Unknown key: ", kw, " for ", n.s.solver.name, " used in defineSolver!() \n "))
     end
   end
 
   if n.s.solver.name==:Ipopt
-    NLPsolver=Ipopt.IpoptSolver(max_cpu_time=n.s.solver.settings[:max_cpu_time],
+    NLPsolver=Ipopt.IpoptSolver(;max_cpu_time=n.s.solver.settings[:max_cpu_time],
                                print_level=n.s.solver.settings[:print_level],
                                warm_start_init_point=n.s.solver.settings[:warm_start_init_point],
                                max_iter=n.s.solver.settings[:max_iter],
@@ -115,7 +115,7 @@ function defineSolver!(n::NLOpt,kw)
                                acceptable_obj_change_tol=n.s.solver.settings[:acceptable_obj_change_tol],
                                diverging_iterates_tol=n.s.solver.settings[:diverging_iterates_tol])
   elseif n.s.solver.name==:KNITRO
-    NLPsolver=KNITRO.KnitroSolver(outlev=n.s.solver.settings[:outlev],
+    NLPsolver=KNITRO.KnitroSolver(;outlev=n.s.solver.settings[:outlev],
                                    maxit=n.s.solver.settings[:maxit],
                                    maxtime_real=n.s.solver.settings[:maxtime_real],
                                    infeastol=n.s.solver.settings[:infeastol],
@@ -131,6 +131,7 @@ function defineSolver!(n::NLOpt,kw)
                                    bar_switchrule=n.s.solver.settings[:bar_switchrule],
                                    linesearch=n.s.solver.settings[:linesearch],
                                    linsolver=n.s.solver.settings[:linsolver])
+
 
   else
     error(string("solver ",n.s.sover.name, " not defined"))

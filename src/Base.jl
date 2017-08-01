@@ -202,10 +202,10 @@ function optimize!(n;Iter::Int64=0)
     n.r.status=status;
     n.r.t_solve=t2-t1;
     n.r.obj_val=getobjectivevalue(n.mdl);
-    n.r.iter_nums=Iter; # possible iteration number for a higher level algorithm
+    n.r.iter_nums=Iter;    # possible iteration number for a higher level algorithm
     n.r.eval_num=n.r.eval_num+1;
+    postProcess!(n);      # temporarily save data
   end
-  postProcess!(n);      # temporarily save data
   return nothing
 end
 

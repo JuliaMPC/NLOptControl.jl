@@ -157,7 +157,7 @@ Result( Vector{Any}[], # time vector for control
         nothing,       # handle for final state constraints
         nothing,       # dynamics constraint
         Constraint(),  # constraint data
-        0,             # number of times optimization has been run
+        1,             # current evaluation number
         [],            # mics. data, perhaps an iteration number for a higher level algorithm
         Symbol,        # optimization status
         Float64,       # solve time for optimization
@@ -371,5 +371,6 @@ export
        @NLparameter,
        @NLconstraint,
        setvalue,
+       getvalue,
        setRHS
 end # module
