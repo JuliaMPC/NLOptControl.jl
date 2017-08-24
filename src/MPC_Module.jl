@@ -188,7 +188,7 @@ function predictX0!(n)
     # based off of "current X0". Even though we may have the next X0 we should not (i.e.look at @show length(n.mpc.X0)). It is because it is a simulation (in reality they would be running in parallel)
     sol=simModel(n,n.mpc.X0[n.r.eval_num],n.r.t_ctr+n.mpc.t0,n.r.U,n.mpc.t0,n.mpc.t0+t0p)
     n.mpc.X0p=sol(n.mpc.t0+t0p)[:];
-  else # TODO combine this with driveStraight!()
+  else # using this with driveStraight!()
     n.mpc.X0p = n.X0  # NOTE assuming the vehicle did not move
   end
 
@@ -212,6 +212,7 @@ function driveStraight!(n;t0::Float64=n.mpc.t0,tf::Float64=n.mpc.tf)
 
   # update the inital time for the optimization
   #setvalue(n.mpc.t0_param,copy(tf));
+  mpcUpdate!(n)
 
   return nothing
 end
