@@ -336,6 +336,35 @@ function savePlantData!(n)
   return nothing
 end
 
+"""
+------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 9/14/2017, Last Modified: 9/14/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+
+function saveBenchMarkData!(n)
+  dfs=DataFrame();
+  temp = [n.r.dfs_plant[jj][:t][1:end-1,:] for jj in 1:length(n.r.dfs_plant)]; # time
+  U=[idx for tempM in temp for idx=tempM]; dfs[:t]=U;
+
+  for st in 1:n.numStates # state
+    temp = [n.r.dfs_plant[jj][n.state.name[st]][1:end-1,:] for jj in 1:length(n.r.dfs_plant)];
+    U=[idx for tempM in temp for idx=tempM];
+    dfs[n.state.name[st]]=U;
+  end
+
+  for ctr in 1:n.numControls # control
+    temp = [n.r.dfs_plant[jj][n.control.name[ctr]][1:end-1,:] for jj in 1:length(n.r.dfs_plant)];
+    U=[idx for tempM in temp for idx=tempM];
+    dfs[n.control.name[ctr]]=U;
+  end
+  cd(n.r.results_dir)
+    writetable("plant_data.csv",dfs);
+  cd(n.r.main_dir)
+  return nothing
+end
+
 
 """
 # maximum(x->maximum(x[:A]), dfs) -> consider
@@ -373,10 +402,9 @@ function maxDF(dfs,varb)
 end
 
 
-# credit JuMP.jl
 function try_import(name::Symbol)
  try
-      @eval import $name
+      @eval using $name
       return true
   catch e
       return false

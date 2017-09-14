@@ -1,4 +1,3 @@
-
 """
 n=define(;numControls=1,X0=[0.,1],XF=[0.,-1.],XL=[0.,-Inf],XU=[1/9,Inf],CL=[-Inf],CU=[Inf])
 --------------------------------------------------------------------------------------\n
@@ -72,9 +71,10 @@ Date Create: 2/9/2017, Last Modified: 7/04/2017 \n
 -------------------------------------------------------------------------------------\n
 """
 function defineSolver!(n::NLOpt,kw)
+
   # get the name of the solver
   if haskey(kw,:name); n.s.solver.name=get(kw,:name,0); end
-  if try_import(n.s.solver.name)  #seems broklen
+  if try_import(n.s.solver.name)
   else error(string("\n could not import ",n.s.solver.name,"\n consider adding it with: \n Pkg.add(``",n.s.solver.name,``")") )
   end
 
@@ -88,6 +88,14 @@ function defineSolver!(n::NLOpt,kw)
     else
       error(string("solver ",n.s.sover.name, " not defined"))
     end
+  else # default solver settings
+    if n.s.solver.name==:Ipopt  # NOTE this should already have been done by default, but could get messed up is user is playing with options
+      n.s.solver.settings=_Ipopt_defaults;
+    elseif n.s.solver.name==:KNITRO
+      n.s.solver.settings=_KNITRO_defaults;
+    else
+      error(string("solver ", n.s.sover.name, " not defined"))
+    end
   end
 
   # modify additional defaults individually
@@ -100,7 +108,7 @@ function defineSolver!(n::NLOpt,kw)
   end
 
   if n.s.solver.name==:Ipopt
-    NLPsolver=Ipopt.IpoptSolver(;max_cpu_time=n.s.solver.settings[:max_cpu_time],
+    setsolver(n.mdl,Ipopt.IpoptSolver(;max_cpu_time=n.s.solver.settings[:max_cpu_time],
                                print_level=n.s.solver.settings[:print_level],
                                warm_start_init_point=n.s.solver.settings[:warm_start_init_point],
                                max_iter=n.s.solver.settings[:max_iter],
@@ -113,30 +121,27 @@ function defineSolver!(n::NLOpt,kw)
                                acceptable_dual_inf_tol=n.s.solver.settings[:acceptable_dual_inf_tol],
                                acceptable_compl_inf_tol=n.s.solver.settings[:acceptable_compl_inf_tol],
                                acceptable_obj_change_tol=n.s.solver.settings[:acceptable_obj_change_tol],
-                               diverging_iterates_tol=n.s.solver.settings[:diverging_iterates_tol])
+                               diverging_iterates_tol=n.s.solver.settings[:diverging_iterates_tol]))
   elseif n.s.solver.name==:KNITRO
-    NLPsolver=KNITRO.KnitroSolver(;outlev=n.s.solver.settings[:outlev],
-                                   maxit=n.s.solver.settings[:maxit],
-                                   maxtime_real=n.s.solver.settings[:maxtime_real],
-                                   infeastol=n.s.solver.settings[:infeastol],
-                                   feastol=n.s.solver.settings[:feastol],
-                                   feastol_abs=n.s.solver.settings[:feastol_abs],
-                                   opttol=n.s.solver.settings[:opttol],
-                                   opttol_abs=n.s.solver.settings[:opttol_abs],
-                                   algorithm=n.s.solver.settings[:algorithm],
-                                   bar_initpt=n.s.solver.settings[:bar_initpt],
-                                   bar_murule=n.s.solver.settings[:bar_murule],
-                                   bar_penaltycons=n.s.solver.settings[:bar_penaltycons],
-                                   bar_penaltyrule=n.s.solver.settings[:bar_penaltyrule],
-                                   bar_switchrule=n.s.solver.settings[:bar_switchrule],
-                                   linesearch=n.s.solver.settings[:linesearch],
-                                   linsolver=n.s.solver.settings[:linsolver])
-
-
+    setsolver(n.mdl,KnitroSolver(;outlev=n.s.solver.settings[:outlev],
+                                 maxit=n.s.solver.settings[:maxit],
+                                 maxtime_real=n.s.solver.settings[:maxtime_real],
+                                 infeastol=n.s.solver.settings[:infeastol],
+                                 feastol=n.s.solver.settings[:feastol],
+                                 feastol_abs=n.s.solver.settings[:feastol_abs],
+                                 opttol=n.s.solver.settings[:opttol],
+                                 opttol_abs=n.s.solver.settings[:opttol_abs],
+                                 algorithm=n.s.solver.settings[:algorithm],
+                                 bar_initpt=n.s.solver.settings[:bar_initpt],
+                                 bar_murule=n.s.solver.settings[:bar_murule],
+                                 bar_penaltycons=n.s.solver.settings[:bar_penaltycons],
+                                 bar_penaltyrule=n.s.solver.settings[:bar_penaltyrule],
+                                 bar_switchrule=n.s.solver.settings[:bar_switchrule],
+                                 linesearch=n.s.solver.settings[:linesearch],
+                                 linsolver=n.s.solver.settings[:linsolver]))
   else
     error(string("solver ",n.s.sover.name, " not defined"))
   end
-    setsolver(n.mdl,NLPsolver)
   return nothing
 end  # function
 

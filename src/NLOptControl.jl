@@ -4,7 +4,8 @@ module NLOptControl
 
 using JuMP
 import JuMP.setRHS
-using Ipopt # temp fix for 0.6
+using Ipopt  # temp fix for 0.6
+using KNITRO # temp fix for 0.6
 using FastGaussQuadrature
 using DataFrames
 using Ranges
@@ -18,6 +19,7 @@ using .MPC_Module
 ################################################################################
 # Constants
 ################################################################################
+
 const _Ipopt_defaults=Dict(
    :print_level                =>0,
    :warm_start_init_point      =>"yes",
@@ -34,6 +36,7 @@ const _Ipopt_defaults=Dict(
    :acceptable_obj_change_tol  =>1e20,
    :diverging_iterates_tol     =>1e20
 )
+
 const _Ipopt_MPC=Dict(
    :print_level                =>0,
    :warm_start_init_point      =>"yes",
@@ -50,7 +53,25 @@ const _Ipopt_MPC=Dict(
    :acceptable_obj_change_tol  =>1e20,
    :diverging_iterates_tol     =>1e20
 )
-# TODO list KNITRO defaults
+
+const _KNITRO_defaults=Dict(
+  :outlev                       =>1,
+  :maxit                        =>0,
+  :maxtime_real                 =>1.0e8,
+  :infeastol                    =>1.0e-8,
+  :feastol                      =>1.0e-6,
+  :feastol_abs                  =>1e-3,
+  :opttol                       =>1.0e-6,
+  :opttol_abs                   =>1.0e-3,
+  :algorithm                    =>0,
+  :bar_initpt                   =>0,
+  :bar_murule                   =>0,
+  :bar_penaltycons              =>0,
+  :bar_penaltyrule              =>0,
+  :bar_switchrule               =>0,
+  :linesearch                   =>0,
+  :linsolver                    =>0
+)
 
 const _KNITRO_MPC=Dict(
   :outlev                       =>0,
