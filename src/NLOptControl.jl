@@ -151,6 +151,9 @@ type Result
   t_polyPts                   # time sample points for polynomials
   X_polyPts                   # state evaluated using Lagrange polynomial
   U_polyPts                   # control evaluated using Lagrane polynomial
+  t_pts                       # vector time sample points for polynomials
+  X_pts                       # vector state evaluated using Lagrange polynomial
+  U_pts                       # vector control evaluated using Lagrane polynomial
   x0_con                      # handle for intial state constraints
   xf_con                      # handle for final state constraints
   dyn_con                     # dynamics constraints
@@ -176,9 +179,12 @@ Result( Vector{Any}[], # time vector for control
         Matrix{Any}[], # JuMP controls
         Matrix{Any}[], # states
         Matrix{Any}[], # controls
-        Matrix{Any}[], # time sample points for polynomials
-        Matrix{Any}[], # state evaluated using Lagrange polynomial
-        Matrix{Any}[], # control evaluated using Lagrane polynomial
+        [],            # time sample points for polynomials
+        [],            # state evaluated using Lagrange polynomial
+        [],            # control evaluated using Lagrane polynomial
+        Vector{Any}[], # vector time sample points for polynomials
+        Vector{Any}[], # vector state evaluated using Lagrange polynomial
+        Vector{Any}[], # vector control evaluated using Lagrane polynomial
         nothing,       # handle for intial state constraints
         nothing,       # handle for final state constraints
         nothing,       # dynamics constraint
@@ -349,7 +355,7 @@ export
        evalConstraints!,
        postProcess!,
        optimize!,
-       
+
        # setup functions
        define,
        configure!,

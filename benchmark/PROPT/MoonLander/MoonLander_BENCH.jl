@@ -1,5 +1,4 @@
 using NLOptControl,DataFrames,Interpolations,Plots
-pyplot()
 
 const v0 = -2
 const h0 = 10
@@ -31,7 +30,6 @@ end
 scatter(t_opt,h_opt,label="h_opt")
 scatter!(t_opt,v_opt,label="v_opt")
 scatter!(t_opt,u_opt,label="u_opt")
-
 
 # save the optimal solution for plotting and PROPT benchmark
 dfs = DataFrame()
@@ -89,10 +87,10 @@ for num in 1:opt_num
     # temporararily save results from this run
     t_solve[j] = n.r.t_solve
 
-    # create splines  TODO extract data from polynomials
-    h_sp = interpolate((n.r.t_st,),n.r.X[:,1],Gridded(Linear()))
-    v_sp = interpolate((n.r.t_st,),n.r.X[:,2],Gridded(Linear()))
-    u_sp = interpolate((n.r.t_ctr,),n.r.U[:,1],Gridded(Linear()))
+    # create splines TODO modify so :tm methods work here
+    h_sp = interpolate((n.r.t_pts,),n.r.X_pts[:,1],Gridded(Linear()))
+    v_sp = interpolate((n.r.t_pts,),n.r.X_pts[:,2],Gridded(Linear()))
+    u_sp = interpolate((n.r.t_pts,),n.r.U_pts[:,1],Gridded(Linear()))
 
     h = zeros(pts); v = zeros(pts); u = zeros(pts);
     for i in 1:pts

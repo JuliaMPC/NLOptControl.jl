@@ -132,15 +132,14 @@ function intervals(n,int,x,u)
 end
 
 """
-# part of postProcess!()
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Created: 9/19/2017, Last Modified: 9/19/2017 \n
+Date Created: 9/19/2017, Last Modified: 9/20/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function interpolateLagrange(n; numPts::Int64=100)
+function interpolateLagrange(n; numPts::Int64=250)
   tf = getvalue(n.tf)
-  numPts = 100
+
   # sample points
   n.r.t_polyPts = [linspace(tf/n.Ni*(int-1),tf/n.Ni*int,numPts) for int in 1:n.Ni]
   n.r.X_polyPts = [[zeros(numPts) for int in 1:n.Ni] for st in 1:n.numStates]
@@ -167,7 +166,24 @@ function interpolateLagrange(n; numPts::Int64=100)
 
   end
 
-  nothing
+  # extract result into vectors
+  temp = [n.r.t_polyPts[int][1:end-1] for int in 1:n.Ni]; # time
+  n.r.t_pts = [idx for tempM in temp for idx=tempM];
+  totalPts = length(n.r.t_pts);
+
+  n.r.X_pts = Matrix{Float64}(totalPts, n.numStates)
+  for st in 1:n.numStates # states
+    temp = [n.r.X_polyPts[st][int][1:end-1,:] for int in 1:n.Ni];
+    n.r.X_pts[:,st] = [idx for tempM in temp for idx=tempM];
+  end
+
+  n.r.U_pts = Matrix{Float64}(totalPts, n.numControls)
+  for ctr in 1:n.numControls # controls
+    temp = [n.r.U_polyPts[ctr][int][1:end-1,:] for int in 1:n.Ni];
+    n.r.U_pts[:,ctr] = [idx for tempM in temp for idx=tempM];
+  end
+
+  return nothing
 end
 
 """
