@@ -68,7 +68,7 @@ function create_tV!(n::NLOpt)
       # go through each mesh interval creating time intervals; [t(i-1),t(i)] --> [-1,1]
       ts = [Array{Any}(n.Nck[int]+1,) for int in 1:n.Ni];
       for int in 1:n.Ni
-        ts[int][1:end-1]=@NLexpression(n.mdl,[j=1:n.Nck[int]], (tm[int+1]-tm[int])/2*n.τ[int][j] +  (tm[int+1]+tm[int])/2);
+        ts[int][1:end-1]=@NLexpression(n.mdl,[j=1:n.Nck[int]], (tm[int+1]-tm[int])/2*n.tau[int][j] +  (tm[int+1]+tm[int])/2);
         ts[int][end]=@NLexpression(n.mdl, n.tf/n.Ni*int) # append +1 at end of each interval
       end
       tt1 = [idx for tempM in ts for idx = tempM[1:end-1]];
@@ -96,18 +96,18 @@ end
 obj=integrate!(n,:(u1))
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/2/2017, Last Modified: 6/29/2017 \n
+Date Create: 1/2/2017, Last Modified: 9/18/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function integrate!(n::NLOpt,V::Expr)
   if n.s.integrationMethod==:ps
     integral_expr=[Array{Any}(n.Nck[int]) for int in 1:n.Ni];
     for int in 1:n.Ni
-      x_int,u_int=intervals(n,int);
+      x_int,u_int=intervals(n,int,n.r.x,n.r.u);
       L=size(x_int)[1]-1;
       integral_expr[int][:]=NLExpr(n,V,x_int,u_int,L)
     end
-    @NLexpression(n.mdl, temp[int=1:n.Ni], (n.tf-n.t0)/2*sum(n.ωₛ[int][j]*integral_expr[int][j] for j = 1:n.Nck[int]) );
+    @NLexpression(n.mdl, temp[int=1:n.Ni], (n.tf-n.t0)/2*sum(n.ws[int][j]*integral_expr[int][j] for j = 1:n.Nck[int]) );
     expression=@NLexpression(n.mdl, sum(temp[int] for int = 1:n.Ni));
   elseif n.s.integrationMethod==:tm
     L=size(n.r.x)[1];
@@ -339,28 +339,33 @@ end
 """
 ------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 9/14/2017, Last Modified: 9/14/2017 \n
+Date Create: 9/14/2017, Last Modified: 9/19/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-
-function saveBenchMarkData!(n)
+function saveBenchMarkData!(n;filename::String="bench_data",first::Int64=2)
+  first=2
   dfs=DataFrame();
-  temp = [n.r.dfs_plant[jj][:t][1:end-1,:] for jj in 1:length(n.r.dfs_plant)]; # time
+  temp = [n.r.dfs[jj][:t][1:end-1,:] for jj in first:length(n.r.dfs)]; # time
   U=[idx for tempM in temp for idx=tempM]; dfs[:t]=U;
 
   for st in 1:n.numStates # state
-    temp = [n.r.dfs_plant[jj][n.state.name[st]][1:end-1,:] for jj in 1:length(n.r.dfs_plant)];
+    temp = [n.r.dfs[jj][n.state.name[st]][1:end-1,:] for jj in first:length(n.r.dfs)];
     U=[idx for tempM in temp for idx=tempM];
     dfs[n.state.name[st]]=U;
   end
 
   for ctr in 1:n.numControls # control
-    temp = [n.r.dfs_plant[jj][n.control.name[ctr]][1:end-1,:] for jj in 1:length(n.r.dfs_plant)];
+    temp = [n.r.dfs[jj][n.control.name[ctr]][1:end-1,:] for jj in first:length(n.r.dfs)];
     U=[idx for tempM in temp for idx=tempM];
     dfs[n.control.name[ctr]]=U;
   end
+
+  # save optimization times
+  temp = [n.r.dfs_opt[jj][n.control.name[ctr]][1:end-1,:] for jj in first:length(n.r.dfs)];
+
+
   cd(n.r.results_dir)
-    writetable("plant_data.csv",dfs);
+    writetable(string(filename,".csv"),dfs);
   cd(n.r.main_dir)
   return nothing
 end

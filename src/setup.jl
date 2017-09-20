@@ -146,36 +146,6 @@ function defineSolver!(n::NLOpt,kw)
 end  # function
 
 """
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 6/29/2017, Last Modified: 6/29/2017 \n
---------------------------------------------------------------------------------------\n
-"""
-function intervals(n,int)
-
-  # states
-  x_int=Array{JuMP.Variable}(length(n.Nck_full[int]+1:n.Nck_full[int+1]),n.numStates);
-  for st in 1:n.numStates # +1 adds the DV in the next interval
-    x_int[:,st]=n.r.x[n.Nck_cum[int]+1:n.Nck_cum[int+1]+1,st];
-  end
-
-  # controls
-  if int!=n.Ni
-    u_int=Array{JuMP.Variable}(length(n.Nck_full[int]+1:n.Nck_full[int+1]),n.numControls);
-  else                    # -1 -> removing control in last mesh interval
-    u_int=Array{JuMP.Variable}(length(n.Nck_full[int]+1:n.Nck_full[int+1]-1),n.numControls);
-  end
-  for ctr in 1:n.numControls
-    if int!=n.Ni          # +1 adds the DV in the next interval
-      u_int[:,ctr]=n.r.u[n.Nck_cum[int]+1:n.Nck_cum[int+1]+1,ctr];
-    else
-      u_int[:,ctr]=n.r.u[n.Nck_cum[int]+1:n.Nck_cum[int+1],ctr];
-    end
-  end
-
-  return x_int,u_int
-end
-"""
 OCPdef!(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
@@ -276,7 +246,7 @@ function OCPdef!(n::NLOpt)
     end
 
     for int in 1:n.Ni
-      x_int,u_int=intervals(n,int);
+      x_int,u_int=intervals(n,int,n.r.x,n.r.u);
 
       # dynamics
       L=size(x_int)[1]-1;
@@ -396,8 +366,8 @@ function configure!(n::NLOpt; kwargs... )
     if n.s.integrationScheme==:lgrExplicit ||  n.s.integrationScheme==:lgrImplicit
       taus_and_weights = [gaussradau(n.Nck[int]) for int in 1:n.Ni];
     end
-    n.τ=[taus_and_weights[int][1] for int in 1:n.Ni];
-    n.ω=[taus_and_weights[int][2] for int in 1:n.Ni];
+    n.tau=[taus_and_weights[int][1] for int in 1:n.Ni];
+    n.w=[taus_and_weights[int][2] for int in 1:n.Ni];
     createIntervals!(n);
     DMatrix!(n);
 

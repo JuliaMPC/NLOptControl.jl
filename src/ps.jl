@@ -52,7 +52,7 @@ function DMatrix!(n::NLOpt, kwargs...)         #TODO make IMatrix and option
     for int in 1:n.Ni
         for idx in 1:n.Nck[int]+1
             for j in 1:n.Nck[int]
-                f = lagrange_basis_poly(tf, test[int], n.Nck[int], idx)
+                f = lagrange_basis_poly(tf, test[int], idx)
                 Dsym[int][j,idx] = diff(f,tf) # symbolic differentiation --> slow but useful TODO include this in test functions
                 n.DMatrix[int][j,idx] = Dsym[int][j,idx](tf=>test[int][j])
             end
@@ -63,43 +63,46 @@ function DMatrix!(n::NLOpt, kwargs...)         #TODO make IMatrix and option
 end
 
 """
-scale_w(ω,x₀,xₙ)
+scale_w(w,ta,tb)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 12/23/2017, Last Modified: 12/25/2016 \n
+Date Create: 12/23/2017, Last Modified: 9/18/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function scale_w(ω,x₀,xₙ)
-  (xₙ - x₀)/2*ω;
+function scale_w(w,ta,tb)
+  (tb - ta)/2*w
 end
 
 """
 n = create_intervals(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 12/23/2017, Last Modified: 1/25/2017 \n
+Date Create: 12/23/2017, Last Modified: 9/18/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function createIntervals!(n::NLOpt)
     tm = Ranges.linspace(-1,1,n.Ni+1)     # create mesh points
-    di = 2/n.Ni;                   # interval size
+    di = 2/n.Ni                           # interval size
     # go through each mesh interval creating time intervals; map [tm[i-1],tm[i]] --> [-1,1]
-    n.ts=[[scale_tau(n.τ[int],tm[int],tm[int+1]);di*int-1] for int in 1:n.Ni];
-    n.ωₛ=[scale_w(n.ω[int],tm[int],tm[int+1]) for int in 1:n.Ni];
+    n.ts = [[scale_tau(n.tau[int],tm[int],tm[int+1]);di*int-1] for int in 1:n.Ni]
+    n.ws = [scale_w(n.w[int],tm[int],tm[int+1]) for int in 1:n.Ni]
     nothing
 end
 
+
+# NOTE this function was used for testing, but is currently depreciated. When it is used again figure out why and explain why
+# di = (tf + 1).n.Ni
 function createIntervals!(n::NLOpt, tf)
-    tm = Ranges.linspace(-1,1,n.Ni+1)     # create mesh points
-    di = (tf+1)/n.Ni;              # interval size
+    tm = Ranges.linspace(-1,1,n.Ni+1)       # create mesh points
+    di = (tf + 1)/n.Ni                      # interval size
     # go through each mesh interval creating time intervals; map [tm[i-1],tm[i]] --> [-1,1]
-    n.ts=[[scale_tau(n.τ[int],tm[int],tm[int+1]);di*int-1] for int in 1:n.Ni];
-    n.ωₛ=[scale_w(n.ω[int],tm[int],tm[int+1]) for int in 1:n.Ni];
+    n.ts = [[scale_tau(n.tau[int],tm[int],tm[int+1]);di*int-1] for int in 1:n.Ni]
+    n.ws = [scale_w(n.w[int],tm[int],tm[int+1]) for int in 1:n.Ni]
     nothing
 end
 
 """
-L = lagrange_basis_poly(x,x_data,Nc,j)
+L = lagrange_basis_poly!(x,x_data,L)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 12/26/2016, Last Modified: 1/25/2016
@@ -108,37 +111,6 @@ Citations: This function was influenced by the lagrange() function [located here
 # Input Arguments
 * `x`: point to approximate function value at
 * `x_data`: x data to used calculate basis polynomials
-* `Nc`: order of Lagrange interpolating polynomial
-* `j`: index of interest
-
-# Output Arguments
-* `L`: Lagrange basis polynomials
-
-A basic description of Lagrange interpolating polynomials is provided [here](http://127.0.0.1:8000/lagrange_poly.html#lagrange-poly)
-
-"""
-function lagrange_basis_poly(x,x_data,Nc,j)
-    L = 1;
-    for idx in 1:Nc+1 # use all of the data
-      if idx!=j
-        L = L*(x - x_data[idx])/(x_data[j]-x_data[idx]);
-      end
-    end
-  return L
-end
-
-
-"""
-L = lagrange_basis_poly!(x,x_data,Nc,L)
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 12/26/2016, Last Modified: 1/25/2016
-Citations: This function was influenced by the lagrange() function [located here](https://github.com/pjabardo/Jacobi.jl/blob/master/src/gauss_quad.jl)
---------------------------------------------------------------------------------------\n
-# Input Arguments
-* `x`: point to approximate function value at
-* `x_data`: x data to used calculate basis polynomials
-* `Nc`: order of Lagrange interpolating polynomial
 * `L`: array of interest
 
 # Output Arguments
@@ -146,11 +118,10 @@ Citations: This function was influenced by the lagrange() function [located here
 
 A basic description of Lagrange interpolating polynomials is provided [here](http://127.0.0.1:8000/lagrange_poly.html#lagrange-poly)
 
+# TODO get ride of Nc and replace it with Nck[int]
 """
-function lagrange_basis_poly!{T<:Number}(x::AbstractArray{T},x_data,Nc,L::AbstractArray{T})
-   if Nc > length(x_data) -1
-      error("Maximum Nc value = length(x_data)-1")
-    end
+function lagrange_basis_poly!{T<:Number}(x::AbstractArray{T},x_data,L::AbstractArray{T})
+    Nc = length(x_data) - 1
     ns = length(x);
     L = zeros(Float64,Nc+1,ns);
     for idx in 1:Nc+1
@@ -161,40 +132,6 @@ function lagrange_basis_poly!{T<:Number}(x::AbstractArray{T},x_data,Nc,L::Abstra
     return L
 end
 lagrange_basis_poly{T<:Number}(x::AbstractArray{T},x_data,Nc) = lagrange_basis_poly!(x::AbstractArray{T},x_data,Nc,zeros(x))
-
-"""
-y=interpolate_lagrange(ts[int],ts[int],stateMatrix[int][:,st],Nck[int])
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Created: 1/2/2017, Last Modified: 1/9/2017 \n
---------------------------------------------------------------------------------------\n
-"""
-function interpolate_lagrange{T<:Number}(x::AbstractArray{T},x_data,y_data,Nc)
-    if Nc > length(x_data) -1
-      error("\n Maximum Nc value = length(x_data)-1 \n")
-    end
-    if length(x_data)!=length(y_data)
-        error(string("\n",
-                      "-------------------------------------------------------", "\n",
-                      "There is an error with the data vector lengths!!", "\n",
-                      "-------------------------------------------------------", "\n",
-                      "The following variables should be equal:", "\n",
-                      "length(x_data) = ",length(x_data),"\n",
-                      "length(y_data) = ",length(y_data),"\n"
-                      )
-              )
-      end
-    ns = length(x);
-    L = zeros(Float64,Nc+1,ns);
-    x = x[:]; x_data = x_data[:]; y_data = y_data[:]; # make sure data is in a column
-    for idx in 1:Nc+1
-      for j in 1:ns
-        L[idx,j] = lagrange_basis_poly(x[j],x_data,Nc,idx);
-      end
-    end
-    y = y_data'*L;
-    return y
-end
 
 """
 D = polyDiff(x);

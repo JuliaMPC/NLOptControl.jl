@@ -13,17 +13,172 @@ export
   postProcess!,
   optimize!,
   scale_tau,
-  try_import
+  try_import,
+  intervals
 
 """
-scale_tau(τ,x₀,xₙ)
+L = lagrange_basis_poly(x,x_data,Nc,j)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 12/23/2017, Last Modified: 12/25/2016 \n
+Date Create: 12/26/2016, Last Modified: 1/25/2016
+Citations: This function was influenced by the lagrange() function [located here](https://github.com/pjabardo/Jacobi.jl/blob/master/src/gauss_quad.jl)
+--------------------------------------------------------------------------------------\n
+# Input Arguments
+* `x`: point to approximate function value at
+* `x_data`: x data to used calculate basis polynomials
+* `Nc`: order of Lagrange interpolating polynomial
+* `j`: index of interest
+
+# Output Arguments
+* `L`: Lagrange basis polynomials
+
+A basic description of Lagrange interpolating polynomials is provided [here](http://127.0.0.1:8000/lagrange_poly.html#lagrange-poly)
+
+"""
+function lagrange_basis_poly(x,x_data,Nc,j)
+    L = 1;
+    for idx in 1:Nc+1 # use all of the data
+      if idx!=j
+        L = L*(x - x_data[idx])/(x_data[j]-x_data[idx]);
+      end
+    end
+  return L
+end
+
+"""
+y=interpolate_lagrange(ts[int],ts[int],stateMatrix[int][:,st])
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Created: 1/2/2017, Last Modified: 9/19/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function scale_tau(τ,x₀,xₙ)
-  (xₙ - x₀)/2*τ + (xₙ + x₀)/2;
+function interpolate_lagrange{T<:Number}(x::AbstractArray{T},x_data,y_data)
+  Nc = length(x_data) - 1
+
+  if length(x_data)!=length(y_data)
+      error(string("\n",
+                    "-------------------------------------------------------", "\n",
+                    "There is an error with the data vector lengths!!", "\n",
+                    "-------------------------------------------------------", "\n",
+                    "The following variables should be equal:", "\n",
+                    "length(x_data) = ",length(x_data),"\n",
+                    "length(y_data) = ",length(y_data),"\n"
+                    )
+            )
+    end
+    ns = length(x);
+    L = zeros(Float64,Nc+1,ns);
+    x = x[:]; x_data = x_data[:]; y_data = y_data[:]; # make sure data is in a column
+    for idx in 1:Nc+1
+      for j in 1:ns
+        L[idx,j] = lagrange_basis_poly(x[j],x_data,Nc,idx);
+      end
+    end
+    y = y_data'*L;
+    return y
+end
+
+"""
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 6/29/2017, Last Modified: 9/20/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+function intervals(n,int,x,u)
+
+  if typeof(x[1,1]) == JuMP.Variable
+    # states
+    x_int=Array{JuMP.Variable}(length(n.Nck_full[int]+1:n.Nck_full[int+1]),n.numStates);
+    for st in 1:n.numStates # +1 adds the DV in the next interval
+      x_int[:,st] = x[n.Nck_cum[int]+1:n.Nck_cum[int+1]+1,st];
+    end
+
+    # controls
+    if int!=n.Ni
+      u_int=Array{JuMP.Variable}(length(n.Nck_full[int]+1:n.Nck_full[int+1]),n.numControls);
+    else                    # -1 -> removing control in last mesh interval
+      u_int=Array{JuMP.Variable}(length(n.Nck_full[int]+1:n.Nck_full[int+1]-1),n.numControls);
+    end
+    for ctr in 1:n.numControls
+      if int!=n.Ni          # +1 adds the DV in the next interval
+        u_int[:,ctr] = u[n.Nck_cum[int]+1:n.Nck_cum[int+1]+1,ctr];
+      else
+        u_int[:,ctr] = u[n.Nck_cum[int]+1:n.Nck_cum[int+1],ctr];
+      end
+    end
+  else
+    # states
+    x_int=Array{Any}(length(n.Nck_full[int]+1:n.Nck_full[int+1]),n.numStates);
+    for st in 1:n.numStates # +1 adds the DV in the next interval
+      x_int[:,st] = x[n.Nck_cum[int]+1:n.Nck_cum[int+1]+1,st];
+    end
+
+    # controls
+    if int!=n.Ni
+      u_int=Array{Any}(length(n.Nck_full[int]+1:n.Nck_full[int+1]),n.numControls);
+    else                    # -1 -> removing control in last mesh interval
+      u_int=Array{Any}(length(n.Nck_full[int]+1:n.Nck_full[int+1]-1),n.numControls);
+    end
+    for ctr in 1:n.numControls
+      if int!=n.Ni          # +1 adds the DV in the next interval
+        u_int[:,ctr] = u[n.Nck_cum[int]+1:n.Nck_cum[int+1]+1,ctr];
+      else
+        u_int[:,ctr] = u[n.Nck_cum[int]+1:n.Nck_cum[int+1],ctr];
+      end
+    end
+  end
+
+  return x_int,u_int
+end
+
+"""
+# part of postProcess!()
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Created: 9/19/2017, Last Modified: 9/19/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+function interpolateLagrange(n; numPts::Int64=100)
+  tf = getvalue(n.tf)
+  numPts = 100
+  # sample points
+  n.r.t_polyPts = [linspace(tf/n.Ni*(int-1),tf/n.Ni*int,numPts) for int in 1:n.Ni]
+  n.r.X_polyPts = [[zeros(numPts) for int in 1:n.Ni] for st in 1:n.numStates]
+  n.r.U_polyPts = [[zeros(numPts) for int in 1:n.Ni] for ctr in 1:n.numControls]
+
+  # time data points
+  t_st_int = [n.r.t_st[n.Nck_cum[int]+1:n.Nck_cum[int+1]+1] for int in 1:n.Ni]
+  t_ctr_int = [n.r.t_ctr[n.Nck_cum[int]+1:n.Nck_cum[int+1]+1] for int in 1:n.Ni-1]
+  t_ctr_int = push!(t_ctr_int, n.r.t_st[n.Nck_cum[n.Ni]+1:n.Nck_cum[n.Ni+1]]) # -1 -> removing control in last mesh interval
+
+  for int in 1:n.Ni
+
+    # controls and states for this interval
+    x_int, u_int = intervals(n, int, copy(n.r.X), n.r.U)
+
+    # sample polynomial in interval at n.r.t_polyPts
+    for st in 1:n.numStates
+      n.r.X_polyPts[st][int] = interpolate_lagrange(n.r.t_polyPts[int], t_st_int[int], x_int[:,st])'
+    end
+
+    for ctr in 1:n.numControls
+      n.r.U_polyPts[ctr][int] = interpolate_lagrange(n.r.t_polyPts[int], t_ctr_int[int], u_int[:,ctr])'
+    end
+
+  end
+
+  nothing
+end
+
+"""
+scale_tau(tau,ta,tb)
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 12/23/2017, Last Modified: 9/18/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+function scale_tau(tau,ta,tb)
+  (tb - ta)/2*tau + (ta + tb)/2;
 end
 
 """
@@ -175,6 +330,7 @@ function postProcess!(n;kwargs...)
       push!(n.r.dfs,dvs2dfs(n));
       push!(n.r.dfs_con,con2dfs(n));
       push!(n.r.dfs_opt,opt2dfs(n));
+      interpolateLagrange(n)
     end
   elseif n.s.save  # no optimization run -> somtimes you drive straight to get started
     push!(n.r.dfs,nothing);
@@ -272,5 +428,7 @@ function evalConstraints!(n)
   end
   return nothing
 end
+
+
 
 end # module

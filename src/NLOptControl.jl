@@ -4,8 +4,8 @@ module NLOptControl
 
 using JuMP
 import JuMP.setRHS
-using Ipopt  # temp fix for 0.6
-using KNITRO # temp fix for 0.6
+using Ipopt  # temp fix for julia 0.6
+using KNITRO # temp fix for julia 0.6
 using FastGaussQuadrature
 using DataFrames
 using Ranges
@@ -107,7 +107,6 @@ end
 
 # ############################# state  ##########################################
 type State
-  # constants
   name::Vector{Any}
   description::Vector{Any}
 end
@@ -149,6 +148,9 @@ type Result
   u                           # JuMP controls
   X                           # states
   U                           # controls
+  t_polyPts                   # time sample points for polynomials
+  X_polyPts                   # state evaluated using Lagrange polynomial
+  U_polyPts                   # control evaluated using Lagrane polynomial
   x0_con                      # handle for intial state constraints
   xf_con                      # handle for final state constraints
   dyn_con                     # dynamics constraints
@@ -174,6 +176,9 @@ Result( Vector{Any}[], # time vector for control
         Matrix{Any}[], # JuMP controls
         Matrix{Any}[], # states
         Matrix{Any}[], # controls
+        Matrix{Any}[], # time sample points for polynomials
+        Matrix{Any}[], # state evaluated using Lagrange polynomial
+        Matrix{Any}[], # control evaluated using Lagrane polynomial
         nothing,       # handle for intial state constraints
         nothing,       # handle for final state constraints
         nothing,       # dynamics constraint
@@ -205,7 +210,7 @@ type Settings   # options
   tf_max::Any                   # maximum final time
 end
 
-# Default Constructor NOTE currently not using these, they get overriden
+# Default Constructor NOTE currently not using these, they get overwritten
 function Settings()
         Settings(
          Solver(),           # default solver
@@ -262,10 +267,10 @@ type NLOpt <: AbstractNLOpt
   Nck_cum::Array{Int64,1}       # cumulative number of points per interval
   Nck_full::Array{Int64,1}      # [0;cumsum(n.Nck+1)]
   Ni::Int64                     # number of intervals
-  τ::Array{Array{Float64,1},1}  # Node points ---> Nc increasing and distinct numbers ∈ [-1,1]
-  ts::Array{Array{Float64,1},1} # time scaled based off of τ
-  ω::Array{Array{Float64,1},1}  # weights
-  ωₛ::Array{Array{Any,1},1}     # scaled weights
+  tau::Array{Array{Float64,1},1}  # Node points ---> Nc increasing and distinct numbers ∈ [-1,1]
+  ts::Array{Array{Float64,1},1} # time scaled based off of tau
+  w::Array{Array{Float64,1},1}  # weights
+  ws::Array{Array{Any,1},1}     # scaled weights
   DMatrix::Array{Array{Any,2},1}# differention matrix
   IMatrix::Array{Array{Any,2},1}# integration matrix
 
@@ -315,7 +320,7 @@ NLOpt(
       Int[],              # Nck_cum
       Int[],              # Nck_full
       0,                  # number of intervals
-      Vector{Float64}[],  # τ
+      Vector{Float64}[],  # tau
       Vector{Any}[],      # ts
       Vector{Float64}[],  # weights
       Vector{Any}[],      # scaled weights
@@ -344,7 +349,7 @@ export
        evalConstraints!,
        postProcess!,
        optimize!,
-
+       
        # setup functions
        define,
        configure!,
