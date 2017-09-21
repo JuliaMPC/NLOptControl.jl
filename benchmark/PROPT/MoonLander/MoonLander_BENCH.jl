@@ -1,10 +1,10 @@
 using NLOptControl,DataFrames,Interpolations,Plots
-
+pyplots()
 const v0 = -2
 const h0 = 10
 const ts = 1.4154
 const tf_opt = 4.1641
-const pts = 100
+const pts = 50
 
 # actual optimal solution
 function optimal_solution(t)
@@ -37,9 +37,11 @@ dfs[:t] = t_opt; dfs[:h] = h_opt; dfs[:v] = v_opt; dfs[:u] = u_opt;
 writetable("optimal_solution.csv",dfs)
 
 # define optimization in julia
-opt_runs = 10
-Nck_vec = [[60]]
-opt_num = length(Nck_vec)
+opt_runs = 2
+
+col_pts = 100
+Nck_vec = [[2+i] for i in 1:col_pts]
+#opt_num = length(Nck_vec)
 
 # final average results
 t_opt_ave = zeros(opt_num)
@@ -54,8 +56,8 @@ h_error = zeros(opt_runs)
 v_error = zeros(opt_runs)
 u_error = zeros(opt_runs)
 max_error = zeros(opt_runs)
-n=0;
-for num in 1:opt_num
+#n=0;
+for num in 1:col_pts
   Nck = Nck_vec[num]
 
   n=define(numStates=2,numControls=1,X0=[h0,v0],XF=[0.,0.],XL=[-20,-20],XU=[20,20],CL=[0.],CU=[3.]);
@@ -112,9 +114,10 @@ for num in 1:opt_num
   max_error_ave[num] = mean(max_error)
 end
 
-plot(h_error)
-plot!(v_error)
-plot!(u_error)
+c_pts = 2:1:col_pts+1
+
+plot(c_pts,log.(max_error_ave))
+plot(c_pts,t_opt_ave)
 
 # optimize for a graph comparison
 

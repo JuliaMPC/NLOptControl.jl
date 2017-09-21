@@ -3,7 +3,7 @@ isdefined(Base, :__precompile__) && __precompile__()
 module NLOptControl
 
 using JuMP
-import JuMP.setRHS
+import JuMP.setRHS, JuMP.getvalue, JuMP.setvalue, JuMP.@NLexpression, JuMP.@NLobjective, JuMP.@NLparameter, JuMP.@NLconstraint
 using Ipopt  # temp fix for julia 0.6
 using KNITRO # temp fix for julia 0.6
 using FastGaussQuadrature

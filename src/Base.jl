@@ -134,11 +134,16 @@ end
 """
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Created: 9/19/2017, Last Modified: 9/20/2017 \n
+Date Created: 9/19/2017, Last Modified: 9/21/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function interpolateLagrange(n; numPts::Int64=250)
-  tf = getvalue(n.tf)
+function interpolateLagrange!(n; numPts::Int64=250)
+
+  if n.s.finalTimeDV
+    tf = getvalue(n.tf)
+  else n.s.finalTimeDV
+    tf = n.tf
+  end
 
   # sample points
   n.r.t_polyPts = [linspace(tf/n.Ni*(int-1),tf/n.Ni*int,numPts) for int in 1:n.Ni]
@@ -346,7 +351,9 @@ function postProcess!(n;kwargs...)
       push!(n.r.dfs,dvs2dfs(n));
       push!(n.r.dfs_con,con2dfs(n));
       push!(n.r.dfs_opt,opt2dfs(n));
-      interpolateLagrange(n)
+      if n.s.integrationMethod==:ps
+        interpolateLagrange!(n)
+      end
     end
   elseif n.s.save  # no optimization run -> somtimes you drive straight to get started
     push!(n.r.dfs,nothing);
