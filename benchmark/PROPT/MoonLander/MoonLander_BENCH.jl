@@ -1,10 +1,10 @@
-using NLOptControl,DataFrames,Interpolations,Plots
-pyplots()
+using NLOptControl,DataFrames,Interpolations
+using Plots
 const v0 = -2
 const h0 = 10
 const ts = 1.4154
 const tf_opt = 4.1641
-const pts = 50
+const pts = 100
 
 # actual optimal solution
 function optimal_solution(t)
@@ -41,7 +41,7 @@ opt_runs = 2
 
 col_pts = 100
 Nck_vec = [[2+i] for i in 1:col_pts]
-#opt_num = length(Nck_vec)
+opt_num = length(Nck_vec)
 
 # final average results
 t_opt_ave = zeros(opt_num)
@@ -103,21 +103,22 @@ for num in 1:col_pts
 
     h_error[j] = maximum(abs.(h - h_opt))
     v_error[j] = maximum(abs.(v - v_opt))
-    u_error[j] = maximum(abs.(u - u_opt))
-    max_error[j] = maximum([h_error[j], v_error[j], u_error[j]])
+#    u_error[j] = maximum(abs.(u - u_opt))
+    max_error[j] = maximum([h_error[j], v_error[j]])
   end
 
   t_opt_ave[num] = mean(t_solve)
   h_error_ave[num] = mean(h_error)
   v_error_ave[num] = mean(v_error)
-  u_error_ave[num] = mean(u_error)
+#  u_error_ave[num] = mean(u_error)
   max_error_ave[num] = mean(max_error)
 end
 
 c_pts = 2:1:col_pts+1
 
-plot(c_pts,log.(max_error_ave))
-plot(c_pts,t_opt_ave)
+h1 = plot(c_pts,log.(max_error_ave))
+h2 = plot(c_pts,t_opt_ave)
+plot(h1,h2)
 
 # optimize for a graph comparison
 
