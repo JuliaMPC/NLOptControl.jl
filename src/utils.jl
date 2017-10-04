@@ -330,11 +330,42 @@ function savePlantData!(n)
     U=[idx for tempM in temp for idx=tempM];
     dfs[n.control.name[ctr]]=U;
   end
+
   cd(n.r.results_dir)
     writetable("plant_data.csv",dfs);
   cd(n.r.main_dir)
   return nothing
 end
+
+
+"""
+# TODO save costate data, polynomial data
+------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 10/3/2017, Last Modified: 10/3/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+
+function saveData(n)
+  # all polynomial data
+  dfs=DataFrame();
+
+  dfs[:t] = n.r.t_pts
+  for st in 1:n.numStates # state
+    dfs[n.state.name[st]]=n.r.X_pts[:,st];
+  end
+
+  for ctr in 1:n.numControls # control
+    dfs[n.control.name[ctr]]=n.r.U_pts[:,ctr];
+  end
+
+  cd(n.r.results_dir)
+    writetable("st_ctr.csv",n.r.dfs[end]); # assuming only want the last one is needed
+    writetable("st_ctr_poly.csv",dfs);
+  cd(n.r.main_dir)
+  return nothing
+end
+
 
 """
 ------------------------------------------------------------------\n
@@ -342,7 +373,7 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 9/14/2017, Last Modified: 9/19/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function saveBenchMarkData!(n;filename::String="bench_data",first::Int64=2)
+function saveBenchMarkData!(n)
   first=2
   dfs=DataFrame();
   temp = [n.r.dfs[jj][:t][1:end-1,:] for jj in first:length(n.r.dfs)]; # time
@@ -365,7 +396,7 @@ function saveBenchMarkData!(n;filename::String="bench_data",first::Int64=2)
 
 
   cd(n.r.results_dir)
-    writetable(string(filename,".csv"),dfs);
+    writetable("bench_data.csv",dfs);
   cd(n.r.main_dir)
   return nothing
 end

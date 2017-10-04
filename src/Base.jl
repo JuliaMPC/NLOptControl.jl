@@ -14,7 +14,8 @@ export
   optimize!,
   scale_tau,
   try_import,
-  intervals
+  intervals,
+  interpolateLagrange!
 
 """
 L = lagrange_basis_poly(x,x_data,Nc,j)

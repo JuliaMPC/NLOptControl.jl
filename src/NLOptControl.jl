@@ -157,7 +157,7 @@ type Result
   x0_con                      # handle for intial state constraints
   xf_con                      # handle for final state constraints
   dyn_con                     # dynamics constraints
-  constraint::Constraint      # constraint handels and data
+  constraint::Constraint      # constraint handles and data
   eval_num                    # number of times optimization has been run
   iter_nums                   # mics. data, perhaps an iteration number for a higher level algorithm
   status                      # optimization status
@@ -351,10 +351,11 @@ include("ps.jl");
 include("diffeq.jl")
 
 export
-       # Base functions
+       # Base functions  TODO make a costate function and hamiltonian function
        evalConstraints!,
        postProcess!,
        optimize!,
+       interpolateLagrange!,
 
        # setup functions
        define,
@@ -381,6 +382,7 @@ export
        minDF,
        maxDF,
        savePlantData!,
+       saveData,
 
        # MPC_Module.jl
        autonomousControl!,
