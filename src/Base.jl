@@ -3,6 +3,7 @@ module Base
 using JuMP
 using Ranges
 using DataFrames
+using Interpolations
 
 # These functions are required for MPC_Module.jl
 export
@@ -15,7 +16,8 @@ export
   scale_tau,
   try_import,
   intervals,
-  interpolateLagrange!
+  interpolateLagrange!,
+  interpolateLinear!
 
 """
 L = lagrange_basis_poly(x,x_data,Nc,j)
@@ -173,25 +175,55 @@ function interpolateLagrange!(n; numPts::Int64=250)
   end
 
   # extract result into vectors
-  temp = [n.r.t_polyPts[int][1:end-1] for int in 1:n.Ni]; # time
+  temp = [n.r.t_polyPts[int][1:end] for int in 1:n.Ni]; # time
   n.r.t_pts = [idx for tempM in temp for idx=tempM];
   totalPts = length(n.r.t_pts);
 
   n.r.X_pts = Matrix{Float64}(totalPts, n.numStates)
   for st in 1:n.numStates # states
-    temp = [n.r.X_polyPts[st][int][1:end-1,:] for int in 1:n.Ni];
+    temp = [n.r.X_polyPts[st][int][1:end,:] for int in 1:n.Ni];
     n.r.X_pts[:,st] = [idx for tempM in temp for idx=tempM];
   end
 
   n.r.U_pts = Matrix{Float64}(totalPts, n.numControls)
   for ctr in 1:n.numControls # controls
-    temp = [n.r.U_polyPts[ctr][int][1:end-1,:] for int in 1:n.Ni];
+    temp = [n.r.U_polyPts[ctr][int][1:end,:] for int in 1:n.Ni];
     n.r.U_pts[:,ctr] = [idx for tempM in temp for idx=tempM];
   end
 
   return nothing
 end
 
+"""
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Created: 10/4/2017, Last Modified: 10/4/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+function interpolateLinear!(n; numPts::Int64=250)
+  if n.s.finalTimeDV
+    tf = getvalue(n.tf)
+  else n.s.finalTimeDV
+    tf = n.tf
+  end
+
+  # sample points
+  n.r.t_pts = linspace(0,tf,numPts)
+  n.r.X_pts = Matrix{Float64}(numPts, n.numStates)
+  n.r.U_pts = Matrix{Float64}(numPts, n.numControls)
+
+  knots = (n.r.t_st,)
+  for st in 1:n.numStates
+    sp_st = interpolate(knots,n.r.X[:,st],Gridded(Linear()))
+    n.r.X_pts[:,st] = sp_st[n.r.t_pts]
+  end
+
+  for ctr in 1:n.numControls
+    sp_ctr = interpolate(knots,n.r.U[:,ctr],Gridded(Linear()))
+    n.r.U_pts[:,ctr] = sp_ctr[n.r.t_pts]
+  end
+  return nothing
+end
 """
 scale_tau(tau,ta,tb)
 --------------------------------------------------------------------------------------\n
@@ -354,6 +386,8 @@ function postProcess!(n;kwargs...)
       push!(n.r.dfs_opt,opt2dfs(n));
       if n.s.integrationMethod==:ps
         interpolateLagrange!(n)
+      else
+        interpolateLinear!(n)
       end
     end
   elseif n.s.save  # no optimization run -> somtimes you drive straight to get started
@@ -365,7 +399,6 @@ function postProcess!(n;kwargs...)
   end
   return nothing
 end
-
 
 """
 optimize!(n)

@@ -356,6 +356,7 @@ export
        postProcess!,
        optimize!,
        interpolateLagrange!,
+       interpolateLinear!,
 
        # setup functions
        define,
