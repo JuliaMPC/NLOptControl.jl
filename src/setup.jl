@@ -310,7 +310,7 @@ end
 
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/1/2017, Last Modified: 7/04/2017 \n
+Date Create: 1/1/2017, Last Modified: 11/10/2017 \n
 -------------------------------------------------------------------------------------\n
 """
 function configure!(n::NLOpt; kwargs... )
@@ -395,10 +395,11 @@ function configure!(n::NLOpt; kwargs... )
   # optimal control problem
   OCPdef!(n);
 
-  # TODO get internal MathProgBase model
-  #if n.s.evalCostates && n.s.integrationMethod == :ps
-  #  n.mpb = JuMP.internalmodel(n.mdl)
-  #end
-
+  if n.s.evalCostates
+     if n.s.integrationMethod != :ps
+       error("costates are only implmented for :ps methods")
+     end
+     n.s.evalConstraints = true
+  end
   return nothing
 end

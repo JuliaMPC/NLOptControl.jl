@@ -201,7 +201,13 @@ function interpolateLagrange!(n; numPts::Int64=250)
     n.r.U_pts[:,ctr] = [idx for tempM in temp for idx=tempM];
   end
 
-  #TODO consider adding in vector for CS
+  if n.s.evalCostates && n.s.evalConstraints
+    n.r.CS_pts = Matrix{Float64}(totalPts, n.numStates)
+    for st in 1:n.numStates # states
+      temp = [n.r.CS_polyPts[st][int][1:end,:] for int in 1:n.Ni];
+      n.r.CS_pts[:,st] = [idx for tempM in temp for idx=tempM];
+    end
+  end
 
   return nothing
 end
@@ -280,25 +286,38 @@ end
 """
 dvs2dfs(n)
 
-# funtionality to save state and control data from optimization
+# funtionality to save state, costate, and control data from optimization
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/10/2017, Last Modified: 5/28/2017 \n
+Date Create: 2/10/2017, Last Modified: 11/10/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function dvs2dfs(n)
   dfs=DataFrame()
   dfs[:t]=n.r.t_st + n.mpc.t0;
-  for i in 1:n.numStates
-    dfs[n.state.name[i]]=n.r.X[:,i];
+  for st in 1:n.numStates
+    dfs[n.state.name[st]]=n.r.X[:,st];
   end
-  for i in 1:n.numControls
+  for ctr in 1:n.numControls
     if n.s.integrationMethod==:tm
-      dfs[n.control.name[i]]=n.r.U[:,i];
+      dfs[n.control.name[ctr]]=n.r.U[:,ctr];
     else
-      dfs[n.control.name[i]]=[n.r.U[:,i];NaN];
+      dfs[n.control.name[ctr]]=[n.r.U[:,ctr];NaN];
     end
   end
+
+  if n.s.evalCostates && n.s.integrationMethod == :ps && n.s.evalConstraints
+    CS_vector = Matrix{Float64}(n.numStatePoints, n.numStates)
+    for st in 1:n.numStates # states
+      temp = [n.r.CS[st][int][1:end,:] for int in 1:n.Ni];
+      CS_vector[1:end-1,st] = [idx for tempM in temp for idx=tempM];
+      CS_vector[end,st] = NaN;
+    end
+    for st in 1:n.numStates # states
+      dfs[Symbol(n.state.name[st],:_cs)]=CS_vector[:,st];
+    end
+  end
+
   return dfs
 end
 

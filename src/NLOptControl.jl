@@ -156,6 +156,7 @@ type Result
   t_pts                       # vector time sample points for polynomials
   X_pts                       # vector state evaluated using Lagrange polynomial
   U_pts                       # vector control evaluated using Lagrane polynomial
+  CS_pts                      # vector costate evaluated using Lagrange polynomial
   x0_con                      # handle for intial state constraints
   xf_con                      # handle for final state constraints
   dyn_con                     # dynamics constraints
@@ -189,6 +190,7 @@ Result( Vector{Any}[], # time vector for control
         Vector{Any}[], # vector time sample points for polynomials
         Vector{Any}[], # vector state evaluated using Lagrange polynomial
         Vector{Any}[], # vector control evaluated using Lagrane polynomial
+        Vector{Any}[], # vector costate evaluated using Lagrange polynomial
         nothing,       # handle for intial state constraints
         nothing,       # handle for final state constraints
         nothing,       # dynamics constraint
@@ -232,7 +234,7 @@ function Settings()
          true,               # bool for saving data
          false,              # bool for reseting data
          false,              # bool for evaluating duals of the constraints
-         true,               # bool for evaluating costates
+         false,              # bool for evaluating costates
          400.0               # maximum final time
                 );
 end

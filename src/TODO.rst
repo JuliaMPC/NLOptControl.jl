@@ -5,7 +5,7 @@ TODO
 ==================
 1) check if variable are getting overwritten!
 2) configure calls define solver and that calls ocp def, so when you call define solver after configure this might be and issue, may just make it slow because you are calling ocpdef twice
-3) why did it slow down!!? implicit?
+3) why did it slow down!!? implicit?  -->>> THE COSTATES are INCORRECT!! for now do not use it!!
 4) start benchmarking so we can see the speed changes on a graph
 5) look at the time horizon for the MAVs problem!!
 6) add an option for tf max or maybe REDUCE IT AT LEAST!!!!

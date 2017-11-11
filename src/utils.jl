@@ -339,10 +339,9 @@ end
 
 
 """
-# TODO save costate data, polynomial data
 ------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 10/3/2017, Last Modified: 10/3/2017 \n
+Date Create: 10/3/2017, Last Modified: 11/11/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 
@@ -357,6 +356,12 @@ function saveData(n)
 
   for ctr in 1:n.numControls # control
     dfs[n.control.name[ctr]]=n.r.U_pts[:,ctr];
+  end
+
+  if n.s.evalCostates && n.s.integrationMethod == :ps && n.s.evalConstraints
+    for st in 1:n.numStates # state
+      dfs[Symbol(n.state.name[1],:_cs)]=n.r.CS_pts[:,st];
+    end
   end
 
   cd(n.r.results_dir)
