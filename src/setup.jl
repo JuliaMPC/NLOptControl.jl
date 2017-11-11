@@ -394,5 +394,11 @@ function configure!(n::NLOpt; kwargs... )
 
   # optimal control problem
   OCPdef!(n);
+
+  # TODO get internal MathProgBase model
+  #if n.s.evalCostates && n.s.integrationMethod == :ps
+  #  n.mpb = JuMP.internalmodel(n.mdl)
+  #end
+
   return nothing
 end

@@ -1,9 +1,12 @@
 module Base
 
 using JuMP
+import JuMP.internalmodel
 using Ranges
 using DataFrames
 using Interpolations
+using MathProgBase
+import MathProgBase.getconstrduals
 
 # These functions are required for MPC_Module.jl
 export
@@ -152,6 +155,7 @@ function interpolateLagrange!(n; numPts::Int64=250)
   n.r.t_polyPts = [linspace(tf/n.Ni*(int-1),tf/n.Ni*int,numPts) for int in 1:n.Ni]
   n.r.X_polyPts = [[zeros(numPts) for int in 1:n.Ni] for st in 1:n.numStates]
   n.r.U_polyPts = [[zeros(numPts) for int in 1:n.Ni] for ctr in 1:n.numControls]
+  if n.s.evalCostates; n.r.CS_polyPts = [[zeros(numPts) for int in 1:n.Ni] for st in 1:n.numStates] end
 
   # time data points
   t_st_int = [n.r.t_st[n.Nck_cum[int]+1:n.Nck_cum[int+1]+1] for int in 1:n.Ni]
@@ -172,6 +176,12 @@ function interpolateLagrange!(n; numPts::Int64=250)
       n.r.U_polyPts[ctr][int] = interpolate_lagrange(n.r.t_polyPts[int], t_ctr_int[int], u_int[:,ctr])'
     end
 
+    # sample polynomial in interval at n.r.t_polyPts NOTE costate is missing the last point, that is the t_st_int[int][1:end-1]
+    if n.s.evalCostates && n.s.evalConstraints
+      for st in 1:n.numStates
+        n.r.CS_polyPts[st][int] = interpolate_lagrange(n.r.t_polyPts[int], t_st_int[int][1:end-1], n.r.CS[st][int])'
+      end
+    end
   end
 
   # extract result into vectors
@@ -190,6 +200,8 @@ function interpolateLagrange!(n; numPts::Int64=250)
     temp = [n.r.U_polyPts[ctr][int][1:end,:] for int in 1:n.Ni];
     n.r.U_pts[:,ctr] = [idx for tempM in temp for idx=tempM];
   end
+
+  #TODO consider adding in vector for CS
 
   return nothing
 end
@@ -361,29 +373,56 @@ function postProcess!(n;kwargs...)
 
     elseif n.s.integrationMethod==:tm
       if n.s.finalTimeDV
-        n.r.t_ctr=append!([n.t0],cumsum(getvalue(n.dt)));
+        n.r.t_ctr = append!([n.t0],cumsum(getvalue(n.dt)))
       else
-        n.r.t_ctr=append!([n.t0],cumsum(n.dt));
+        n.r.t_ctr = append!([n.t0],cumsum(n.dt))
       end
-      n.r.t_st = n.r.t_ctr;
+      n.r.t_st = n.r.t_ctr
     end
-    n.r.X=zeros(Float64,n.numStatePoints,n.numStates);
-    n.r.U=zeros(Float64,n.numControlPoints,n.numControls);
+    n.r.X = zeros(Float64,n.numStatePoints,n.numStates)
+    n.r.U = zeros(Float64,n.numControlPoints,n.numControls)
+
     for st in 1:n.numStates
       n.r.X[:,st] = getvalue(n.r.x[:,st]);
     end
+
     for ctr in 1:n.numControls
       n.r.U[:,ctr] = getvalue(n.r.u[:,ctr]);
     end
 
     if n.s.evalConstraints#&& n.r.status==:Optimal  # note may want to remove this &&
-      evalConstraints!(n);
+      evalConstraints!(n)
+
+      # TODO make a note that costates can only be evaluated if .....
+      if n.s.evalCostates && n.s.integrationMethod == :ps
+        L1 = 0       # find index where dynamics constraints start
+        for i in 1:length(n.r.constraint.name)
+          if n.r.constraint.name[i] == :dyn_con
+            L1 = n.r.constraint.nums[i][end][1]
+          end
+        end
+
+        mpb = JuMP.internalmodel(n.mdl)
+        c = MathProgBase.getconstrduals(mpb)
+        # NOTE for now since costates are not defined for :tm methods, n.r.CS is in a different format than n.r.X
+        # in the future if costates are defined for :tm methods this can be changed
+        n.r.CS = [[zeros(Float64,n.Nck[int]) for int in 1:n.Ni] for st in 1:n.numStates]
+        for int in 1:n.Ni
+          b = 0
+          for st in 1:n.numStates
+            a = L1 + n.Nck[int]*(st-1)  # n.Nck[int]*(st-1) adds on indices for each additional state within the interval
+            b = a + n.Nck[int] - 1      # length of the state within this interval
+            n.r.CS[st][int] = c[a:b]./n.ws[int]
+          end
+          L1 = b + 1 # adds indices due to a change in the interval
+        end
+      end
     end
 
     if n.s.save
-      push!(n.r.dfs,dvs2dfs(n));
-      push!(n.r.dfs_con,con2dfs(n));
-      push!(n.r.dfs_opt,opt2dfs(n));
+      push!(n.r.dfs,dvs2dfs(n))
+      push!(n.r.dfs_con,con2dfs(n))
+      push!(n.r.dfs_opt,opt2dfs(n))
       if n.s.integrationMethod==:ps
         interpolateLagrange!(n)
       else
@@ -391,9 +430,9 @@ function postProcess!(n;kwargs...)
       end
     end
   elseif n.s.save  # no optimization run -> somtimes you drive straight to get started
-    push!(n.r.dfs,nothing);
-    push!(n.r.dfs_con,nothing);
-    push!(n.r.dfs_opt,opt2dfs(n,;(:Init=>true)));
+    push!(n.r.dfs,nothing)
+    push!(n.r.dfs_con,nothing)
+    push!(n.r.dfs_opt,opt2dfs(n,;(:Init=>true)))
   else
     warn("postProcess.jl did not do anything")
   end

@@ -3,9 +3,9 @@ isdefined(Base, :__precompile__) && __precompile__()
 module NLOptControl
 
 using JuMP
-import JuMP.setRHS, JuMP.getvalue, JuMP.setvalue, JuMP.@NLexpression, JuMP.@NLobjective, JuMP.@NLparameter, JuMP.@NLconstraint
-using Ipopt  # temp fix for julia 0.6
-using KNITRO # temp fix for julia 0.6
+import JuMP.setRHS, JuMP.getvalue, JuMP.setvalue, JuMP.@NLexpression, JuMP.@NLobjective, JuMP.@NLparameter, JuMP.@NLconstraint, JuMP.internalmodel
+using Ipopt
+using KNITRO
 using FastGaussQuadrature
 using DataFrames
 using Ranges
@@ -148,8 +148,10 @@ type Result
   u                           # JuMP controls
   X                           # states
   U                           # controls
+  CS                          # costates
   t_polyPts                   # time sample points for polynomials
   X_polyPts                   # state evaluated using Lagrange polynomial
+  CS_polyPts                  # costate evaluated using Lagrange polynomial
   U_polyPts                   # control evaluated using Lagrane polynomial
   t_pts                       # vector time sample points for polynomials
   X_pts                       # vector state evaluated using Lagrange polynomial
@@ -179,8 +181,10 @@ Result( Vector{Any}[], # time vector for control
         Matrix{Any}[], # JuMP controls
         Matrix{Any}[], # states
         Matrix{Any}[], # controls
+        [],            # costates
         [],            # time sample points for polynomials
         [],            # state evaluated using Lagrange polynomial
+        [],            # costate evaluated using Lagrange polynomial
         [],            # control evaluated using Lagrane polynomial
         Vector{Any}[], # vector time sample points for polynomials
         Vector{Any}[], # vector state evaluated using Lagrange polynomial
@@ -213,6 +217,7 @@ type Settings   # options
   save::Bool                    # bool for saving data
   reset::Bool                   # bool for reseting data
   evalConstraints::Bool         # bool for evaluating duals of the constraints
+  evalCostates::Bool            # bool for evaluating costates
   tf_max::Any                   # maximum final time
 end
 
@@ -227,6 +232,7 @@ function Settings()
          true,               # bool for saving data
          false,              # bool for reseting data
          false,              # bool for evaluating duals of the constraints
+         true,               # bool for evaluating costates
          400.0               # maximum final time
                 );
 end
