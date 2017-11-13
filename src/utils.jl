@@ -360,7 +360,7 @@ function saveData(n)
 
   if n.s.evalCostates && n.s.integrationMethod == :ps && n.s.evalConstraints
     for st in 1:n.numStates # state
-      dfs[Symbol(n.state.name[1],:_cs)]=n.r.CS_pts[:,st];
+      dfs[Symbol(n.state.name[st],:_cs)]=n.r.CS_pts[:,st];
     end
   end
 
