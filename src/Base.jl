@@ -20,7 +20,8 @@ export
   try_import,
   intervals,
   interpolateLagrange!,
-  interpolateLinear!
+  interpolateLinear!,
+  interpolate_lagrange
 
 """
 L = lagrange_basis_poly(x,x_data,Nc,j)
@@ -443,9 +444,9 @@ function postProcess!(n;kwargs...)
       push!(n.r.dfs_con,con2dfs(n))
       push!(n.r.dfs_opt,opt2dfs(n))
       if n.s.integrationMethod==:ps
-        interpolateLagrange!(n)
+        interpolateLagrange!(n;numPts = n.s.numInterpPts)
       else
-        interpolateLinear!(n)
+        interpolateLinear!(n;numPts = n.s.numInterpPts)
       end
     end
   elseif n.s.save  # no optimization run -> somtimes you drive straight to get started

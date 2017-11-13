@@ -221,6 +221,7 @@ type Settings   # options
   evalConstraints::Bool         # bool for evaluating duals of the constraints
   evalCostates::Bool            # bool for evaluating costates
   tf_max::Any                   # maximum final time
+  numInterpPts::Int64           # number of points to sample polynomial running through collocation points
 end
 
 # Default Constructor NOTE currently not using these, they get overwritten
@@ -235,7 +236,8 @@ function Settings()
          false,              # bool for reseting data
          false,              # bool for evaluating duals of the constraints
          false,              # bool for evaluating costates
-         400.0               # maximum final time
+         400.0,              # maximum final time
+         250                 # number of points to sample polynomial running through collocation points
                 );
 end
 
@@ -365,6 +367,7 @@ export
        optimize!,
        interpolateLagrange!,
        interpolateLinear!,
+       interpolate_lagrange,
 
        # setup functions
        define,
