@@ -432,7 +432,7 @@ function postProcess!(n;kwargs...)
           for st in 1:n.numStates
             a = L1 + n.Nck[int]*(st-1)  # n.Nck[int]*(st-1) adds on indices for each additional state within the interval
             b = a + n.Nck[int] - 1      # length of the state within this interval
-            n.r.CS[st][int] = c[a:b]./n.ws[int]
+            n.r.CS[st][int] = -c[a:b]./n.ws[int]
           end
           L1 = b + 1 # adds indices due to a change in the interval
         end
