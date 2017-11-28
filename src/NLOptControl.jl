@@ -279,16 +279,16 @@ type NLOpt <: AbstractNLOpt
   CU::Array{Float64,1}
 
   # ps method data
-  Nck::Array{Int64,1}           # number of collocation points per interval
-  Nck_cum::Array{Int64,1}       # cumulative number of points per interval
-  Nck_full::Array{Int64,1}      # [0;cumsum(n.Nck+1)]
-  Ni::Int64                     # number of intervals
+  Nck::Array{Int64,1}             # number of collocation points per interval
+  Nck_cum::Array{Int64,1}         # cumulative number of points per interval
+  Nck_full::Array{Int64,1}        # [0;cumsum(n.Nck+1)]
+  Ni::Int64                       # number of intervals
   tau::Array{Array{Float64,1},1}  # Node points ---> Nc increasing and distinct numbers ∈ [-1,1]
-  ts::Array{Array{Float64,1},1} # time scaled based off of tau
-  w::Array{Array{Float64,1},1}  # weights
-  ws::Array{Array{Any,1},1}     # scaled weights
-  DMatrix::Array{Array{Any,2},1}# differention matrix
-  IMatrix::Array{Array{Any,2},1}# integration matrix
+  ts::Array{Array{Float64,1},1}   # time scaled based off of tau
+  w::Array{Array{Float64,1},1}    # weights
+  ws::Array{Array{Any,1},1}       # scaled weights
+  DMatrix::Array{Array{Any,2},1}  # differention matrix
+  IMatrix::Array{Array{Any,2},1}  # integration matrix
 
   # tm method data
   N::Int64                      # number of points in discretization
