@@ -56,13 +56,19 @@ const _Ipopt_MPC=Dict(
 
 const _KNITRO_defaults=Dict(
   :outlev                       =>1,
-  :maxit                        =>0,
-  :maxtime_real                 =>1.0e8,
-  :infeastol                    =>1.0e-8,
   :feastol                      =>1.0e-6,
   :feastol_abs                  =>1e-3,
-  :opttol                       =>1.0e-6,
-  :opttol_abs                   =>1.0e-3,
+  :ftol                         =>1e-15,
+  :ftol_iters                   =>5,
+  :infeastol                    =>1.0e-8,
+  :maxfevals                    =>-1,
+  :maxit                        =>0,
+  :maxtime_cpu                  =>1e8,
+  :maxtime_real                 =>1e8,
+  :opttol                       =>1e-6,
+  :opttol_abs                   =>1e-3,
+  :xtol                         =>1e-12,
+  :xtol_iters                   =>0,
   :algorithm                    =>0,
   :bar_initpt                   =>0,
   :bar_murule                   =>0,
@@ -72,6 +78,7 @@ const _KNITRO_defaults=Dict(
   :linesearch                   =>0,
   :linsolver                    =>0
 )
+
 
 const _KNITRO_MPC=Dict(
   :outlev                       =>0,
