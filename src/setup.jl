@@ -263,7 +263,7 @@ function OCPdef!(n::NLOpt)
         dx[:,st]=DiffEq(n,x_int,u_int,L,st);
       end
 
-      for st in 1:n.numStates
+      for st in 1:n.numStates # TODO consider multiplying X*D to reduce computations (i.e. remove this for loop for the states)
         if n.s.integrationScheme==:lgrExplicit
           dynamics_expr[int][:,st]=@NLexpression(n.mdl, [j in 1:n.Nck[int]], sum(n.DMatrix[int][j,i]*x_int[i,st] for i in 1:n.Nck[int]+1) - ((n.tf)/2)*dx[j,st]  )
         elseif n.s.integrationScheme==:lgrImplicit
