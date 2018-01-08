@@ -76,9 +76,9 @@ function interpolate_lagrange{T<:Number}(x::AbstractArray{T},x_data,y_data)
     ns = length(x);
     L = zeros(Float64,Nc+1,ns);
     x = x[:]; x_data = x_data[:]; y_data = y_data[:]; # make sure data is in a column
-    for idx in 1:Nc+1
-      for j in 1:ns
-        L[idx,j] = lagrange_basis_poly(x[j],x_data,Nc,idx);
+    @parallel for idx in 1:Nc+1
+      @parallel for j in 1:ns
+          L[idx,j] = lagrange_basis_poly(x[j],x_data,Nc,idx);
       end
     end
     y = y_data'*L;
@@ -141,15 +141,19 @@ end
 """
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Created: 9/19/2017, Last Modified: 9/21/2017 \n
+Date Created: 9/19/2017, Last Modified: 12/13/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function interpolateLagrange!(n; numPts::Int64=250)
-
-  if n.s.finalTimeDV
-    tf = getvalue(n.tf)
-  else n.s.finalTimeDV
-    tf = n.tf
+function interpolateLagrange!(n; numPts::Int64=250, tfOptimal::Any=false)
+  # TODO throw an error if tfOptimal does not make sense given current solution
+  if isa(tfOptimal,Bool)
+    if n.s.finalTimeDV
+      tf = getvalue(n.tf)
+    else n.s.finalTimeDV
+      tf = n.tf
+    end
+  else  # if there is a known optimal final time, then it is useful to evaluate the Lagrange polynomial at particular points to determine the error in the solution
+    tf = tfOptimal
   end
 
   # sample points
@@ -169,17 +173,17 @@ function interpolateLagrange!(n; numPts::Int64=250)
     x_int, u_int = intervals(n, int, copy(n.r.X), n.r.U)
 
     # sample polynomial in interval at n.r.t_polyPts
-    for st in 1:n.numStates
+    @parallel for st in 1:n.numStates
       n.r.X_polyPts[st][int] = interpolate_lagrange(n.r.t_polyPts[int], t_st_int[int], x_int[:,st])'
     end
 
-    for ctr in 1:n.numControls
+    @parallel for ctr in 1:n.numControls
       n.r.U_polyPts[ctr][int] = interpolate_lagrange(n.r.t_polyPts[int], t_ctr_int[int], u_int[:,ctr])'
     end
 
     # sample polynomial in interval at n.r.t_polyPts NOTE costate is missing the last point, that is the t_st_int[int][1:end-1]
     if n.s.evalCostates && n.s.evalConstraints
-      for st in 1:n.numStates
+      @parallel for st in 1:n.numStates
         n.r.CS_polyPts[st][int] = interpolate_lagrange(n.r.t_polyPts[int], t_st_int[int][1:end-1], n.r.CS[st][int])'
       end
     end
@@ -191,20 +195,20 @@ function interpolateLagrange!(n; numPts::Int64=250)
   totalPts = length(n.r.t_pts);
 
   n.r.X_pts = Matrix{Float64}(totalPts, n.numStates)
-  for st in 1:n.numStates # states
+  @parallel for st in 1:n.numStates # states
     temp = [n.r.X_polyPts[st][int][1:end,:] for int in 1:n.Ni];
     n.r.X_pts[:,st] = [idx for tempM in temp for idx=tempM];
   end
 
   n.r.U_pts = Matrix{Float64}(totalPts, n.numControls)
-  for ctr in 1:n.numControls # controls
+  @parallel for ctr in 1:n.numControls # controls
     temp = [n.r.U_polyPts[ctr][int][1:end,:] for int in 1:n.Ni];
     n.r.U_pts[:,ctr] = [idx for tempM in temp for idx=tempM];
   end
 
   if n.s.evalCostates && n.s.evalConstraints
     n.r.CS_pts = Matrix{Float64}(totalPts, n.numStates)
-    for st in 1:n.numStates # states
+    @parallel for st in 1:n.numStates # states
       temp = [n.r.CS_polyPts[st][int][1:end,:] for int in 1:n.Ni];
       n.r.CS_pts[:,st] = [idx for tempM in temp for idx=tempM];
     end
@@ -216,14 +220,19 @@ end
 """
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Created: 10/4/2017, Last Modified: 10/4/2017 \n
+Date Created: 10/4/2017, Last Modified: 12/13/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function interpolateLinear!(n; numPts::Int64=250)
-  if n.s.finalTimeDV
-    tf = getvalue(n.tf)
-  else n.s.finalTimeDV
-    tf = n.tf
+function interpolateLinear!(n; numPts::Int64=250, tfOptimal::Any=false)
+  # TODO throw an error if tfOptimal does not make sense given current solution
+  if isa(tfOptimal,Bool)
+    if n.s.finalTimeDV
+      tf = getvalue(n.tf)
+    else n.s.finalTimeDV
+      tf = n.tf
+    end
+  else  # if there is a known optimal final time, then it is useful to evaluate the Lagrange polynomial at particular points to determine the error in the solution
+    tf = tfOptimal
   end
 
   # sample points
@@ -232,12 +241,12 @@ function interpolateLinear!(n; numPts::Int64=250)
   n.r.U_pts = Matrix{Float64}(numPts, n.numControls)
 
   knots = (n.r.t_st,)
-  for st in 1:n.numStates
+  @parallel for st in 1:n.numStates
     sp_st = interpolate(knots,n.r.X[:,st],Gridded(Linear()))
     n.r.X_pts[:,st] = sp_st[n.r.t_pts]
   end
 
-  for ctr in 1:n.numControls
+  @parallel for ctr in 1:n.numControls
     sp_ctr = interpolate(knots,n.r.U[:,ctr],Gridded(Linear()))
     n.r.U_pts[:,ctr] = sp_ctr[n.r.t_pts]
   end
@@ -268,11 +277,11 @@ function plant2dfs!(n,sol)
   dfs_plant=DataFrame();
   dfs_plant[:t]=t_sample;
 
-  for st in 1:n.numStates
+  @parallel for st in 1:n.numStates
     dfs_plant[n.state.name[st]]=[sol(t)[st] for t in t_sample];
   end
 
-  for ctr in 1:n.numControls
+  @parallel for ctr in 1:n.numControls
     dfs_plant[n.control.name[ctr]]= n.r.U[ctr];
   end
 
@@ -296,10 +305,10 @@ Date Create: 2/10/2017, Last Modified: 11/10/2017 \n
 function dvs2dfs(n)
   dfs=DataFrame()
   dfs[:t]=n.r.t_st + n.mpc.t0;
-  for st in 1:n.numStates
+  @parallel for st in 1:n.numStates
     dfs[n.state.name[st]]=n.r.X[:,st];
   end
-  for ctr in 1:n.numControls
+  @parallel for ctr in 1:n.numControls
     if n.s.integrationMethod==:tm
       dfs[n.control.name[ctr]]=n.r.U[:,ctr];
     else
@@ -309,12 +318,12 @@ function dvs2dfs(n)
 
   if n.s.evalCostates && n.s.integrationMethod == :ps && n.s.evalConstraints
     CS_vector = Matrix{Float64}(n.numStatePoints, n.numStates)
-    for st in 1:n.numStates # states
+    @parallel for st in 1:n.numStates # states
       temp = [n.r.CS[st][int][1:end,:] for int in 1:n.Ni];
       CS_vector[1:end-1,st] = [idx for tempM in temp for idx=tempM];
       CS_vector[end,st] = NaN;
     end
-    for st in 1:n.numStates # states
+    @parallel for st in 1:n.numStates # states
       dfs[Symbol(n.state.name[st],:_cs)]=CS_vector[:,st];
     end
   end
@@ -444,9 +453,9 @@ function postProcess!(n;kwargs...)
       push!(n.r.dfs_con,con2dfs(n))
       push!(n.r.dfs_opt,opt2dfs(n))
       if n.s.integrationMethod==:ps
-        interpolateLagrange!(n;numPts = n.s.numInterpPts)
+        interpolateLagrange!(n;numPts = n.s.numInterpPts, tfOptimal = n.s.tfOptimal)
       else
-        interpolateLinear!(n;numPts = n.s.numInterpPts)
+        interpolateLinear!(n;numPts = n.s.numInterpPts, tfOptimal = n.s.tfOptimal)
       end
     end
   elseif n.s.save  # no optimization run -> somtimes you drive straight to get started

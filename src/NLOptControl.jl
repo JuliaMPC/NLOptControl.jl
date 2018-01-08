@@ -228,6 +228,7 @@ type Settings   # options
   evalConstraints::Bool         # bool for evaluating duals of the constraints
   evalCostates::Bool            # bool for evaluating costates
   tf_max::Any                   # maximum final time
+  tfOptimal::Any                # known optimal final time
   numInterpPts::Int64           # number of points to sample polynomial running through collocation points
 end
 
@@ -244,6 +245,7 @@ function Settings()
          false,              # bool for evaluating duals of the constraints
          false,              # bool for evaluating costates
          400.0,              # maximum final time
+         false,              # known optimal final time
          250                 # number of points to sample polynomial running through collocation points
                 );
 end
