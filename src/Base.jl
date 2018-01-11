@@ -76,8 +76,8 @@ function interpolate_lagrange{T<:Number}(x::AbstractArray{T},x_data,y_data)
     ns = length(x);
     L = zeros(Float64,Nc+1,ns);
     x = x[:]; x_data = x_data[:]; y_data = y_data[:]; # make sure data is in a column
-    @parallel for idx in 1:Nc+1
-      @parallel for j in 1:ns
+    for idx in 1:Nc+1
+      for j in 1:ns
           L[idx,j] = lagrange_basis_poly(x[j],x_data,Nc,idx);
       end
     end

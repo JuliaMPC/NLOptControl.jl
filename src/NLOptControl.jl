@@ -9,6 +9,7 @@ using KNITRO
 using FastGaussQuadrature
 using DataFrames
 using Ranges
+using CSV
 
 include("Base.jl")
 using .Base

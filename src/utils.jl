@@ -301,7 +301,7 @@ function resultsDir!(n;results_name::String="",description::String="no descripti
   * " , description )
 
  cd(n.r.results_dir)
-   write("description.txt", description_str)
+   CSV.write("description.txt", description_str)
  cd(n.r.main_dir)
  return nothing
 end
@@ -332,7 +332,7 @@ function savePlantData!(n)
   end
 
   cd(n.r.results_dir)
-    writetable("plant_data.csv",dfs);
+    CSV.write("plant_data.csv",dfs);
   cd(n.r.main_dir)
   return nothing
 end
@@ -360,13 +360,13 @@ function saveData(n)
 
   if n.s.evalCostates && n.s.integrationMethod == :ps && n.s.evalConstraints
     for st in 1:n.numStates # state
-      dfs[Symbol(n.state.name[st],:_cs)]=n.r.CS_pts[:,st];
+      dfs[Symbol(n.state.name[st],:cs)]=n.r.CS_pts[:,st];
     end
   end
 
   cd(n.r.results_dir)
-    writetable("st_ctr.csv",n.r.dfs[end]); # assuming only want the last one is needed
-    writetable("st_ctr_poly.csv",dfs);
+    CSV.write("st_ctr.csv",n.r.dfs[end]); # assuming only want the last one is needed
+    CSV.write("st_ctr_poly.csv",dfs);
   cd(n.r.main_dir)
   return nothing
 end
@@ -401,7 +401,7 @@ function saveBenchMarkData!(n)
 
 
   cd(n.r.results_dir)
-    writetable("bench_data.csv",dfs);
+    CSV.write("bench_data.csv",dfs);
   cd(n.r.main_dir)
   return nothing
 end
