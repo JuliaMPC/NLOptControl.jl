@@ -173,17 +173,17 @@ function interpolateLagrange!(n; numPts::Int64=250, tfOptimal::Any=false)
     x_int, u_int = intervals(n, int, copy(n.r.X), n.r.U)
 
     # sample polynomial in interval at n.r.t_polyPts
-    @parallel for st in 1:n.numStates
+     for st in 1:n.numStates
       n.r.X_polyPts[st][int] = interpolate_lagrange(n.r.t_polyPts[int], t_st_int[int], x_int[:,st])'
     end
 
-    @parallel for ctr in 1:n.numControls
+     for ctr in 1:n.numControls
       n.r.U_polyPts[ctr][int] = interpolate_lagrange(n.r.t_polyPts[int], t_ctr_int[int], u_int[:,ctr])'
     end
 
     # sample polynomial in interval at n.r.t_polyPts NOTE costate is missing the last point, that is the t_st_int[int][1:end-1]
     if n.s.evalCostates && n.s.evalConstraints
-      @parallel for st in 1:n.numStates
+       for st in 1:n.numStates
         n.r.CS_polyPts[st][int] = interpolate_lagrange(n.r.t_polyPts[int], t_st_int[int][1:end-1], n.r.CS[st][int])'
       end
     end
@@ -195,20 +195,20 @@ function interpolateLagrange!(n; numPts::Int64=250, tfOptimal::Any=false)
   totalPts = length(n.r.t_pts);
 
   n.r.X_pts = Matrix{Float64}(totalPts, n.numStates)
-  @parallel for st in 1:n.numStates # states
+   for st in 1:n.numStates # states
     temp = [n.r.X_polyPts[st][int][1:end,:] for int in 1:n.Ni];
     n.r.X_pts[:,st] = [idx for tempM in temp for idx=tempM];
   end
 
   n.r.U_pts = Matrix{Float64}(totalPts, n.numControls)
-  @parallel for ctr in 1:n.numControls # controls
+   for ctr in 1:n.numControls # controls
     temp = [n.r.U_polyPts[ctr][int][1:end,:] for int in 1:n.Ni];
     n.r.U_pts[:,ctr] = [idx for tempM in temp for idx=tempM];
   end
 
   if n.s.evalCostates && n.s.evalConstraints
     n.r.CS_pts = Matrix{Float64}(totalPts, n.numStates)
-    @parallel for st in 1:n.numStates # states
+     for st in 1:n.numStates # states
       temp = [n.r.CS_polyPts[st][int][1:end,:] for int in 1:n.Ni];
       n.r.CS_pts[:,st] = [idx for tempM in temp for idx=tempM];
     end
@@ -241,12 +241,12 @@ function interpolateLinear!(n; numPts::Int64=250, tfOptimal::Any=false)
   n.r.U_pts = Matrix{Float64}(numPts, n.numControls)
 
   knots = (n.r.t_st,)
-  @parallel for st in 1:n.numStates
+  for st in 1:n.numStates
     sp_st = interpolate(knots,n.r.X[:,st],Gridded(Linear()))
     n.r.X_pts[:,st] = sp_st[n.r.t_pts]
   end
 
-  @parallel for ctr in 1:n.numControls
+   for ctr in 1:n.numControls
     sp_ctr = interpolate(knots,n.r.U[:,ctr],Gridded(Linear()))
     n.r.U_pts[:,ctr] = sp_ctr[n.r.t_pts]
   end
@@ -277,11 +277,11 @@ function plant2dfs!(n,sol)
   dfs_plant=DataFrame();
   dfs_plant[:t]=t_sample;
 
-  @parallel for st in 1:n.numStates
+  for st in 1:n.numStates
     dfs_plant[n.state.name[st]]=[sol(t)[st] for t in t_sample];
   end
 
-  @parallel for ctr in 1:n.numControls
+  for ctr in 1:n.numControls
     dfs_plant[n.control.name[ctr]]= n.r.U[ctr];
   end
 
@@ -305,10 +305,10 @@ Date Create: 2/10/2017, Last Modified: 11/10/2017 \n
 function dvs2dfs(n)
   dfs=DataFrame()
   dfs[:t]=n.r.t_st + n.mpc.t0;
-  @parallel for st in 1:n.numStates
+  for st in 1:n.numStates
     dfs[n.state.name[st]]=n.r.X[:,st];
   end
-  @parallel for ctr in 1:n.numControls
+  for ctr in 1:n.numControls
     if n.s.integrationMethod==:tm
       dfs[n.control.name[ctr]]=n.r.U[:,ctr];
     else
@@ -318,12 +318,12 @@ function dvs2dfs(n)
 
   if n.s.evalCostates && n.s.integrationMethod == :ps && n.s.evalConstraints
     CS_vector = Matrix{Float64}(n.numStatePoints, n.numStates)
-    @parallel for st in 1:n.numStates # states
+    for st in 1:n.numStates # states
       temp = [n.r.CS[st][int][1:end,:] for int in 1:n.Ni];
       CS_vector[1:end-1,st] = [idx for tempM in temp for idx=tempM];
       CS_vector[end,st] = NaN;
     end
-    @parallel for st in 1:n.numStates # states
+    for st in 1:n.numStates # states
       dfs[Symbol(n.state.name[st],:_cs)]=CS_vector[:,st];
     end
   end

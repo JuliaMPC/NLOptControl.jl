@@ -10,6 +10,7 @@ using FastGaussQuadrature
 using DataFrames
 using Ranges
 using CSV
+using Images
 
 include("Base.jl")
 using .Base
