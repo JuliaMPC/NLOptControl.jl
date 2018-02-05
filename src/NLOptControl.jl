@@ -178,6 +178,7 @@ type Result
   dfs                         # results in DataFrame for plotting
   dfs_opt                     # optimization information in DataFrame for plotting
   dfs_plant                   # plant data
+  dfs_plantPts::DataFrames.DataFrame                # plant data extracted into a single DataFrame
   dfs_con                     # constraint data
   results_dir                 # string that defines results folder
   main_dir                    # string that defines main folder
@@ -200,7 +201,7 @@ Result( Vector{Any}[], # time vector for control
         Vector{Any}[], # vector state evaluated using Lagrange polynomial
         Vector{Any}[], # vector control evaluated using Lagrane polynomial
         Vector{Any}[], # vector costate evaluated using Lagrange polynomial
-        nothing,       # handle for intial state constraints
+        nothing,       # handle for initial state constraints
         nothing,       # handle for final state constraints
         nothing,       # dynamics constraint
         Constraint(),  # constraint data
@@ -212,6 +213,7 @@ Result( Vector{Any}[], # time vector for control
         [],            # results in DataFrame for plotting
         [],            # optimization information in DataFrame for plotting
         [],            # plant data
+        DataFrame(),   # plant data extracted into a single DataFrame
         [],            # constraint data
         string(pwd(),"/results/"),  # string that defines results folder
         pwd()                       # string that defines main folder

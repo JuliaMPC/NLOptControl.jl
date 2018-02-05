@@ -285,7 +285,7 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 3/26/2017, Last Modified: 5/29/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function resultsDir!(n;results_name::String="",description::String="no description given")
+function resultsDir!(n;results_name::String = "",description::DataFrame = DataFrame())
  results_dir=string(n.r.main_dir,"/results/",results_name)  # define directories
  n.r.results_dir=results_dir;
 
@@ -295,13 +295,8 @@ function resultsDir!(n;results_name::String="",description::String="no descripti
  end
  mkdir(n.r.results_dir)# create directory
 
- description_str = string(
- "In this test: \n
-  RESULTS DISCUSSION:  \n
-  * " , description )
-
  cd(n.r.results_dir)
-   CSV.write("description.txt", description_str)
+   CSV.write("description.csv", description)
  cd(n.r.main_dir)
  return nothing
 end
@@ -331,6 +326,7 @@ function savePlantData!(n)
     dfs[n.control.name[ctr]]=U;
   end
 
+  n.r.dfs_plantPts = dfs;
   cd(n.r.results_dir)
     CSV.write("plant_data.csv",dfs);
   cd(n.r.main_dir)
