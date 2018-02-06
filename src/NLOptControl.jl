@@ -81,7 +81,7 @@ const _KNITRO_defaults=Dict(
   :linsolver                    =>0
 )
 
-
+ # TODO add all keys from above
 const _KNITRO_MPC=Dict(
   :outlev                       =>0,
   :maxit                        =>500,
@@ -178,7 +178,7 @@ type Result
   dfs                         # results in DataFrame for plotting
   dfs_opt                     # optimization information in DataFrame for plotting
   dfs_plant                   # plant data
-  dfs_plantPts::DataFrames.DataFrame                # plant data extracted into a single DataFrame
+  dfs_plantPts::DataFrames.DataFrame # plant data extracted into a single DataFrame
   dfs_con                     # constraint data
   results_dir                 # string that defines results folder
   main_dir                    # string that defines main folder
@@ -211,7 +211,7 @@ Result( Vector{Any}[], # time vector for control
         Float64,       # solve time for optimization
         Float64,       # objective function value
         [],            # results in DataFrame for plotting
-        [],            # optimization information in DataFrame for plotting
+        DataFrame(),   # optimization information in DataFrame for plotting
         [],            # plant data
         DataFrame(),   # plant data extracted into a single DataFrame
         [],            # constraint data
@@ -374,7 +374,7 @@ include("ps.jl");
 include("diffeq.jl")
 
 export
-       # Base functions  TODO make a costate function and hamiltonian function
+       # Base functions  TODO make a hamiltonian function
        evalConstraints!,
        postProcess!,
        optimize!,

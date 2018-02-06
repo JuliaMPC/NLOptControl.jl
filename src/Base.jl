@@ -13,7 +13,6 @@ export
   evalConstraints!,
   dvs2dfs,
   plant2dfs!,
-  opt2dfs,
   postProcess!,
   optimize!,
   scale_tau,
@@ -268,7 +267,7 @@ plant2dfs!(n,sol)
 # TODO: sometimes plant control models have different states and controls - > take this into account
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/14/2017, Last Modified: 6/22/2017 \n
+Date Create: 2/14/2017, Last Modified: 2/6/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function plant2dfs!(n,sol)
@@ -290,6 +289,25 @@ function plant2dfs!(n,sol)
   else
     push!(n.r.dfs_plant,dfs_plant);
   end
+
+  # push plant states to a single DataFrame
+  dfs=DataFrame();
+  temp = [n.r.dfs_plant[jj][:t][1:end-1,:] for jj in 1:length(n.r.dfs_plant)]; # time
+  U=[idx for tempM in temp for idx=tempM]; dfs[:t]=U;
+
+  for st in 1:n.numStates # state
+    temp = [n.r.dfs_plant[jj][n.state.name[st]][1:end-1,:] for jj in 1:length(n.r.dfs_plant)];
+    U=[idx for tempM in temp for idx=tempM];
+    dfs[n.state.name[st]]=U;
+  end
+
+  for ctr in 1:n.numControls # control
+    temp = [n.r.dfs_plant[jj][n.control.name[ctr]][1:end-1,:] for jj in 1:length(n.r.dfs_plant)];
+    U=[idx for tempM in temp for idx=tempM];
+    dfs[n.control.name[ctr]]=U;
+  end
+  n.r.dfs_plantPts = dfs;
+
   return nothing
 end
 
@@ -332,33 +350,37 @@ function dvs2dfs(n)
 end
 
 """
-opt2dfs(n)
+opt2dfs!(n)
 # funtionality to save optimization data
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/10/2017, Last Modified: 5/29/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function opt2dfs(n;kwargs...)
+function opt2dfs!(n;kwargs...)
   kw = Dict(kwargs);
   # check to see if the user is initializing while compensating for control delay
   if !haskey(kw,:Init); Init=false;
   else; Init=get(kw,:Init,0);
   end
-  dfs_opt=DataFrame()
 
   if !Init
-    dfs_opt[:t_solve]=n.r.t_solve
-    dfs_opt[:obj_val]=n.r.obj_val
-    dfs_opt[:status]=n.r.status
-    dfs_opt[:iter_num]=n.r.iter_nums
+    push!(n.r.dfs_opt[:t_solve], n.r.t_solve)
+    push!(n.r.dfs_opt[:obj_val], n.r.obj_val)
+    push!(n.r.dfs_opt[:status], n.r.status)
+    if n.s.MPC
+      push!(n.r.dfs_opt[:iter_num], n.r.iter_nums)
+    else
+      push!(n.r.dfs_opt[:iter_num], n.r.iter_nums)
+    end
   else
-    dfs_opt[:t_solve]=0.0
-    dfs_opt[:obj_val]=0.0
-    dfs_opt[:status]=:Init
-    dfs_opt[:iter_num]=0
+    n.r.dfs_opt=DataFrame()
+    n.r.dfs_opt[:t_solve]=0.0
+    n.r.dfs_opt[:obj_val]=0.0
+    n.r.dfs_opt[:status]=:Init
+    n.r.dfs_opt[:iter_num]=0
   end
-  return dfs_opt
+  return nothing
 end
 
 """
@@ -451,7 +473,7 @@ function postProcess!(n;kwargs...)
     if n.s.save
       push!(n.r.dfs,dvs2dfs(n))
       push!(n.r.dfs_con,con2dfs(n))
-      push!(n.r.dfs_opt,opt2dfs(n))
+      opt2dfs!(n)
       if n.s.integrationMethod==:ps
         interpolateLagrange!(n;numPts = n.s.numInterpPts, tfOptimal = n.s.tfOptimal)
       else
@@ -461,7 +483,7 @@ function postProcess!(n;kwargs...)
   elseif n.s.save  # no optimization run -> somtimes you drive straight to get started
     push!(n.r.dfs,nothing)
     push!(n.r.dfs_con,nothing)
-    push!(n.r.dfs_opt,opt2dfs(n,;(:Init=>true)))
+    opt2dfs!(n,;(:Init=>true))
   else
     warn("postProcess.jl did not do anything")
   end
@@ -553,7 +575,5 @@ function evalConstraints!(n)
   end
   return nothing
 end
-
-
 
 end # module

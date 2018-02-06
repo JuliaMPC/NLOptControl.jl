@@ -305,34 +305,15 @@ end
 """
 ------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 3/26/2017, Last Modified: 4/27/2017 \n
+Date Create: 3/26/2017, Last Modified: 2/6/2018 \n
 --------------------------------------------------------------------------------------\n
 """
-
 function savePlantData!(n)
-  dfs=DataFrame();
-  temp = [n.r.dfs_plant[jj][:t][1:end-1,:] for jj in 1:length(n.r.dfs_plant)]; # time
-  U=[idx for tempM in temp for idx=tempM]; dfs[:t]=U;
-
-  for st in 1:n.numStates # state
-    temp = [n.r.dfs_plant[jj][n.state.name[st]][1:end-1,:] for jj in 1:length(n.r.dfs_plant)];
-    U=[idx for tempM in temp for idx=tempM];
-    dfs[n.state.name[st]]=U;
-  end
-
-  for ctr in 1:n.numControls # control
-    temp = [n.r.dfs_plant[jj][n.control.name[ctr]][1:end-1,:] for jj in 1:length(n.r.dfs_plant)];
-    U=[idx for tempM in temp for idx=tempM];
-    dfs[n.control.name[ctr]]=U;
-  end
-
-  n.r.dfs_plantPts = dfs;
   cd(n.r.results_dir)
-    CSV.write("plant_data.csv",dfs);
+    CSV.write("plant_data.csv", n.r.dfs_plantPts);
   cd(n.r.main_dir)
   return nothing
 end
-
 
 """
 ------------------------------------------------------------------\n

@@ -60,6 +60,7 @@ end
 ########################################################################################
 # mpc functions
 ########################################################################################
+
 """
 initializeMPC(n)
 
@@ -241,7 +242,7 @@ function mpcUpdate!(n)
 end
 
 """
-status=autonomousControl(n)
+status=autonomousControl!(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/1/2017, Last Modified: 6/22/2017 \n
