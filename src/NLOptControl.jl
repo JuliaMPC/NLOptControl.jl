@@ -81,16 +81,21 @@ const _KNITRO_defaults=Dict(
   :linsolver                    =>0
 )
 
- # TODO add all keys from above
 const _KNITRO_MPC=Dict(
   :outlev                       =>0,
-  :maxit                        =>500,
-  :maxtime_real                 =>0.47,
-  :infeastol                    =>1e-2,
   :feastol                      =>1.0e20,
   :feastol_abs                  =>7e-2,
+  :ftol                         =>1e-15,
+  :ftol_iters                   =>5,
+  :infeastol                    =>1e-2,
+  :maxfevals                    =>-1,
+  :maxit                        =>500,
+  :maxtime_cpu                  =>1e8,
+  :maxtime_real                 =>0.47,
   :opttol                       =>1.0e20,
   :opttol_abs                   =>5e-1,
+  :xtol                         =>1e-12,
+  :xtol_iters                   =>0,
   :algorithm                    =>1,
   :bar_initpt                   =>3,
   :bar_murule                   =>4,

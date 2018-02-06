@@ -376,7 +376,6 @@ function saveBenchMarkData!(n)
   # save optimization times
   temp = [n.r.dfs_opt[jj][n.control.name[ctr]][1:end-1,:] for jj in first:length(n.r.dfs)];
 
-
   cd(n.r.results_dir)
     CSV.write("bench_data.csv",dfs);
   cd(n.r.main_dir)
@@ -418,7 +417,6 @@ function maxDF(dfs,varb)
   end
   maximum(tmp)  # find the minimum
 end
-
 
 function try_import(name::Symbol)
  try
