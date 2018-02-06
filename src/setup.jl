@@ -67,10 +67,14 @@ end
 """
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/9/2017, Last Modified: 7/04/2017 \n
+Date Create: 2/9/2017, Last Modified: 2/05/2017 \n
 -------------------------------------------------------------------------------------\n
 """
 function defineSolver!(n::NLOpt,kw)
+
+ if typeof(kw)!=Dict{Symbol,Symbol}
+   kw = Dict(kw)
+ end
 
   # get the name of the solver
   if haskey(kw,:name); n.s.solver.name=get(kw,:name,0); end
@@ -284,6 +288,7 @@ function OCPdef!(n::NLOpt)
     if n.s.finalTimeDV
      @variable(n.mdl, 0.001 <= tf <= n.s.tf_max)
      n.tf = tf;
+     create_tV!(n)          # make a time vector
     end
     n.dt = n.tf/n.N*ones(n.N,);
 
