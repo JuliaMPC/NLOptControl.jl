@@ -562,9 +562,13 @@ function evalConstraints!(n)
           catch
             dfs[idx] = DataFrame(step=1:S[2];Dict(n.r.constraint.name[i] => NaN)...); # fix for case where all of the states are not being constrainted, but some are within some XF_tol
           end
-          if idx==1; con=dfs[idx]; else; con=join(con,dfs[idx],on=:step); end
+          if idx==1;
+            con = dfs[idx]
+          else
+            con = join(con,dfs[idx],on=:step,makeunique=true)
+          end
         end
-        l=S[1]*S[2];
+        l = S[1]*S[2]
       end
     end
     f=s+l-1;
