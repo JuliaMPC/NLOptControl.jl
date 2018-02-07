@@ -62,32 +62,23 @@ Date Create: 3/17/2017, Last Modified: 3/17/2017 \n
 function create_tV!(n::NLOpt)
 
   if n.s.integrationMethod==:ps
-    if n.s.finalTimeDV
-      # create mesh points, interval size = tf_var/Ni
-      tm = @NLexpression(n.mdl, [idx=1:n.Ni+1], (idx-1)*n.tf/n.Ni);
-      # go through each mesh interval creating time intervals; [t(i-1),t(i)] --> [-1,1]
-      ts = [Array{Any}(n.Nck[int]+1,) for int in 1:n.Ni];
-      for int in 1:n.Ni
-        ts[int][1:end-1]=@NLexpression(n.mdl,[j=1:n.Nck[int]], (tm[int+1]-tm[int])/2*n.tau[int][j] +  (tm[int+1]+tm[int])/2);
-        ts[int][end]=@NLexpression(n.mdl, n.tf/n.Ni*int) # append +1 at end of each interval
-      end
-      tt1 = [idx for tempM in ts for idx = tempM[1:end-1]];
-      tmp = [tt1;ts[end][end]];
-      n.tV = @NLexpression(n.mdl,[j=1:n.numStatePoints], n.mpc.t0_param + tmp[j]);
-    else
-      error("finish this")
+    # create mesh points, interval size = tf_var/Ni
+    tm = @NLexpression(n.mdl, [idx=1:n.Ni+1], (idx-1)*n.tf/n.Ni);
+    # go through each mesh interval creating time intervals; [t(i-1),t(i)] --> [-1,1]
+    ts = [Array{Any}(n.Nck[int]+1,) for int in 1:n.Ni];
+    for int in 1:n.Ni
+      ts[int][1:end-1]=@NLexpression(n.mdl,[j=1:n.Nck[int]], (tm[int+1]-tm[int])/2*n.tau[int][j] +  (tm[int+1]+tm[int])/2);
+      ts[int][end]=@NLexpression(n.mdl, n.tf/n.Ni*int) # append +1 at end of each interval
     end
+    tt1 = [idx for tempM in ts for idx = tempM[1:end-1]];
+    tmp = [tt1;ts[end][end]];
+    n.tV = @NLexpression(n.mdl,[j=1:n.numStatePoints], n.mpc.t0_param + tmp[j]);
   else
-    error("finish this")
-
-    if n.s.finalTimeDV
-      # vector with the design variable in it
-      t = Array{Any}(n.N+1,1);
-      tmp = [0;cumsum(n.dt)];
-      n.tV = @NLexpression(n.mdl,[j=1:n.numStatePoints], n.t0 + tmp[j]);
-    else
-
-    end
+    # create vector with the design variable in it
+    t = Array{Any}(n.N+1,1);
+    tm = @NLexpression(n.mdl, [idx=1:n.N], n.tf/n.N*idx);
+    tmp = [0;tm];
+    n.tV = @NLexpression(n.mdl,[j=1:n.numStatePoints], n.mpc.t0_param + tmp[j]);
   end
   return nothing
 end
