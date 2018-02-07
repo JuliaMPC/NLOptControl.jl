@@ -441,7 +441,7 @@ function postProcess!(n;kwargs...)
       n.r.U[:,ctr] = getvalue(n.r.u[:,ctr]);
     end
 
-    if n.s.evalConstraints#&& n.r.status==:Optimal  # note may want to remove this &&
+    if n.s.evalConstraints && n.r.status!=:Error  # note may want to remove the && arg
       evalConstraints!(n)
 
       # TODO make a note that costates can only be evaluated if .....
