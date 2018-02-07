@@ -89,21 +89,21 @@ const _KNITRO_MPC=Dict(
   :ftol_iters                   =>5,
   :infeastol                    =>1e-2,
   :maxfevals                    =>-1,
-  :maxit                        =>500,
+  :maxit                        =>0,
   :maxtime_cpu                  =>1e8,
   :maxtime_real                 =>0.47,
   :opttol                       =>1.0e20,
   :opttol_abs                   =>5e-1,
   :xtol                         =>1e-12,
   :xtol_iters                   =>0,
-  :algorithm                    =>1,
-  :bar_initpt                   =>3,
-  :bar_murule                   =>4,
-  :bar_penaltycons              =>1,
-  :bar_penaltyrule              =>2,
-  :bar_switchrule               =>2,
-  :linesearch                   =>1,
-  :linsolver                    =>2
+  :algorithm                    =>0,
+  :bar_initpt                   =>0,
+  :bar_murule                   =>0,
+  :bar_penaltycons              =>0,
+  :bar_penaltyrule              =>0,
+  :bar_switchrule               =>0,
+  :linesearch                   =>0,
+  :linsolver                    =>0
 )
 
 ################################################################################

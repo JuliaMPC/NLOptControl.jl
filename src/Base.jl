@@ -402,7 +402,7 @@ end
 postProcess!(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/27/2017, Last Modified: 5/28/2017 \n
+Date Create: 1/27/2017, Last Modified: 2/6/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function postProcess!(n;kwargs...)
@@ -412,7 +412,7 @@ function postProcess!(n;kwargs...)
   else; Init=get(kw,:Init,0);
   end
 
-  if !Init
+  if !Init # && n.r.status!=:Infeasible
     if n.s.integrationMethod==:ps
       if n.s.finalTimeDV
         t=[scale_tau(n.ts[int],0.0,getvalue(n.tf)) for int in 1:n.Ni];     # scale time from [-1,1] to [t0,tf]
@@ -480,7 +480,7 @@ function postProcess!(n;kwargs...)
         interpolateLinear!(n;numPts = n.s.numInterpPts, tfOptimal = n.s.tfOptimal)
       end
     end
-  elseif n.s.save  # no optimization run -> somtimes you drive straight to get started
+  elseif n.s.save  # no optimization ran -> sometimes you drive straight to get started
     push!(n.r.dfs,nothing)
     push!(n.r.dfs_con,nothing)
     opt2dfs!(n,;(:Init=>true))
