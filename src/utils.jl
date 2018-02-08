@@ -287,7 +287,7 @@ function resultsDir!(n;results_name::String = "",description::DataFrame = DataFr
  mkdir(n.r.results_dir)# create directory
 
  cd(n.r.results_dir)
-   CSV.write("description.csv", description)
+   CSV.write("description.csv", description; quotechar = ' ')
  cd(n.r.main_dir)
  return nothing
 end
@@ -301,7 +301,7 @@ Date Create: 3/26/2017, Last Modified: 2/6/2018 \n
 """
 function savePlantData!(n)
   cd(n.r.results_dir)
-    CSV.write("plant_data.csv", n.r.dfs_plantPts);
+    CSV.write("plant_data.csv", n.r.dfs_plantPts; quotechar = ' ');
   cd(n.r.main_dir)
   return nothing
 end
@@ -333,8 +333,8 @@ function saveData(n)
   end
 
   cd(n.r.results_dir)
-    CSV.write("st_ctr.csv",n.r.dfs[end]); # assuming only want the last one is needed
-    CSV.write("st_ctr_poly.csv",dfs);
+    CSV.write("st_ctr.csv",n.r.dfs[end]; quotechar = ' '); # assuming only want the last one is needed
+    CSV.write("st_ctr_poly.csv",dfs; quotechar = ' ');
   cd(n.r.main_dir)
   return nothing
 end
@@ -368,7 +368,7 @@ function saveBenchMarkData!(n)
   temp = [n.r.dfs_opt[jj][n.control.name[ctr]][1:end-1,:] for jj in first:length(n.r.dfs)];
 
   cd(n.r.results_dir)
-    CSV.write("bench_data.csv",dfs);
+    CSV.write("bench_data.csv",dfs; quotechar = ' ');
   cd(n.r.main_dir)
   return nothing
 end
