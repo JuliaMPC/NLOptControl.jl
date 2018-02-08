@@ -362,7 +362,7 @@ opt2dfs!(n)
 # funtionality to save optimization data
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/10/2017, Last Modified: 5/29/2017 \n
+Date Create: 2/10/2017, Last Modified: 02/08/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function opt2dfs!(n;kwargs...)
@@ -373,20 +373,23 @@ function opt2dfs!(n;kwargs...)
   end
 
   if !Init
-    push!(n.r.dfs_opt[:t_solve], n.r.t_solve)
-    push!(n.r.dfs_opt[:obj_val], n.r.obj_val)
+    if isempty(n.r.dfs_opt)
+        n.r.dfs_opt = DataFrame(tSolve = Float64[], objVal = Float64[], status = Bool[])
+    end
+    push!(n.r.dfs_opt[:tSolve], n.r.t_solve)
+    push!(n.r.dfs_opt[:objVal], n.r.obj_val)
     push!(n.r.dfs_opt[:status], n.r.status)
     if n.s.MPC
-      push!(n.r.dfs_opt[:iter_num], n.r.iter_nums)
+      push!(n.r.dfs_opt[:iterNum], n.r.iter_nums)
     else
-      push!(n.r.dfs_opt[:iter_num], n.r.iter_nums)
+      push!(n.r.dfs_opt[:iterNum], n.r.iter_nums)
     end
   else
     n.r.dfs_opt=DataFrame()
-    n.r.dfs_opt[:t_solve]=0.0
-    n.r.dfs_opt[:obj_val]=0.0
+    n.r.dfs_opt[:tSolve]=0.0
+    n.r.dfs_opt[:objVal]=0.0
     n.r.dfs_opt[:status]=:Init
-    n.r.dfs_opt[:iter_num]=0
+    n.r.dfs_opt[:iterNum]=0
   end
   return nothing
 end
@@ -493,7 +496,7 @@ function postProcess!(n;kwargs...)
     push!(n.r.dfs_con,nothing)
     if ((n.r.status != :Infeasible) || (n.r.status != :Error))
         opt2dfs!(n)
-    else  # no optimization ran -> sometimes you drive straight to get started
+    else  # no optimization ran -> i.e. drive straight to get started
         opt2dfs!(n,;(:Init=>true))
     end
   else
