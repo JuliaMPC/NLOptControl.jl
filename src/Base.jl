@@ -144,6 +144,10 @@ Date Created: 9/19/2017, Last Modified: 12/13/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function interpolateLagrange!(n; numPts::Int64=250, tfOptimal::Any=false)
+  if isnan(n.tf)
+      error("n.tf is a NaN cannot use it in interpolateLagrange!().\n")
+  end
+
   # TODO throw an error if tfOptimal does not make sense given current solution
   if isa(tfOptimal,Bool)
     if n.s.finalTimeDV
@@ -223,6 +227,10 @@ Date Created: 10/4/2017, Last Modified: 12/13/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function interpolateLinear!(n; numPts::Int64=250, tfOptimal::Any=false)
+    if isnan(n.tf)
+        error("n.tf is a NaN cannot use it in interpolateLinear!().\n")
+    end
+
   # TODO throw an error if tfOptimal does not make sense given current solution
   if isa(tfOptimal,Bool)
     if n.s.finalTimeDV
@@ -470,7 +478,7 @@ function postProcess!(n;kwargs...)
       end
     end
 
-    if n.s.save
+    if n.s.save && ((n.r.status != :Infeasible) || (n.r.status != :Error))
       push!(n.r.dfs,dvs2dfs(n))
       push!(n.r.dfs_con,con2dfs(n))
       opt2dfs!(n)
@@ -480,10 +488,14 @@ function postProcess!(n;kwargs...)
         interpolateLinear!(n;numPts = n.s.numInterpPts, tfOptimal = n.s.tfOptimal)
       end
     end
-  elseif n.s.save  # no optimization ran -> sometimes you drive straight to get started
+  elseif n.s.save
     push!(n.r.dfs,nothing)
     push!(n.r.dfs_con,nothing)
-    opt2dfs!(n,;(:Init=>true))
+    if ((n.r.status != :Infeasible) || (n.r.status != :Error))
+        opt2dfs!(n)
+    else  # no optimization ran -> sometimes you drive straight to get started
+        opt2dfs!(n,;(:Init=>true))
+    end
   else
     warn("postProcess.jl did not do anything")
   end
