@@ -144,10 +144,6 @@ Date Created: 9/19/2017, Last Modified: 12/13/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function interpolateLagrange!(n; numPts::Int64=250, tfOptimal::Any=false)
-  if isnan(n.tf)
-      error("n.tf is a NaN cannot use it in interpolateLagrange!().\n")
-  end
-
   # TODO throw an error if tfOptimal does not make sense given current solution
   if isa(tfOptimal,Bool)
     if n.s.finalTimeDV
@@ -157,6 +153,9 @@ function interpolateLagrange!(n; numPts::Int64=250, tfOptimal::Any=false)
     end
   else  # if there is a known optimal final time, then it is useful to evaluate the Lagrange polynomial at particular points to determine the error in the solution
     tf = tfOptimal
+  end
+  if isnan(tf)
+      error("tf is a NaN cannot use it in interpolateLagrange!().\n")
   end
 
   # sample points
@@ -227,10 +226,6 @@ Date Created: 10/4/2017, Last Modified: 12/13/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function interpolateLinear!(n; numPts::Int64=250, tfOptimal::Any=false)
-    if isnan(n.tf)
-        error("n.tf is a NaN cannot use it in interpolateLinear!().\n")
-    end
-
   # TODO throw an error if tfOptimal does not make sense given current solution
   if isa(tfOptimal,Bool)
     if n.s.finalTimeDV
@@ -240,6 +235,9 @@ function interpolateLinear!(n; numPts::Int64=250, tfOptimal::Any=false)
     end
   else  # if there is a known optimal final time, then it is useful to evaluate the Lagrange polynomial at particular points to determine the error in the solution
     tf = tfOptimal
+  end
+  if isnan(tf)
+      error("tf is a NaN cannot use it in interpolateLinear!().\n")
   end
 
   # sample points
@@ -374,7 +372,7 @@ function opt2dfs!(n;kwargs...)
 
   if !Init
     if isempty(n.r.dfs_opt)
-        n.r.dfs_opt = DataFrame(tSolve = Float64[], objVal = Float64[], status = Bool[])
+        n.r.dfs_opt = DataFrame(tSolve = Float64[], objVal = Float64[], status = Symbol[], iterNum = Int32[])
     end
     push!(n.r.dfs_opt[:tSolve], n.r.t_solve)
     push!(n.r.dfs_opt[:objVal], n.r.obj_val)
