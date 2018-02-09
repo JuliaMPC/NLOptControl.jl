@@ -6,7 +6,7 @@ BrysonDenham_EXP=[:(x2[j]),:(u1[j])]; L=1/6;
   obj=integrate!(n,:(0.5*u1[j]^2));
   @NLobjective(n.mdl,Min,obj);
   optimize!(n);
-  @show n.r.dfs_opt[1][:t_solve][1]
+  @show n.r.dfs_opt[:tSolve]
   @test isapprox(4/(9*L),n.r.obj_val[1],atol=tol)
 end
 
@@ -19,7 +19,7 @@ dx=[:(sin(x2[j])),:(u1[j])]
   obj=integrate!(n,:( u1[j]^2 + 350*cos(x2[j]) ) )
   @NLobjective(n.mdl,Min,obj);
   optimize!(n);
-  @show n.r.dfs_opt[1][:t_solve][1]
+  @show n.r.dfs_opt[:tSolve]
   @test isapprox(350,n.r.obj_val[1],atol=tol)
 end
 
@@ -33,7 +33,7 @@ dx=Array{Expr}(2);dx[1]=:(x[j]);dx[2]=:(u[j]-1.625);
   obj=integrate!(n,:(u[j]));
   @NLobjective(n.mdl, Min, obj);
   optimize!(n);
-  @show n.r.dfs_opt[1][:t_solve][1]
+  @show n.r.dfs_opt[:tSolve]
   @test isapprox(8.9253,n.r.obj_val[1],atol=tol)
 end
 
