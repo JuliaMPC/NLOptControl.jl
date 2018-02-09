@@ -291,12 +291,13 @@ plant2dfs!(n,sol)
 # TODO: sometimes plant control models have different states and controls - > take this into account
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/14/2017, Last Modified: 2/6/2018 \n
+Date Create: 2/14/2017, Last Modified: 2/8/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function plant2dfs!(n,sol)
   row, column=size(n.r.u)
-  t_sample=Ranges.linspace(sol.t[1],sol.t[end],row);
+  num = maximum([2*row, 50]) # TODO let user choose this
+  t_sample=Ranges.linspace(sol.t[1],sol.t[end],num);
   dfs_plant=DataFrame();
   dfs_plant[:t]=t_sample;
 
