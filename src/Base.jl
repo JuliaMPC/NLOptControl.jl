@@ -154,8 +154,17 @@ function interpolateLagrange!(n; numPts::Int64=250, tfOptimal::Any=false)
   else  # if there is a known optimal final time, then it is useful to evaluate the Lagrange polynomial at particular points to determine the error in the solution
     tf = tfOptimal
   end
+
   if isnan(tf)
-      error("tf is a NaN cannot use it in interpolateLagrange!().\n")
+      warn("tf is a NaN cannot use it in interpolateLagrange!().\n
+            Exiting interpolateLagrange!() without an interpolated solution.")
+    return nothing
+  end
+
+  if tf < 0.01
+    warn("tf needs to be greater than 0.01 to interpolate over solution.\n
+          Exiting interpolateLagrange!() without an interpolated solution.")
+     return nothing
   end
 
   # sample points
@@ -236,8 +245,17 @@ function interpolateLinear!(n; numPts::Int64=250, tfOptimal::Any=false)
   else  # if there is a known optimal final time, then it is useful to evaluate the Lagrange polynomial at particular points to determine the error in the solution
     tf = tfOptimal
   end
+
   if isnan(tf)
-      error("tf is a NaN cannot use it in interpolateLinear!().\n")
+      warn("tf is a NaN cannot use it in interpolateLinear!().\n
+            Exiting interpolateLinear!() without an interpolated solution.")
+      return nothing
+  end
+
+  if tf < 0.01
+    warn("tf needs to be greater than 0.01 to interpolate over solution.\n
+          Exiting interpolateLinear!() without an interpolated solution.")
+    return nothing
   end
 
   # sample points
@@ -365,15 +383,21 @@ Date Create: 2/10/2017, Last Modified: 02/08/2018 \n
 """
 function opt2dfs!(n;kwargs...)
   kw = Dict(kwargs);
-  # check to see if the user is initializing while compensating for control delay
+
   if !haskey(kw,:Init); Init=false;
   else; Init=get(kw,:Init,0);
   end
 
-  if !Init
-    if isempty(n.r.dfs_opt)
-        n.r.dfs_opt = DataFrame(tSolve = Float64[], objVal = Float64[], status = Symbol[], iterNum = Int32[])
-    end
+  if !haskey(kw,:statusUpdate); statusUpdate=false;
+  else; statusUpdate=get(kw,:statusUpdate,0);
+  end
+
+  # make sure that the feildnames are initialized
+  if isempty(n.r.dfs_opt)
+      n.r.dfs_opt = DataFrame(tSolve = [], objVal = [], status = [], iterNum = [])
+  end
+
+  if !Init && !statusUpdate
     push!(n.r.dfs_opt[:tSolve], n.r.t_solve)
     push!(n.r.dfs_opt[:objVal], n.r.obj_val)
     push!(n.r.dfs_opt[:status], n.r.status)
@@ -383,11 +407,14 @@ function opt2dfs!(n;kwargs...)
       push!(n.r.dfs_opt[:iterNum], n.r.iter_nums)
     end
   else
-    n.r.dfs_opt=DataFrame()
-    n.r.dfs_opt[:tSolve]=0.0
-    n.r.dfs_opt[:objVal]=0.0
-    n.r.dfs_opt[:status]=:Init
-    n.r.dfs_opt[:iterNum]=0
+    n.r.dfs_opt[:tSolve] = NaN
+    n.r.dfs_opt[:objVal] = NaN
+    if statusUpdate && (typeof(n.r.status)!=Symbol)
+      push!(n.r.dfs_opt[:status], n.r.status)
+    else
+      n.r.dfs_opt[:status] = :Init
+    end
+    n.r.dfs_opt[:iterNum] = NaN
   end
   return nothing
 end
@@ -421,7 +448,10 @@ function postProcess!(n;kwargs...)
   else; Init=get(kw,:Init,0);
   end
 
-  if !Init # && n.r.status!=:Infeasible
+  # even if n.r.status==:Infeasible try to get solution. For the case that user may want to look at results to see where constraints where violated
+  # in this case set =>  n.s.evalConstraints = true
+  # http://jump.readthedocs.io/en/latest/refmodel.html#solve-status
+  if !Init && (n.s.evalConstraints || ((n.r.status==:Optimal) || (n.r.status==:UserLimit)))
     if n.s.integrationMethod==:ps
       if n.s.finalTimeDV
         t=[scale_tau(n.ts[int],0.0,getvalue(n.tf)) for int in 1:n.Ni];     # scale time from [-1,1] to [t0,tf]
@@ -479,7 +509,7 @@ function postProcess!(n;kwargs...)
       end
     end
 
-    if n.s.save && ((n.r.status != :Infeasible) || (n.r.status != :Error))
+    if n.s.save && (n.r.status != :Infeasible) && (n.r.status != :Error)
       push!(n.r.dfs,dvs2dfs(n))
       push!(n.r.dfs_con,con2dfs(n))
       opt2dfs!(n)
@@ -492,8 +522,8 @@ function postProcess!(n;kwargs...)
   elseif n.s.save
     push!(n.r.dfs,nothing)
     push!(n.r.dfs_con,nothing)
-    if ((n.r.status != :Infeasible) || (n.r.status != :Error))
-        opt2dfs!(n)
+    if (n.r.status == :Infeasible) || (n.r.status == :Error)
+        opt2dfs!(n;(:statusUpdate=>true))
     else  # no optimization ran -> i.e. drive straight to get started
         opt2dfs!(n,;(:Init=>true))
     end
