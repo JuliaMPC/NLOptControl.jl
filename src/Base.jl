@@ -402,20 +402,19 @@ function opt2dfs!(n;kwargs...)
     push!(n.r.dfs_opt[:tSolve], n.r.t_solve)
     push!(n.r.dfs_opt[:objVal], n.r.obj_val)
     push!(n.r.dfs_opt[:status], n.r.status)
-    if n.s.MPC
-      push!(n.r.dfs_opt[:iterNum], n.r.iter_nums)
-    else
-      push!(n.r.dfs_opt[:iterNum], n.r.iter_nums)
-    end
   else
-    n.r.dfs_opt[:tSolve] = NaN
-    n.r.dfs_opt[:objVal] = NaN
-    if statusUpdate && (typeof(n.r.status)!=Symbol)
+    push!(n.r.dfs_opt[:tSolve], NaN)
+    push!(n.r.dfs_opt[:objVal], NaN)
+    if statusUpdate && (typeof(n.r.status)==Symbol)
       push!(n.r.dfs_opt[:status], n.r.status)
     else
-      n.r.dfs_opt[:status] = :Init
+      push!(n.r.dfs_opt[:status], NaN)
     end
-    n.r.dfs_opt[:iterNum] = NaN
+  end
+  if n.s.MPC
+    push!(n.r.dfs_opt[:iterNum], n.r.iter_nums) # can set iter_nums for a higher/lower level algoritm
+  else
+    push!(n.r.dfs_opt[:iterNum], n.r.eval_num)
   end
   return nothing
 end
@@ -445,7 +444,7 @@ Date Create: 1/27/2017, Last Modified: 2/6/2017 \n
 function postProcess!(n;kwargs...)
   kw = Dict(kwargs);
   # check to see if the user is initializing while compensating for control delay
-  if !haskey(kw,:Init);Init=false;
+  if !haskey(kw,:Init);Init=false; 
   else; Init=get(kw,:Init,0);
   end
 
@@ -519,8 +518,10 @@ function postProcess!(n;kwargs...)
       else
         interpolateLinear!(n;numPts = n.s.numInterpPts, tfOptimal = n.s.tfOptimal)
       end
+    else # always give a status update
+      opt2dfs!(n;(:statusUpdate=>true))
     end
-  elseif n.s.save
+  elseif n.s.save  # helps to line data up, also if !n.s.evalConstraints then the optimization status will be saved
     push!(n.r.dfs,nothing)
     push!(n.r.dfs_con,nothing)
     if (n.r.status == :Infeasible) || (n.r.status == :Error)
