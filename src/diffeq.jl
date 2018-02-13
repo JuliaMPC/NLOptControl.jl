@@ -121,7 +121,6 @@ function NLCon(n::NLOpt,expr::Expr,args...)
     end
 
     @NLconstraint($n.mdl,[j=1:$L],$expr)
-#    newConstraint!(n,FZ_rl_con,:FZ_rl_con);
   end
   return eval(code)
 end

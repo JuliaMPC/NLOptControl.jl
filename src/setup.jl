@@ -280,7 +280,8 @@ function OCPdef!(n::NLOpt)
 
       # additional constraints
       for num in 1:length(n.NLcon)
-        addCon(n,x_int,u_int,L,num);
+         ch = addCon(n,x_int,u_int,L,num)
+         newConstraint!(n,ch,Symbol(string("ch",num))) # TODO could let the user name these
       end
     end
   elseif n.s.integrationMethod==:tm
@@ -306,6 +307,12 @@ function OCPdef!(n::NLOpt)
       for st in 1:n.numStates
         n.r.dyn_con[:,st] = @NLconstraint(n.mdl, [j in 1:n.N], n.r.x[j+1,st] - n.r.x[j,st] == 0.5*(dx[j,st] + dx[j+1,st])*n.tf/(n.N) )
       end
+    end
+
+    # additional constraints
+    for num in 1:length(n.NLcon)
+       ch = addCon(n,n.r.x,n.r.u,L,num)
+       newConstraint!(n,ch,Symbol(string("ch",num))) # TODO could let the user name these
     end
   end
 
