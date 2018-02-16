@@ -21,7 +21,19 @@ using .MPC_Module
 ################################################################################
 # Constants
 ################################################################################
-
+#####################################
+# settings for both KNITRO and IPOPT
+####################################
+#outlev # (c.m.solver==:Ipopt) ? :print_level : :outlev # print level
+# (KNITRO) absolute stopping tolerance for the feasibility error
+# (Ipopt) Absolute tolerance on the constraint violation.
+#feastol_abs # (c.m.solver==:Ipopt) ? :constr_viol_tol : :feastol_abs
+# (KNITRO) maximum number of iterations before termination
+# (Ipopt) Maximum number of iterations.
+#maxit # (c.m.solver==:Ipopt) ? :max_iter : :maxit
+# (KNITRO) in seconds, the maximum allowable CPU time before termination
+# (Ipopt) A limit on CPU seconds that Ipopt can use to solve one problem
+#maxtime_cpu # (c.m.solver==:Ipopt) ? :max_cpu_time : :maxtime_cpu
 const _Ipopt_defaults=Dict(
    :print_level                =>0,
    :warm_start_init_point      =>"yes",
