@@ -21,7 +21,7 @@ type MPC
   modelEquations
 
   # constants
-  tp::Float64          # predication time (if finalTimeDV == true -> this is not known before optimization)
+  tp::Any          # predication time (if finalTimeDV == true -> this is not known before optimization)
   tex::Float64         # execution horizon time
   max_iter::Int64      # maximum number of iterations
 
@@ -43,7 +43,7 @@ function MPC()
   MPC(
       Any,
       Any,
-      0.0,
+      Any,  # might be a variable tp
       0.0,
       0,
       false,
@@ -71,7 +71,7 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 4/7/2017, Last Modified: 4/7/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function initializeMPC!(n;FixedTp::Bool=true,PredictX0::Bool=true,tp::Float64=5.0,tex::Float64=0.5,max_iter::Int64=10)
+function initializeMPC!(n;FixedTp::Bool=true,PredictX0::Bool=true,tp::Any=NaN,tex::Float64=0.5,max_iter::Int64=10)
   if n.mpc.t0_param!=Any
     error("\n initializeMPC!() must be called before OCPdef!() \n")
   end
