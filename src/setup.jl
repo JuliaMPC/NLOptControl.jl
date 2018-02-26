@@ -79,7 +79,7 @@ function defineSolver!(n::NLOpt,kw)
   # get the name of the solver
   if haskey(kw,:name); n.s.solver.name=get(kw,:name,0); end
   if try_import(n.s.solver.name)
-  else error(string("\n could not import ",n.s.solver.name,"\n consider adding it with: \n Pkg.add(``",n.s.solver.name,``")") )
+  else error(string("could not import ",n.s.solver.name) )
   end
 
   # see if the user would like to use a standard set of solver settings for mpc
@@ -227,7 +227,7 @@ function OCPdef!(n::NLOpt)
 
   for st in 1:n.numStates
     if !isnan(n.X0[st]) # could have a bool for this
-      if any(.!isnan.(n.X0_tol)) #NOTE in JuMP: Modifying range constraints is currently unsupported.
+      if !isnan(n.X0_tol[st]) #NOTE in JuMP: Modifying range constraints is currently unsupported.
         n.r.x0_con[st,1]=@constraint(n.mdl, n.r.x[1,st] <=  (n.X0[st]+n.X0_tol[st]));
         n.r.x0_con[st,2]=@constraint(n.mdl,-n.r.x[1,st] <= -(n.X0[st]-n.X0_tol[st]));
       else
