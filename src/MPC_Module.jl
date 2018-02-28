@@ -122,7 +122,6 @@ function updateStates!(n)
 end
 
 """
-# NOTE: this function is called inside simPlant()
 updateX0!(n,X0;(:userUpdate=>true))    # user defined update of X0
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
@@ -162,7 +161,7 @@ Date Create: 2/14/2017, Last Modified: 6/27/2017 \n
 function simPlant!(n;X0=n.X0,t=n.r.t_ctr+n.mpc.t0,U=n.r.U,t0=n.mpc.t0_actual,tf=n.r.eval_num*n.mpc.tex)
   sol=n.mpc.plantEquations(n,X0,t,U,t0,tf);
   plant2dfs!(n,sol);  #TODO consider passing U, t0 etc..
-  t0p=updateX0!(n);
+#  updateX0!(n);
   return nothing
 end
 
