@@ -200,7 +200,7 @@ end
 
 function states!(n::NLOpt,names;descriptions=[])
   if !n.define
-    error("\n call define() before calling stateNames() \n")
+    error("\n call define() before calling states!() \n")
   end
   if length(names)!=n.numStates
     error("\n Check size of names \n")
@@ -238,7 +238,7 @@ end
 
 function controls!(n::NLOpt,names;descriptions=[])
   if !n.define
-    error("\n call define() before calling controlNames() \n")
+    error("\n call define() before calling controls!() \n")
   end
   if length(names)!=n.numControls
     error("\n Check sizes of names \n")
