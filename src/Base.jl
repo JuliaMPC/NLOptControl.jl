@@ -367,7 +367,7 @@ function dvs2dfs(n)
       CS_vector[end,st] = NaN;
     end
     for st in 1:n.numStates # states
-      dfs[Symbol(n.state.name[st],:_cs)]=CS_vector[:,st];
+      dfs[Symbol(n.state.name[st],:cs)]=CS_vector[:,st];
     end
   end
 
@@ -444,7 +444,7 @@ Date Create: 1/27/2017, Last Modified: 2/6/2017 \n
 function postProcess!(n;kwargs...)
   kw = Dict(kwargs);
   # check to see if the user is initializing while compensating for control delay
-  if !haskey(kw,:Init);Init=false; 
+  if !haskey(kw,:Init);Init=false;
   else; Init=get(kw,:Init,0);
   end
 
