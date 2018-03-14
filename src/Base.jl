@@ -541,19 +541,19 @@ optimize!(n)
 # solves JuMP model and saves optimization data
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/6/2017, Last Modified: 5/29/2017 \n
+Date Create: 2/6/2017, Last Modified: 3/12/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function optimize!(n;Iter::Int64=0)
-  t1=time(); status=JuMP.solve(n.mdl); t2=time();
-#  if n.s.save
-    n.r.status=status;
-    n.r.t_solve=t2-t1;
-    n.r.obj_val=getobjectivevalue(n.mdl);
-    n.r.iter_nums=Iter;    # possible iteration number for a higher level algorithm
-    n.r.eval_num=n.r.eval_num+1;
-    postProcess!(n);      # temporarily save data
-#  end
+  t1 = time(); status = JuMP.solve(n.mdl); t2 = time();
+  if !n.s.cacheOnly
+    n.r.status = status
+    n.r.t_solve = t2 - t1
+    n.r.obj_val = getobjectivevalue(n.mdl)
+    n.r.iter_nums = Iter    # possible iteration number for a higher level algorithm
+    n.r.eval_num = n.r.eval_num + 1
+    postProcess!(n)      # temporarily save data
+  end
   return nothing
 end
 

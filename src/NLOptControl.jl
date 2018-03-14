@@ -222,7 +222,7 @@ Result( Vector{Any}[], # time vector for control
         nothing,       # handle for final state constraints
         nothing,       # dynamics constraint
         Constraint(),  # constraint data
-        1,             # current evaluation number
+        0,             # current evaluation number
         [],            # mics. data, perhaps an iteration number for a higher level algorithm
         Symbol,        # optimization status
         Float64,       # solve time for optimization
@@ -251,6 +251,7 @@ type Settings   # options
   tf_max::Any                   # maximum final time
   tfOptimal::Any                # known optimal final time
   numInterpPts::Int64           # number of points to sample polynomial running through collocation points
+  cacheOnly::Bool               # bool for only caching the results when using optimize!()
 end
 
 # Default Constructor NOTE currently not using these, they get overwritten
@@ -267,7 +268,8 @@ function Settings()
          false,              # bool for evaluating costates
          400.0,              # maximum final time
          false,              # known optimal final time
-         250                 # number of points to sample polynomial running through collocation points
+         250,                # number of points to sample polynomial running through collocation points
+         false               # bool for only caching the results when using optimize!()
                 );
 end
 

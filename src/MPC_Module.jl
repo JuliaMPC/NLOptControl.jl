@@ -153,15 +153,16 @@ end
 
 """
 simPlant(n)
+# NOTE if previous solution was Infeasible it will just pass the begining of the last Optimal solution again
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/14/2017, Last Modified: 6/27/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function simPlant!(n;X0=n.X0,t=n.r.t_ctr+n.mpc.t0,U=n.r.U,t0=n.mpc.t0_actual,tf=n.r.eval_num*n.mpc.tex)
-  sol=n.mpc.plantEquations(n,X0,t,U,t0,tf);
-  plant2dfs!(n,sol);  #TODO consider passing U, t0 etc..
-#  updateX0!(n);
+function simPlant!(n;X0=n.X0,t=n.r.t_ctr+n.mpc.t0,U=n.r.U,t0=n.mpc.t0_actual,tf=(n.r.eval_num)*n.mpc.tex)
+  sol=n.mpc.plantEquations(n,X0,t,U,t0,tf)
+  plant2dfs!(n,sol)  #TODO consider passing U, t0 etc..
+#  updateX0!(n)
   return nothing
 end
 
@@ -179,15 +180,17 @@ function predictX0!(n)
     error("n.mpc.tf==n.mpc.t0")
   end
 
-  if n.mpc.FixedTp || r.eval_num==1
-    t0p=n.mpc.tex;
+  if n.mpc.FixedTp
+    t0p = n.mpc.tex
+  elseif n.r.eval_num == 0
+    t0p = n.t0
   else
-    t0p=r.dfs_opt[end][:t_solve][1]
+    t0p = r.dfs_opt[end][:t_solve][1]
   end
-  if n.r.eval_num != 1
+  if n.r.eval_num != 0
     # based off of "current X0". Even though we may have the next X0 we should not (i.e.look at @show length(n.mpc.X0)). It is because it is a simulation (in reality they would be running in parallel)
-    sol=simModel(n,n.mpc.X0[n.r.eval_num],n.r.t_ctr+n.mpc.t0,n.r.U,n.mpc.t0,n.mpc.t0+t0p)
-    n.mpc.X0p=sol(n.mpc.t0+t0p)[:];
+    sol = simModel(n,n.mpc.X0[(n.r.eval_num)],n.r.t_ctr+n.mpc.t0,n.r.U,n.mpc.t0,n.mpc.t0+t0p)
+    n.mpc.X0p = sol(n.mpc.t0+t0p)[:];
   else # using this with driveStraight!()
     n.mpc.X0p = n.X0  # NOTE assuming the vehicle did not move
   end
@@ -248,15 +251,17 @@ Date Create: 2/1/2017, Last Modified: 6/22/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function autonomousControl!(n)
-  mpcUpdate!(n)
- # update states based off of n.mpc.X0p
-  # updateStates!(n)  TODO update this function so it does the following code
-  for st in 1:n.numStates   # update states based off of n.mpc.X0p
-    if any(!isnan(n.X0_tol[st]))
-      JuMP.setRHS(n.r.x0_con[st,1], (n.mpc.X0p[st]+n.X0_tol[st]));
-      JuMP.setRHS(n.r.x0_con[st,2],-(n.mpc.X0p[st]-n.X0_tol[st]));
-    else
-      JuMP.setRHS(n.r.x0_con[st],n.mpc.X0p[st]);
+  if n.r.eval_num != 0
+    mpcUpdate!(n)
+   # update states based off of n.mpc.X0p
+    # updateStates!(n)  TODO update this function so it does the following code
+    for st in 1:n.numStates   # update states based off of n.mpc.X0p
+      if any(!isnan(n.X0_tol[st]))
+        JuMP.setRHS(n.r.x0_con[st,1], (n.mpc.X0p[st]+n.X0_tol[st]));
+        JuMP.setRHS(n.r.x0_con[st,2],-(n.mpc.X0p[st]-n.X0_tol[st]));
+      else
+        JuMP.setRHS(n.r.x0_con[st],n.mpc.X0p[st]);
+      end
     end
   end
   optimize!(n)
