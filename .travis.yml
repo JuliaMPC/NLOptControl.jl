@@ -13,8 +13,8 @@ addons:
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia -e 'Pkg.clone(pwd())'
-  #- julia -e 'Pkg.add("Ipopt")'
-  #- julia -e 'Pkg.build("Ipopt")'
+  - julia -e 'Pkg.add("Ipopt")'
+  - julia -e 'Pkg.build("Ipopt")'
   #- julia -e 'Pkg.add("NBInclude")'
   #- julia -e 'Pkg.build("NBInclude")'
   - julia -e 'Pkg.test("NLOptControl")'
