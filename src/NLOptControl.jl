@@ -8,7 +8,6 @@ using Ipopt
 using KNITRO
 using FastGaussQuadrature
 using DataFrames # https://discourse.julialang.org/t/dataframes-0-11-released/7296
-using Ranges
 using CSV
 using Images
 

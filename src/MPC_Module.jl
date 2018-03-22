@@ -1,7 +1,6 @@
 module MPC_Module
 
 using JuMP
-using Ranges
 
 include("Base.jl")
 using .Base
@@ -207,7 +206,7 @@ Date Create: 4/9/2017, Last Modified: 6/27/2017 \n
 function driveStraight!(n;t0::Float64=n.mpc.t0,tf::Float64=n.mpc.tf)
   # add these signals to r so that they can be used for predictions during optimization
   n.r.U=0*Matrix{Float64}(n.numControlPoints,n.numControls);
-  n.r.t_ctr=Vector(Ranges.linspace(t0,tf,n.numControlPoints)); # gives a bunch of points
+  n.r.t_ctr=Vector(linspace(t0,tf,n.numControlPoints))         # gives a bunch of points
   postProcess!(n;(:Init=>true));                               # to make solutions line up
 
   # simulate the "actual vehicle" response

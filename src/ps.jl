@@ -81,7 +81,7 @@ Date Create: 12/23/2017, Last Modified: 9/18/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function createIntervals!(n::NLOpt)
-    tm = Ranges.linspace(-1,1,n.Ni+1)     # create mesh points
+    tm = linspace(-1,1,n.Ni+1)     # create mesh points
     di = 2/n.Ni                           # interval size
     # go through each mesh interval creating time intervals; map [tm[i-1],tm[i]] --> [-1,1]
     n.ts = [[scale_tau(n.tau[int],tm[int],tm[int+1]);di*int-1] for int in 1:n.Ni]
@@ -93,7 +93,7 @@ end
 # NOTE this function was used for testing, but is currently depreciated. When it is used again figure out why and explain why
 # di = (tf + 1).n.Ni
 function createIntervals!(n::NLOpt, tf)
-    tm = Ranges.linspace(-1,1,n.Ni+1)       # create mesh points
+    tm = linspace(-1,1,n.Ni+1)       # create mesh points
     di = (tf + 1)/n.Ni                      # interval size
     # go through each mesh interval creating time intervals; map [tm[i-1],tm[i]] --> [-1,1]
     n.ts = [[scale_tau(n.tau[int],tm[int],tm[int+1]);di*int-1] for int in 1:n.Ni]
