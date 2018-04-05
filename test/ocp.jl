@@ -121,11 +121,11 @@ opt_num = length(Nck_vec)
       end
     end
 
-    t_opt_ave[num] = Images.meanfinite(t_solve,1)[1]
-    h_error_ave[num] = Images.meanfinite(h_error,1)[1]
-    v_error_ave[num] = Images.meanfinite(v_error,1)[1]
-    u_error_ave[num] = Images.meanfinite(u_error,1)[1]
-    max_error_ave[num] = Images.meanfinite(max_error,1)[1]
+    t_opt_ave[num] = mean(t_solve[!isnan.(t_solve)],1)[1]
+    h_error_ave[num] = mean(h_error[!isnan.(h_error)],1)[1]
+    v_error_ave[num] = mean(v_error[!isnan.(v_error)],1)[1]
+    u_error_ave[num] = mean(u_error[!isnan.(u_error)],1)[1]
+    max_error_ave[num] = mean(max_error[!isnan.(max_error)],1)[1]
   end
   @show maximum(max_error_ave)
   @test isapprox(0, maximum(max_error_ave),atol=big_tol)
