@@ -92,21 +92,21 @@ Date Create: 1/2/2017, Last Modified: 9/18/2017 \n
 """
 function integrate!(n::NLOpt,V::Expr)
   if n.s.integrationMethod==:ps
-    integral_expr=[Array{Any}(n.Nck[int]) for int in 1:n.Ni];
+    integral_expr = [Array{Any}(n.Nck[int]) for int in 1:n.Ni]
     for int in 1:n.Ni
-      x_int,u_int=intervals(n,int,n.r.x,n.r.u);
-      L=size(x_int)[1]-1;
-      integral_expr[int][:]=NLExpr(n,V,x_int,u_int,L)
+      x_int,u_int = intervals(n,int,n.r.x,n.r.u)
+      L = size(x_int)[1]-1
+      integral_expr[int][:] = NLExpr(n,V,x_int,u_int,L)
     end
-    @NLexpression(n.mdl, temp[int=1:n.Ni], (n.tf-n.t0)/2*sum(n.ws[int][j]*integral_expr[int][j] for j = 1:n.Nck[int]) );
-    expression=@NLexpression(n.mdl, sum(temp[int] for int = 1:n.Ni));
+    @NLexpression(n.mdl, temp[int=1:n.Ni], (n.tf-n.t0)/2*sum(n.ws[int][j]*integral_expr[int][j] for j = 1:n.Nck[int]) )
+    expression = @NLexpression(n.mdl, sum(temp[int] for int = 1:n.Ni))
   elseif n.s.integrationMethod==:tm
-    L=size(n.r.x)[1];
-    temp=NLExpr(n,V,n.r.x,n.r.u,L);
+    L = size(n.r.x)[1];
+    temp = NLExpr(n,V,n.r.x,n.r.u,L);
     if n.s.integrationScheme==:bkwEuler
-      expression=@NLexpression(n.mdl,sum(temp[j+1]*n.tf/n.N for j = 1:n.N) );
+      expression = @NLexpression(n.mdl, sum(temp[j+1]*n.tf/n.N for j = 1:n.N) )
     elseif n.s.integrationScheme==:trapezoidal
-      expression=@NLexpression(n.mdl,sum(0.5*(temp[j]+temp[j+1])*n.tf/n.N for j = 1:n.N) );
+      expression = @NLexpression(n.mdl, sum(0.5*(temp[j]+temp[j+1])*n.tf/n.N for j = 1:n.N) )
     else
       error("\n $(n.s.integrationScheme) not defined in integrationSchemes\n")
     end
