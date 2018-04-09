@@ -522,13 +522,14 @@ function postProcess!(n;kwargs...)
       opt2dfs!(n;(:statusUpdate=>true))
     end
   elseif n.s.save  # helps to line data up, also if !n.s.evalConstraints then the optimization status will be saved
-    push!(n.r.dfs,nothing)
-    push!(n.r.dfs_con,nothing)
-    if (n.r.status == :Infeasible) || (n.r.status == :Error)
+    # NOTE removed!
+    #push!(n.r.dfs,nothing)
+    #push!(n.r.dfs_con,nothing)
+    #if (n.r.status == :Infeasible) || (n.r.status == :Error)
         opt2dfs!(n;(:statusUpdate=>true))
-    else  # no optimization ran -> i.e. drive straight to get started
-        opt2dfs!(n,;(:Init=>true))
-    end
+    #else  # no optimization ran -> i.e. drive straight to get started
+    #    opt2dfs!(n,;(:Init=>true))
+    #end
   else
     warn("postProcess.jl did not do anything")
   end

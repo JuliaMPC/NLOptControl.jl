@@ -152,13 +152,14 @@ end
 
 """
 simPlant(n)
+# consider X0=n.mpc.X0[(n.r.eval_num)] when plant and controller are different
 # NOTE if previous solution was Infeasible it will just pass the begining of the last Optimal solution again
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/14/2017, Last Modified: 6/27/2017 \n
+Date Create: 2/14/2017, Last Modified: 4/09/2018 \n
 --------------------------------------------------------------------------------------\n
 """
-function simPlant!(n;X0=n.X0,t=n.r.t_ctr+n.mpc.t0,U=n.r.U,t0=n.mpc.t0_actual,tf=(n.r.eval_num)*n.mpc.tex)
+function simPlant!(n;X0=n.X0,t=n.r.t_ctr+n.mpc.t0,U=n.r.U,t0=n.mpc.t0_actual,tf=n.r.eval_num*n.mpc.tex)
   sol=n.mpc.plantEquations(n,X0,t,U,t0,tf)
   plant2dfs!(n,sol)  #TODO consider passing U, t0 etc..
 #  updateX0!(n)
