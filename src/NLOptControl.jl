@@ -429,7 +429,6 @@ export
        # MPC_Module.jl
        autonomousControl!,
        initializeMPC!,
-       driveStraight!,
        updateX0!,
        simPlant!,
        simModel,
