@@ -48,19 +48,19 @@ function define(;
     error(string("\n Length of CU must match number of controls \n"));
   end
 
-  n.numStates=numStates;
-  n.numControls = numControls;
-  n.state=initStateNames(n);
-  n.control=initControlNames(n);
-  n.X0 = X0;
-  n.X0_tol = NaN*X0;
-  n.XF = XF;
-  n.XF_tol = NaN*XF;
-  n.XL = XL;
-  n.XU = XU;
-  n.CL = CL;
-  n.CU = CU;
-  n.define=true;
+  n.numStates = numStates
+  n.numControls = numControls
+  n.state = initStateNames(n)
+  n.control = initControlNames(n)
+  n.X0 = X0
+  n.X0_tol = NaN*X0
+  n.XF = XF
+  n.XF_tol = NaN*XF
+  n.XL = XL
+  n.XU = XU
+  n.CL = CL
+  n.CU = CU
+  n.define = true
   return n
 end
 
