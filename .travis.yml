@@ -15,6 +15,4 @@ script:
   - julia -e 'Pkg.clone(pwd())'
   - julia -e 'Pkg.add("Ipopt")'
   - julia -e 'Pkg.build("Ipopt")'
-  #- julia -e 'Pkg.add("NBInclude")'
-  #- julia -e 'Pkg.build("NBInclude")'
   - julia -e 'Pkg.test("NLOptControl")'
