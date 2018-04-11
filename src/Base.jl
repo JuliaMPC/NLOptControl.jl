@@ -19,8 +19,32 @@ export
   intervals,
   interpolateLagrange!,
   interpolateLinear!,
-  interpolate_lagrange
+  interpolate_lagrange,
+  State,
+  Control
 
+################################################################################
+# Basic Types
+################################################################################
+############################### control ########################################
+type Control
+  name::Vector{Any}
+  description::Vector{Any}
+end
+function Control()
+  Control([],
+          []);
+end
+
+# ############################# state  ##########################################
+type State
+  name::Vector{Any}
+  description::Vector{Any}
+end
+function State()
+  State([],
+        []);
+end
 """
 L = lagrange_basis_poly(x,x_data,Nc,j)
 --------------------------------------------------------------------------------------\n

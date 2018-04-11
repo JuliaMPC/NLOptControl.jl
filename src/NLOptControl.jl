@@ -116,29 +116,6 @@ const _KNITRO_MPC=Dict(
   :linsolver                    =>0
 )
 
-################################################################################
-# Basic Types
-################################################################################
-############################### control ########################################
-type Control
-  name::Vector{Any}
-  description::Vector{Any}
-end
-function Control()
-  Control([],
-          []);
-end
-
-# ############################# state  ##########################################
-type State
-  name::Vector{Any}
-  description::Vector{Any}
-end
-function State()
-  State([],
-        []);
-end
-
 ############################## constraint ######################################
 type Constraint
   name::Vector{Any}

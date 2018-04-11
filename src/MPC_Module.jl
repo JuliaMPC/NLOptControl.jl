@@ -2,7 +2,7 @@ module MPC_Module
 
 using JuMP
 
-include("Base.jl")
+include("Base.jl") # TODO move State and Control here
 using .Base
 
 export
@@ -45,7 +45,8 @@ function configureMPC!(n; kwargs... )
 
   elseif isequal(n.mpc.simulationMode,:internalPlant)
 
-  elseif
+  else
+  end
 
 end
 
@@ -113,6 +114,7 @@ function MPC()
       [],
       Float64[],          # predicted actual initial state conditions
       [],
+      true,
       true,
       true,
       true,
@@ -319,5 +321,71 @@ function autonomousControl!(n)
   return n.r.status
 end
 
+"""
+mapIP!(n)
+
+
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 4/9/2018, Last Modified: 4/9/2018 \n
+--------------------------------------------------------------------------------------\n
+"""
+function mapNames!(n,mode)
+  if isequal(mode,:IP)
+    s1 = n.state.name
+    c1 = n.control.name
+    s2 = n.mpc.stateIP.name
+    c2 = n.mpc.controlIP.name
+  elseif isequal(mode,:EP)
+    error(":EP function not ready")
+  else
+    error("mode must be either :IP or :EP")
+  end
+
+  m = []
+  # go through all states in OCP
+  idxOCP = 1
+  for var in s1
+    # go through all states in IP
+    idxIP = find(var.==s2)
+    if !isempty(idxIP)
+      push!(m, [var; :stOCP; idxOCP; :stIP; idxIP[1]])
+    end
+
+    # go through all controls in IP
+    idxIP = find(var.==c2)
+    if !isempty(idxIP)
+      push!(m, [var; :stOCP; idxOCP; :ctrIP; idxIP[1]])
+    end
+    idxOCP = idxOCP + 1
+  end
+
+  # go through all controls in OCP
+  idxOCP = 1
+  for var in c1
+    # go through all states in IP
+    idxIP = find(var.==s2)
+    if !isempty(idxIP)
+      push!(m, [var; :ctrOCP; idxOCP; :stIP; idxIP[1]])
+    end
+
+    # go through all controls in IP
+    idxIP = find(var.==c2)
+    if !isempty(idxIP)
+      push!(m, [var; :ctrOCP; idxOCP; :ctrIP; idxIP[1]])
+    end
+    idxOCP = idxOCP + 1
+  end
+
+  if isequal(mode,:IP)
+    n.mpc.mIP = m
+  elseif isequal(mode,:EP)
+    error(":EP function not ready")
+  else
+    error("mode must be either :IP or :EP")
+  end
+
+  return nothing
+end
 
 end # module
