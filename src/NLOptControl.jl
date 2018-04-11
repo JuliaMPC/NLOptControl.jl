@@ -181,7 +181,7 @@ type Result
   X_pts                       # vector state evaluated using Lagrange polynomial
   U_pts                       # vector control evaluated using Lagrane polynomial
   CS_pts                      # vector costate evaluated using Lagrange polynomial
-  x0_con                      # handle for intial state constraints
+  x0_con                      # handle for initial state constraints
   xf_con                      # handle for final state constraints
   dyn_con                     # dynamics constraints
   constraint::Constraint      # constraint handles and data
@@ -192,8 +192,8 @@ type Result
   obj_val                     # objective function value
   dfs                         # results in DataFrame for plotting
   dfs_opt                     # optimization information in DataFrame for plotting
-  dfs_plant                   # plant data
-  dfs_plantPts::DataFrames.DataFrame # plant data extracted into a single DataFrame
+  dfs_plant                   # plant data TODO move
+  dfs_plantPts::DataFrames.DataFrame # plant data extracted into a single DataFrame TODO move
   dfs_con                     # constraint data
   results_dir                 # string that defines results folder
   main_dir                    # string that defines main folder

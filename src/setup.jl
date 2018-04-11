@@ -334,7 +334,7 @@ Date Create: 1/1/2017, Last Modified: 11/10/2017 \n
 -------------------------------------------------------------------------------------\n
 """
 function configure!(n::NLOpt; kwargs... )
-  kw = Dict(kwargs);
+  kw = Dict(kwargs)
 
   # final time
   if !haskey(kw,:finalTimeDV);n.s.finalTimeDV=false;
@@ -345,9 +345,9 @@ function configure!(n::NLOpt; kwargs... )
     error("\n If the final is not a design variable pass it as: (:tf=>Float64(some #)) \n
         If the final time is a design variable, indicate that as: (:finalTimeDV=>true)\n")
   elseif haskey(kw,:tf) && !n.s.finalTimeDV
-    n.tf = get(kw,:tf,0);
+    n.tf = get(kw,:tf,0)
   elseif n.s.finalTimeDV
-    n.tf = Any;
+    n.tf = Any
   end
 
   # integrationScheme
@@ -356,9 +356,9 @@ function configure!(n::NLOpt; kwargs... )
   end
 
   if n.s.integrationScheme==:lgrExplicit ||  n.s.integrationScheme==:lgrImplicit
-    n.s.integrationMethod=:ps;
+    n.s.integrationMethod = :ps
   elseif n.s.integrationScheme==:trapezoidal || n.s.integrationScheme==:bkwEuler
-    n.s.integrationMethod=:tm;
+    n.s.integrationMethod = :tm
   else
     error("the :integrationScheme that you specified is not currently implemeted \n")
   end
