@@ -206,12 +206,12 @@ end
 
 function PlantResults()
  PlantResults(
-  [],               # plant data
+    DataFrame(), # plantdata
   Vector{Any}[],
   Vector{Any}[],
   Vector{Any}[],
   Matrix{Any}[], # e
-  DataFrame(),
+           [],   # vector of plantdata dfs
   DataFrame(),
   DataFrame(),
   DataFrame(),
@@ -435,7 +435,7 @@ end
 """
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 6/29/2017, Last Modified: 9/20/2017 \n
+Date Create: 6/29/2017, Last Modified: 4/13/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function intervals(n,int,x,u)
@@ -488,7 +488,7 @@ end
 """
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Created: 9/19/2017, Last Modified: 12/13/2017 \n
+Date Created: 9/19/2017, Last Modified: 4/13/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function interpolateLagrange!(n; numPts::Int64=250, tfOptimal::Any=false)
@@ -579,7 +579,7 @@ end
 """
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Created: 10/4/2017, Last Modified: 12/13/2017 \n
+Date Created: 10/4/2017, Last Modified: 4/13/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function interpolateLinear!(n; numPts::Int64=250, tfOptimal::Any=false)
@@ -636,25 +636,24 @@ end
 
 """
 plant2dfs!(n,sol)
-# TODO: sometimes plant control models have different states and controls - > take this into account
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/14/2017, Last Modified: 3/22/2018 \n
+Date Create: 2/14/2017, Last Modified: 4/13/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function plant2dfs!(n,sol)
-  row, column = size(n.r.ocp.u)
+  row, column = size(n.r.ocp.u) # NOTE this is wrong
   num = maximum([2*row, 50]) # TODO let user choose this
   t_sample = linspace(sol.t[1],sol.t[end],num)
   dfs_plant = DataFrame()
   dfs_plant[:t] = t_sample
 
-  for st in 1:n.ocp.state.num
-    dfs_plant[n.ocp.state.name[st]] = [sol(t)[st] for t in t_sample]
+  for st in 1:n.mpc.ip.state.num
+    dfs_plant[n.mpc.ip.state.name[st]] = [sol(t)[st] for t in t_sample]
   end
 
-  for ctr in 1:n.ocp.control.num
-    dfs_plant[n.ocp.control.name[ctr]] = n.r.ocp.U[ctr]
+  for ctr in 1:n.mpc.ip.control.num
+    dfs_plant[n.mpc.ip.control.name[ctr]] = n.r.ocp.U[ctr]
   end
 
   if n.s.ocp.reset
@@ -664,21 +663,22 @@ function plant2dfs!(n,sol)
   end
 
   # push plant states to a single DataFrame
+  # NOTE this should be postProcess! (at the very end!), not done every time!
   dfs = DataFrame()
   temp = [n.r.ip.dfsplant[jj][:t][1:end-1,:] for jj in 1:length(n.r.ip.dfsplant)] # time
   U = [idx for tempM in temp for idx=tempM]
   dfs[:t] = U
 
-  for st in 1:n.ocp.state.num # state
-    temp = [n.r.ip.dfsplant[jj][n.ocp.state.name[st]][1:end-1,:] for jj in 1:length(n.r.ip.dfsplant)];
+  for st in 1:n.mpc.ip.state.num # state
+    temp = [n.r.ip.dfsplant[jj][n.mpc.ip.state.name[st]][1:end-1,:] for jj in 1:length(n.r.ip.dfsplant)];
     U = [idx for tempM in temp for idx = tempM]
-    dfs[n.ocp.state.name[st]] = U
+    dfs[n.mpc.ip.state.name[st]] = U
   end
 
-  for ctr in 1:n.ocp.control.num # control
-    temp = [n.r.ip.dfsplant[jj][n.ocp.control.name[ctr]][1:end-1,:] for jj in 1:length(n.r.ip.dfsplant)];
+  for ctr in 1:n.mpc.ip.control.num # control
+    temp = [n.r.ip.dfsplant[jj][n.mpc.ip.control.name[ctr]][1:end-1,:] for jj in 1:length(n.r.ip.dfsplant)];
     U = [idx for tempM in temp for idx=tempM]
-    dfs[n.ocp.control.name[ctr]] = U
+    dfs[n.mpc.ip.control.name[ctr]] = U
   end
   n.r.ip.dfsplantPts = dfs
 
@@ -691,7 +691,7 @@ dvs2dfs(n)
 # funtionality to save state, costate, and control data from optimization
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/10/2017, Last Modified: 11/10/2017 \n
+Date Create: 2/10/2017, Last Modified: 4/13/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function dvs2dfs(n)
@@ -728,7 +728,7 @@ opt2dfs!(n)
 # funtionality to save optimization data
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/10/2017, Last Modified: 02/08/2018 \n
+Date Create: 2/10/2017, Last Modified: 4/13/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function opt2dfs!(n;kwargs...)
@@ -774,7 +774,7 @@ con2dfs(n)
 # funtionality to save constraint data
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/20/2017, Last Modified: 5/29/2017 \n
+Date Create: 2/20/2017, Last Modified: 4/13/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function con2dfs(n)
@@ -787,7 +787,7 @@ end
 postProcess!(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/27/2017, Last Modified: 2/6/2017 \n
+Date Create: 1/27/2017, Last Modified: 4/13/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function postProcess!(n;kwargs...)
@@ -891,7 +891,7 @@ optimize!(n)
 # solves JuMP model and saves optimization data
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/6/2017, Last Modified: 3/12/2018 \n
+Date Create: 2/6/2017, Last Modified: 4/13/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function optimize!(n;Iter::Int64=0)
@@ -911,7 +911,7 @@ end
 
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/7/2017, Last Modified: 6/19/2017 \n
+Date Create: 2/7/2017, Last Modified: 4/13/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 

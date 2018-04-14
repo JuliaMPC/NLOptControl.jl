@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 6/29/2017, Last Modified: 6/30/2017 \n
+Date Create: 6/29/2017, Last Modified: 4/13/2018 \n
 -------------------------------------------------------------------------------------\n
 """
 function dynamics!(n::NLOpt,dx::Array{Expr,1})
@@ -16,7 +16,7 @@ end
 """
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 7/04/2017, Last Modified: 7/04/2017 \n
+Date Create: 7/04/2017, Last Modified: 4/13/2018 \n
 -------------------------------------------------------------------------------------\n
 """
 function constraints!(n::NLOpt,con::Array{Expr,1})
@@ -26,7 +26,7 @@ end
 """
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 6/11/2017, Last Modified: 6/30/2017 \n
+Date Create: 6/11/2017, Last Modified: 4/13/2018 \n
 -------------------------------------------------------------------------------------\n
 """
 function DiffEq(n::NLOpt,x::Array{JuMP.Variable,2},u::Array{JuMP.Variable,2},L::Int64,st::Int64)
@@ -37,7 +37,7 @@ end
 """
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 7/04/2017, Last Modified: 7/04/2017 \n
+Date Create: 7/04/2017, Last Modified: 4/13/2018 \n
 -------------------------------------------------------------------------------------\n
 """
 function addCon(n::NLOpt,x::Array{JuMP.Variable,2},u::Array{JuMP.Variable,2},L::Int64,num::Int64)
@@ -49,7 +49,7 @@ end
 # returns an array of @NLexpression()
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 6/29/2017, Last Modified: 7/1/2017 \n
+Date Create: 6/29/2017, Last Modified: 4/13/2018 \n
 -------------------------------------------------------------------------------------\n
 """
 function NLExpr(n::NLOpt,expr::Expr,args...)
@@ -89,7 +89,7 @@ end
 # returns an array of @NLconstraint()
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 7/04/2017, Last Modified: 7/04/2017 \n
+Date Create: 7/04/2017, Last Modified: 4/13/2018 \n
 -------------------------------------------------------------------------------------\n
 """
 function NLCon(n::NLOpt,expr::Expr,args...)

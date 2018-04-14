@@ -9,9 +9,8 @@ using .Base
 
 export
       MPC,
-      defineMPC!
-
-
+      defineMPC!,
+      defineIP!
 ########################################################################################
 # MPC types
 ########################################################################################
@@ -98,68 +97,71 @@ function defineMPC!(n;
                    IPKnown::Bool=true,
                    saveMode::Symbol=:all,
                    maxSim::Int64=100,
-                   goal=n.XF)
+                   goal=n.ocp.XF)
   n.s.mpc.on = true
-
   n.mpc::MPC = MPC()
-  n.mpc.s.mode = mode
-  n.mpc.s.predictX0 = predictX0
-  n.mpc.s.fixedTp = fixedTp
-  n.mpc.s.IPKnown = IPKnown
-  n.mpc.s.saveMode = saveMode
-  n.mpc.s.maxSim = maxSim
+  n.s.mpc.mode = mode
+  n.s.mpc.predictX0 = predictX0
+  n.s.mpc.fixedTp = fixedTp
+  n.s.mpc.IPKnown = IPKnown
+  n.s.mpc.saveMode = saveMode
+  n.s.mpc.maxSim = maxSim
   n.mpc.v.goal = goal
-  n.mpc.f.mpcDefined = true
+  n.f.mpc.defined = true
+
   return nothing
 end
 
+
 """
+# add a mode that solves as quickly as possible
+# consider using the IP always.
 defineModel!(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 4/12/2018, Last Modified: 4/12/2018 \n
 --------------------------------------------------------------------------------------\n
 """
-function defineModel!(n;
-                 stateNames=[],
-                 controlNames=[],
-                 X0a=[],
-                 model=[]
-                 )
-   if isequal(n.mpc.s.simulationMode,:OCP) # this function is called automatically for this mode
+function defineIP!(n,model;stateNames=[],controlNames=[],X0a=[])
+
+   if isequal(n.s.mpc.mode,:OCP) # this function is called automatically for this mode
     if !isempty(stateNames)
-     error("stateNames are set automatically for :simulationMode == :OCP and cannot be provided.")
+     error("stateNames are set automatically for :mode == :OCP and cannot be provided.")
     end
     if !isempty(controlNames)
-     error("controlNames are set automatically for :simulationMode == :OCP and cannot be provided.")
+     error("controlNames are set automatically for :mode == :OCP and cannot be provided.")
     end
     if !isempty(X0a)
-     error("X0a is set automatically for :simulationMode == :OCP and cannot be provided.")
+     error("X0a is set automatically for :mode == :OCP and cannot be provided.")
     end
-    if !isempty(model)
-     error("model is set automatically for :simulationMode == :OCP and cannot be provided.")
-    end
-    n.mpc.ocp.state::State = State() # reset
-    n.mpc.ocp.state.num = n.ocp.state.num
-    n.mpc.ocp.state.names = n.ocp.state.names
+    n.r.ip.X0a = copy(n.ocp.X0)
+    n.mpc.ip.state.model = model
+    n.mpc.ip.state.name = n.ocp.state.name
+    n.mpc.ip.state.description = n.ocp.state.description
+    n.mpc.ip.state.num = n.ocp.state.num
+    n.mpc.ip.state.pts = n.ocp.state.pts
 
-   elseif isequal(n.mpc.s.simulationMode,:IP)
+    n.mpc.ip.control.name = n.ocp.control.name
+    n.mpc.ip.control.description = n.ocp.control.description
+    n.mpc.ip.control.num = n.ocp.control.num
+    n.mpc.ip.control.pts = n.ocp.control.pts
+
+   elseif isequal(n.s.mpc.mode,:IP)
     if isempty(stateNames)
-     error("unless :simulationMode == :OCP the stateNames must be provided.")
+     error("unless :mode == :OCP the stateNames must be provided.")
     end
     if isempty(controlNames)
-     error("unless :simulationMode == :OCP the controlNames must be provided.")
+     error("unless :mode == :OCP the controlNames must be provided.")
     end
     if isempty(X0a)
-     error("unless :simulationMode == :OCP X0a must be provided.")
+     error("unless :mode == :OCP X0a must be provided.")
     end
     if isempty(model)
-     error("A model needs to be passed for the IP simulationMode.")
+     error("A model needs to be passed for the IP mode.")
     else
     if isequal(length(X0a),length(stateNames))
-      error(string("\n Length of X0a must match length(stateNames) \n"));
+      error(string("\n Length of X0a must match length(stateNames) \n"))
     end
-
 
      n.mpc.ip.state::State = State() # reset
      n.mpc.ip.state.num = length(stateNames)
@@ -181,13 +183,14 @@ function defineModel!(n;
      n.mpc.r.ip.X0a = X0a
      n.mpc.ip.state.model = model # TODO validate type of model
     end
-   elseif isequal(n.mpc.s.simulationMode,:EP)
+   elseif isequal(n.s.mpc.mode,:EP)
     error("not setup for :EP")
    else
-    error("n.mpc.s.simulationMode = ",n.mpc.s.simulationMode," not defined." )
+    error("n.mpc.s.mode = ",n.s.mpc.mode," not defined." )
    end
 
    # consider calling mapNames
+   return nothing
 end
 
 
@@ -199,12 +202,12 @@ Date Create: 4/9/2018, Last Modified: 4/12/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function mapNames!(n)
-  if isequal(n.mpc.s.simulationMode,:IP)
+  if isequal(n.s.mpc.mode,:IP)
     s1 = n.ocp.state.name
     c1 = n.ocp.control.name
     s2 = n.mpc.stateIP.name
     c2 = n.mpc.controlIP.name
-  elseif isequal(n.mpc.s.simulationMode,:EP)
+  elseif isequal(n.s.mpc.mode,:EP)
     error(":EP function not ready")
   else
     error("mode must be either :IP or :EP")
@@ -253,6 +256,21 @@ function mapNames!(n)
     error("mode must be either :IP or :EP")
   end
 
+  return nothing
+end
+
+"""
+simPlant(n)
+# consider X0=n.r.ip.X0a[(n.r.ocp.evalNum)] when plant and controller are different
+# NOTE if previous solution was Infeasible it will just pass the begining of the last Optimal solution again
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 2/14/2017, Last Modified: 4/09/2018 \n
+--------------------------------------------------------------------------------------\n
+"""
+function simPlant!(n;X0=n.ocp.X0,t=n.r.ocp.tctr+n.mpc.v.t0,U=n.r.ocp.U,t0=n.mpc.v.t0Actual,tf=n.r.ocp.evalNum*n.mpc.v.tex)
+  sol = n.mpc.ip.state.model(n,X0,t,U,t0,tf)
+  plant2dfs!(n,sol)  #TODO consider passing U, t0 etc.. and only run this if saving data
   return nothing
 end
 

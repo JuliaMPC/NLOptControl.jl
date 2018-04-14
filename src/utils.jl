@@ -8,7 +8,7 @@ linearStateTolerances!(n)
 
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 3/23/2017, Last Modified: 3/25/2017 \n
+Date Create: 3/23/2017, Last Modified: 4/13/2018 \n
 -------------------------------------------------------------------------------------\n
 """
 function linearStateTolerances!(n::NLOpt;
@@ -41,7 +41,7 @@ end
 defineTolerances!(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/8/2017, Last Modified: 2/8/2017 \n
+Date Create: 2/8/2017, Last Modified: 4/13/2018 \n
 -------------------------------------------------------------------------------------\n
 """
 function defineTolerances!(n::NLOpt;
@@ -56,7 +56,7 @@ create_tV!(n)
 # define a time vector (n.ocp.tV) for use with time varying constraints when (finalTimeDV=>true)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 3/17/2017, Last Modified: 3/17/2017 \n
+Date Create: 3/17/2017, Last Modified: 4/13/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function create_tV!(n::NLOpt)
@@ -87,7 +87,7 @@ end
 obj=integrate!(n,:(u1))
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/2/2017, Last Modified: 9/18/2017 \n
+Date Create: 1/2/2017, Last Modified: 4/13/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function integrate!(n::NLOpt,V::Expr)
@@ -123,7 +123,7 @@ end
 # funtionality to save constraint data
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/7/2017, Last Modified: 3/6/2017 \n
+Date Create: 2/7/2017, Last Modified: 4/13/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function initConstraint!(n)
@@ -147,7 +147,7 @@ maxDualInf = evalMaxDualInf(n)
 # funtionality to evaluate maximum dual infeasibility of problem
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/13/2017, Last Modified: 2/13/2017 \n
+Date Create: 2/13/2017, Last Modified: 4/13/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function evalMaxDualInf(n::NLOpt)
@@ -190,7 +190,7 @@ end
 # initialize states
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/7/2017, Last Modified: 3/6/2017 \n
+Date Create: 2/7/2017, Last Modified: 4/13/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function initState(numStates)
@@ -232,7 +232,7 @@ end
 # initialize control
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/7/2017, Last Modified: 3/6/2017 \n
+Date Create: 2/7/2017, Last Modified: 4/13/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function initControl(numControls)
@@ -423,4 +423,53 @@ function try_import(name::Symbol)
   catch e
       return false
   end
+end
+
+
+"""
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 2/06/2017, Last Modified: 2/06/2018 \n
+--------------------------------------------------------------------------------------\n
+"""
+function linearSpline(t::Vector,V::Vector)
+  # t must be the time vector
+  # V is any vector that you are interpolating
+
+  # remove any repeating values
+  M = Array{Bool}(length(t)); M[1:length(t)] = false;
+  for i in 1:length(t)-1
+      if t[i]==t[i+1]
+          M[i]=true
+      else
+          M[i]=false
+      end
+  end
+
+  rm_idx = find(M)
+
+  if (length(t)==length(rm_idx))
+    error("No time has elapsed and there will be an issue with interpolation. \n
+          Cannot simulate the vehicle.")
+  end
+
+  # initialize vetors
+  t_new = Array{Float64}(length(t)-length(rm_idx));
+  V_new = Array{Float64}(length(t)-length(rm_idx));
+
+  q=1;
+  for i in 1:length(V) #TODO put an error message here if V and t are different sizes
+      if !M[i]
+          t_new[q] = t[i];
+          V_new[q] = V[i];
+          q=q+1
+      end
+  end
+
+  # make interpolant using Dierckx.jl
+  #Spline1D(t_new,V_new,k=1)    # linear spline
+
+  # make interpolant using Interpolations.jl
+  knots = (t_new,)
+  return interpolate(knots,V_new,Gridded(Linear()))
 end
