@@ -1,9 +1,11 @@
 julia 0.6
 FastGaussQuadrature
 JuMP
-DataFrames
+DataFrames 0.11
 Ipopt
 KNITRO
 Interpolations
 MathProgBase
-CSV
+CSV 0.2.4
+OrdinaryDiffEq
+DiffEqBase

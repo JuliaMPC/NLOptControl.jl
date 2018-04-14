@@ -17,252 +17,14 @@ include("MPC_Module.jl")
 using .MPC_Module
 
 ################################################################################
-# Constants
+# Model Classfield
 ################################################################################
-#####################################
-# settings for both KNITRO and IPOPT
-####################################
-#outlev # (c.m.solver==:Ipopt) ? :print_level : :outlev # print level
-# (KNITRO) absolute stopping tolerance for the feasibility error
-# (Ipopt) Absolute tolerance on the constraint violation.
-#feastol_abs # (c.m.solver==:Ipopt) ? :constr_viol_tol : :feastol_abs
-# (KNITRO) maximum number of iterations before termination
-# (Ipopt) Maximum number of iterations.
-#maxit # (c.m.solver==:Ipopt) ? :max_iter : :maxit
-# (KNITRO) in seconds, the maximum allowable CPU time before termination
-# (Ipopt) A limit on CPU seconds that Ipopt can use to solve one problem
-#maxtime_cpu # (c.m.solver==:Ipopt) ? :max_cpu_time : :maxtime_cpu
-const _Ipopt_defaults=Dict(
-   :print_level                =>0,
-   :warm_start_init_point      =>"yes",
-   :tol                        =>1e-8,
-   :max_iter                   =>3000,
-   :max_cpu_time               =>1e6,
-   :dual_inf_tol               =>1.,
-   :constr_viol_tol            =>0.0001,
-   :compl_inf_tol              =>0.0001,
-   :acceptable_tol             =>1e-6,
-   :acceptable_constr_viol_tol =>0.01,
-   :acceptable_dual_inf_tol    =>1e-10,
-   :acceptable_compl_inf_tol   =>0.01,
-   :acceptable_obj_change_tol  =>1e20,
-   :diverging_iterates_tol     =>1e20
-)
-
-const _Ipopt_MPC=Dict(
-   :print_level                =>0,
-   :warm_start_init_point      =>"yes",
-   :tol                        =>5e-1,
-   :max_iter                   =>500,
-   :max_cpu_time               =>0.47,
-   :dual_inf_tol               =>5.,
-   :constr_viol_tol            =>1e-1,
-   :compl_inf_tol              =>1e-1,
-   :acceptable_tol             =>1e-2,
-   :acceptable_constr_viol_tol =>0.01,
-   :acceptable_dual_inf_tol    =>1e10,
-   :acceptable_compl_inf_tol   =>0.01,
-   :acceptable_obj_change_tol  =>1e20,
-   :diverging_iterates_tol     =>1e20
-)
-
-const _KNITRO_defaults=Dict(
-  :outlev                       =>1,
-  :feastol                      =>1.0e-6,
-  :feastol_abs                  =>1e-3,
-  :ftol                         =>1e-15,
-  :ftol_iters                   =>5,
-  :infeastol                    =>1.0e-8,
-  :maxfevals                    =>-1,
-  :maxit                        =>0,
-  :maxtime_cpu                  =>1e8,
-  :maxtime_real                 =>1e8,
-  :opttol                       =>1e-6,
-  :opttol_abs                   =>1e-3,
-  :xtol                         =>1e-12,
-  :xtol_iters                   =>0,
-  :algorithm                    =>0,
-  :bar_initpt                   =>0,
-  :bar_murule                   =>0,
-  :bar_penaltycons              =>0,
-  :bar_penaltyrule              =>0,
-  :bar_switchrule               =>0,
-  :linesearch                   =>0,
-  :linsolver                    =>0
-)
-
-const _KNITRO_MPC=Dict(
-  :outlev                       =>0,
-  :feastol                      =>1.0e20,
-  :feastol_abs                  =>7e-2,
-  :ftol                         =>1e-15,
-  :ftol_iters                   =>5,
-  :infeastol                    =>1e-2,
-  :maxfevals                    =>-1,
-  :maxit                        =>0,
-  :maxtime_cpu                  =>1e8,
-  :maxtime_real                 =>0.47,
-  :opttol                       =>1.0e20,
-  :opttol_abs                   =>5e-1,
-  :xtol                         =>1e-12,
-  :xtol_iters                   =>0,
-  :algorithm                    =>0,
-  :bar_initpt                   =>0,
-  :bar_murule                   =>0,
-  :bar_penaltycons              =>0,
-  :bar_penaltyrule              =>0,
-  :bar_switchrule               =>0,
-  :linesearch                   =>0,
-  :linsolver                    =>0
-)
-
-############################## constraint ######################################
-type Constraint
-  name::Vector{Any}
-  handle::Vector{Any}
-  value::Vector{Any}
-  nums  # range of indecies in g(x)
-end
-function Constraint()
-  Constraint([],
-             [],
-             [],
-             []);
-end
-
-############################### solver  ########################################
-type Solver
-    name
-    settings
-end
-
-function Solver()
-       Solver(:Ipopt,
-              _Ipopt_defaults);
-end
-
-# Result Class
-type Result
-  t_ctr                       # time vector for control
-  t_st                        # time vector for state
-  x                           # JuMP states
-  u                           # JuMP controls
-  X                           # states
-  U                           # controls
-  CS                          # costates
-  t_polyPts                   # time sample points for polynomials
-  X_polyPts                   # state evaluated using Lagrange polynomial
-  CS_polyPts                  # costate evaluated using Lagrange polynomial
-  U_polyPts                   # control evaluated using Lagrane polynomial
-  t_pts                       # vector time sample points for polynomials
-  X_pts                       # vector state evaluated using Lagrange polynomial
-  U_pts                       # vector control evaluated using Lagrane polynomial
-  CS_pts                      # vector costate evaluated using Lagrange polynomial
-  x0_con                      # handle for initial state constraints
-  xf_con                      # handle for final state constraints
-  dyn_con                     # dynamics constraints
-  constraint::Constraint      # constraint handles and data
-  eval_num                    # number of times optimization has been run
-  iter_nums                   # mics. data, perhaps an iteration number for a higher level algorithm
-  status                      # optimization status
-  t_solve                     # solve time for optimization
-  obj_val                     # objective function value
-  dfs                         # results in DataFrame for plotting
-  dfs_opt                     # optimization information in DataFrame for plotting
-  dfs_plant                   # plant data TODO move
-  dfs_plantPts::DataFrames.DataFrame # plant data extracted into a single DataFrame TODO move
-  dfs_con                     # constraint data
-  results_dir                 # string that defines results folder
-  main_dir                    # string that defines main folder
-end
-
-# Default Constructor
-function Result()
-Result( Vector{Any}[], # time vector for control
-        Vector{Any}[], # time vector for state
-        Matrix{Any}[], # JuMP states
-        Matrix{Any}[], # JuMP controls
-        Matrix{Any}[], # states
-        Matrix{Any}[], # controls
-        [],            # costates
-        [],            # time sample points for polynomials
-        [],            # state evaluated using Lagrange polynomial
-        [],            # costate evaluated using Lagrange polynomial
-        [],            # control evaluated using Lagrane polynomial
-        Vector{Any}[], # vector time sample points for polynomials
-        Vector{Any}[], # vector state evaluated using Lagrange polynomial
-        Vector{Any}[], # vector control evaluated using Lagrane polynomial
-        Vector{Any}[], # vector costate evaluated using Lagrange polynomial
-        nothing,       # handle for initial state constraints
-        nothing,       # handle for final state constraints
-        nothing,       # dynamics constraint
-        Constraint(),  # constraint data
-        0,             # current evaluation number
-        [],            # mics. data, perhaps an iteration number for a higher level algorithm
-        Symbol,        # optimization status
-        Float64,       # solve time for optimization
-        Float64,       # objective function value
-        [],            # results in DataFrame for plotting
-        DataFrame(),   # optimization information in DataFrame for plotting
-        [],            # plant data
-        DataFrame(),   # plant data extracted into a single DataFrame
-        [],            # constraint data
-        string(pwd(),"/results/"),  # string that defines results folder
-        pwd()                       # string that defines main folder
-      );
-end
-
-# Settings Class
-type Settings   # options
-  solver::Solver                # solver information
-  finalTimeDV::Bool
-  integrationMethod::Symbol
-  integrationScheme::Symbol
-  MPC::Bool                     # bool for doing MPC
-  save::Bool                    # bool for saving data
-  reset::Bool                   # bool for reseting data
-  evalConstraints::Bool         # bool for evaluating duals of the constraints
-  evalCostates::Bool            # bool for evaluating costates
-  tf_max::Any                   # maximum final time
-  tfOptimal::Any                # known optimal final time
-  numInterpPts::Int64           # number of points to sample polynomial running through collocation points
-  cacheOnly::Bool               # bool for only caching the results when using optimize!()
-end
-
-# Default Constructor NOTE currently not using these, they get overwritten
-function Settings()
-        Settings(
-         Solver(),           # default solver
-         false,              # finalTimeDV
-         :ts,                # integrationMethod
-         :bkwEuler,          # integrationScheme
-         false,              # bool for doing MPC
-         true,               # bool for saving data
-         false,              # bool for reseting data
-         false,              # bool for evaluating duals of the constraints
-         false,              # bool for evaluating costates
-         400.0,              # maximum final time
-         false,              # known optimal final time
-         250,                # number of points to sample polynomial running through collocation points
-         false               # bool for only caching the results when using optimize!()
-                );
-end
-
-################################################################################
-# Model Class
-################################################################################
-abstract type AbstractNLOpt end
-type NLOpt <: AbstractNLOpt
+type OCP
   # general properties
-  numStates::Int64          # number of states
   state::State              # state data
-  numControls::Int64        # number of controls
   control::Control          # control data
-  numStatePoints::Int64     # number of dvs per state
-  numControlPoints::Int64   # numer of dvs per control
-  lengthDV::Int64           # total number of dv discretizations per variables
   tf::Any                   # final time
-  t0::Any                   # initial time TODO consider getting ride of this! or replace it with n.mpc.t0_param
+  t0::Any                   # initial time TODO consider getting ride of this! or replace it with n.mpc.v.t0Param
   tV::Any                   # vector for use with time varying constraints
 
   # boundary constraits
@@ -278,8 +40,8 @@ type NLOpt <: AbstractNLOpt
   # variables for linear bounds on state variables
   mXL::Array{Any,1}           # slope on XL -> time always starts at zero
   mXU::Array{Any,1}           # slope on XU -> time always starts at zero
-  XL_var::Any                 # time varying lower bounds on states
-  XU_var::Any                 # time varying upper bounds on states
+  XL_var::Any                 # time varying lower bounds on states NOTE Not used currently
+  XU_var::Any                 # time varying upper bounds on states NOTE Not used currently
 
   # constant bounds on control variables
   CL::Array{Float64,1}
@@ -288,7 +50,7 @@ type NLOpt <: AbstractNLOpt
   # ps method data
   Nck::Array{Int64,1}             # number of collocation points per interval
   Nck_cum::Array{Int64,1}         # cumulative number of points per interval
-  Nck_full::Array{Int64,1}        # [0;cumsum(n.Nck+1)]
+  Nck_full::Array{Int64,1}        # [0;cumsum(n.ocp.Nck+1)]
   Ni::Int64                       # number of intervals
   tau::Array{Array{Float64,1},1}  # Node points ---> Nc increasing and distinct numbers ∈ [-1,1]
   ts::Array{Array{Float64,1},1}   # time scaled based off of tau
@@ -301,29 +63,17 @@ type NLOpt <: AbstractNLOpt
   N::Int64                      # number of points in discretization
   dt::Array{Any,1}              # array of dts
 
-  # major data types
-  mpc::MPC                      # mpc data
   mdl::JuMP.Model               # JuMP model
-  s::Settings                   # settings
-  r::Result                     # results
   params                        # parameters for the models
   DXexpr
-  NLcon
-
-  # problem state
-  define::Bool                  # a bool to tell if define!() has been called
+  NLcon# NOTE Not used currently
 end
 
 # Default Constructor
-function NLOpt()
-NLOpt(
-      0,                  # number of states
+function OCP()
+OCP(
       State(),            # state data
-      0,                  # number of controls
       Control(),          # control data
-      0,                  # number of dvs per state
-      0,                  # number of dvs per control
-      0,                  # total number of dv discretizations per variables
       Any,                # final time
       0.0,                # initial time
       Any,                # optional vector for use with time varying constraints
@@ -351,14 +101,70 @@ NLOpt(
       Matrix{Any}[],      # IMatrix
       0,                  # number of points in discretization
       Any[],              # array of dts
-      MPC(),              # mpc data
       JuMP.Model(),       # JuMP model
-      Settings(),
-      Result(),
       Any[],
       Any[],
-      Any[],
-      false);
+      Any[]
+      )
+end
+
+type OCPFlags
+  defined::Bool  # a bool to tell if define() has been called
+end
+
+function OCPFlags()
+  OCPFlags(
+   false
+  )
+end
+
+type MPCFlags
+ defined::Bool
+ goalReached::Bool
+ ipDefined::Bool
+ epDefined::Bool
+end
+
+function MPCFlags()
+ MPCFlags(
+  false,
+  false,
+  false,
+  false
+ )
+end
+
+type Flags
+  ocp::OCPFlags
+  mpc::MPCFlags
+end
+
+function Flags()
+  Flags(
+   OCPFlags(),
+   MPCFlags()
+  )
+end
+
+abstract type AbstractNLOpt end
+type NLOpt <: AbstractNLOpt
+  # major data types
+  ocp::OCP
+  mpc::MPC
+  s::Settings
+  r::Results
+  f::Flags
+end
+
+# Default Constructor
+function NLOpt()
+NLOpt(
+  OCP(),
+  MPC(),
+  Settings(),
+  Results(),
+  Flags()
+    )
 end
 
 # scripts
@@ -404,11 +210,7 @@ export
        saveData,
 
        # MPC_Module.jl
-       autonomousControl!,
-       initializeMPC!,
-       updateX0!,
-       simPlant!,
-       simModel,
+       defineMPC!,
        MPC,
 
        # Objects
@@ -424,5 +226,11 @@ export
        @NLconstraint,
        setvalue,
        getvalue,
-       setRHS
+       setRHS,
+
+       # TMP
+       State,
+       Control,
+       initState
+
 end # module

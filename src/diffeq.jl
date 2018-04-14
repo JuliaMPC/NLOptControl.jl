@@ -6,10 +6,10 @@ Date Create: 6/29/2017, Last Modified: 6/30/2017 \n
 -------------------------------------------------------------------------------------\n
 """
 function dynamics!(n::NLOpt,dx::Array{Expr,1})
-  if length(dx)!=n.numStates
-    error("\n The number of differential equations must equal numStates. \n")
+  if length(dx)!=n.ocp.state.num
+    error("\n The number of differential equations must equal ocp.state.num. \n")
   end
-  n.DXexpr=dx;
+  n.ocp.DXexpr = dx
   return nothing
 end
 
@@ -20,7 +20,7 @@ Date Create: 7/04/2017, Last Modified: 7/04/2017 \n
 -------------------------------------------------------------------------------------\n
 """
 function constraints!(n::NLOpt,con::Array{Expr,1})
-  n.NLcon=con;
+  n.ocp.NLcon = con
   return nothing
 end
 """
@@ -30,7 +30,7 @@ Date Create: 6/11/2017, Last Modified: 6/30/2017 \n
 -------------------------------------------------------------------------------------\n
 """
 function DiffEq(n::NLOpt,x::Array{JuMP.Variable,2},u::Array{JuMP.Variable,2},L::Int64,st::Int64)
-  expr=n.DXexpr[st]
+  expr = n.ocp.DXexpr[st]
   return NLExpr(n,expr,x,u,L)
 end
 
@@ -41,7 +41,7 @@ Date Create: 7/04/2017, Last Modified: 7/04/2017 \n
 -------------------------------------------------------------------------------------\n
 """
 function addCon(n::NLOpt,x::Array{JuMP.Variable,2},u::Array{JuMP.Variable,2},L::Int64,num::Int64)
-  expr=n.NLcon[num]
+  expr = n.ocp.NLcon[num]
   return NLCon(n,expr,x,u,L)
 end
 
@@ -58,29 +58,29 @@ function NLExpr(n::NLOpt,expr::Expr,args...)
     uuu=args[2]
     L=args[3]
   elseif length(args)==0
-    xxx=n.r.x
-    uuu=n.r.u
-    L=n.numStatePoints
+    xxx=n.r.ocp.x
+    uuu=n.r.ocp.u
+    L=n.ocp.state.pts
   else
     error("\n The length of the args... must be either 3 or 0 \n")
   end
 
   code=quote
     # rename state variables
-    state=Array{Expr}($n.numStates);
-    for st in 1:$n.numStates
-      state[st]=Expr(:(=),$n.state.name[st],$xxx[:,st])
+    state=Array{Expr}($n.ocp.state.num);
+    for st in 1:$n.ocp.state.num
+      state[st]=Expr(:(=),$n.ocp.state.name[st],$xxx[:,st])
       eval(state[st])
     end
 
     # rename control variables
-    control=Array{Expr}($n.numControls);
-    for ctr in 1:$n.numControls
-      control[ctr]=Expr(:(=),$n.control.name[ctr],$uuu[:,ctr])
+    control=Array{Expr}($n.ocp.control.num);
+    for ctr in 1:$n.ocp.control.num
+      control[ctr]=Expr(:(=),$n.ocp.control.name[ctr],$uuu[:,ctr])
       eval(control[ctr])
     end
 
-    @NLexpression($n.mdl,[j=1:$L],$expr)
+    @NLexpression($n.ocp.mdl,[j=1:$L],$expr)
   end
   return eval(code)
 end
@@ -98,29 +98,29 @@ function NLCon(n::NLOpt,expr::Expr,args...)
     uuu=args[2]
     L=args[3]
   elseif length(args)==0
-    xxx=n.r.x
-    uuu=n.r.u
-    L=n.numStatePoints
+    xxx=n.r.ocp.x
+    uuu=n.r.ocp.u
+    L=n.ocp.state.pts
   else
     error("\n The length of the args... must be either 3 or 0 \n")
   end
 
   code=quote
     # rename state variables
-    state=Array{Expr}($n.numStates);
-    for st in 1:$n.numStates
-      state[st]=Expr(:(=),$n.state.name[st],$xxx[:,st])
+    state=Array{Expr}($n.ocp.state.num);
+    for st in 1:$n.ocp.state.num
+      state[st]=Expr(:(=),$n.ocp.state.name[st],$xxx[:,st])
       eval(state[st])
     end
 
     # rename control variables
-    control=Array{Expr}($n.numControls);
-    for ctr in 1:$n.numControls
-      control[ctr]=Expr(:(=),$n.control.name[ctr],$uuu[:,ctr])
+    control=Array{Expr}($n.ocp.control.num);
+    for ctr in 1:$n.ocp.control.num
+      control[ctr]=Expr(:(=),$n.ocp.control.name[ctr],$uuu[:,ctr])
       eval(control[ctr])
     end
 
-    @NLconstraint($n.mdl,[j=1:$L],$expr)
+    @NLconstraint($n.ocp.mdl,[j=1:$L],$expr)
   end
   return eval(code)
 end

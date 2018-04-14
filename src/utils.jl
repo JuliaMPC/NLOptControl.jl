@@ -12,24 +12,24 @@ Date Create: 3/23/2017, Last Modified: 3/25/2017 \n
 -------------------------------------------------------------------------------------\n
 """
 function linearStateTolerances!(n::NLOpt;
-                                mXL::Array{Any,1}=falses(n.numStates),
-                                mXU::Array{Any,1}=falses(n.numStates))
-  n.mXL=mXL;  n.mXU=mXU;
-  for st in 1:n.numStates
+                                mXL::Array{Any,1}=falses(n.ocp.state.num),
+                                mXU::Array{Any,1}=falses(n.ocp.state.num))
+  n.ocp.mXL=mXL;  n.ocp.mXU=mXU;
+  for st in 1:n.ocp.state.num
     # lower state constraint
-    if n.mXL[st]!=false
-      if !isnan(n.XL[st])
-        for j in 1:n.numStatePoints
-        n.XL_var[st,j]=n.XL[st] + n.mXL[st]*(j/n.numStatePoints); # lower
+    if n.ocp.mXL[st]!=false
+      if !isnan(n.ocp.XL[st])
+        for j in 1:n.ocp.state.pts
+        n.ocp.XL_var[st,j]=n.ocp.XL[st] + n.ocp.mXL[st]*(j/n.ocp.state.pts); # lower
         end
       end
     end
 
     # upper state constraint
-    if n.XU[st]!=false
-      if !isnan(n.XU[st])
-        for j in 1:n.numStatePoints
-        n.XU_var[st,j]=n.XU[st] + n.mXU[st]*(j/n.numStatePoints); # upper
+    if n.ocp.XU[st]!=false
+      if !isnan(n.ocp.XU[st])
+        for j in 1:n.ocp.state.pts
+        n.ocp.XU_var[st,j]=n.ocp.XU[st] + n.ocp.mXU[st]*(j/n.ocp.state.pts); # upper
         end
       end
     end
@@ -45,15 +45,15 @@ Date Create: 2/8/2017, Last Modified: 2/8/2017 \n
 -------------------------------------------------------------------------------------\n
 """
 function defineTolerances!(n::NLOpt;
-                          X0_tol::Array{Float64,1}=0.05*ones(Float64,n.numStates,),
-                          XF_tol::Array{Float64,1}=0.05*ones(Float64,n.numStates,))
-  n.X0_tol=X0_tol; n.XF_tol=XF_tol;
+                          X0_tol::Array{Float64,1}=0.05*ones(Float64,n.ocp.state.num,),
+                          XF_tol::Array{Float64,1}=0.05*ones(Float64,n.ocp.state.num,))
+  n.ocp.X0_tol=X0_tol; n.ocp.XF_tol=XF_tol;
   return nothing
 end
 
 """
 create_tV!(n)
-# define a time vector (n.tV) for use with time varying constraints when (finalTimeDV=>true)
+# define a time vector (n.ocp.tV) for use with time varying constraints when (finalTimeDV=>true)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 3/17/2017, Last Modified: 3/17/2017 \n
@@ -61,24 +61,24 @@ Date Create: 3/17/2017, Last Modified: 3/17/2017 \n
 """
 function create_tV!(n::NLOpt)
 
-  if n.s.integrationMethod==:ps
+  if n.s.ocp.integrationMethod==:ps
     # create mesh points, interval size = tf_var/Ni
-    tm = @NLexpression(n.mdl, [idx=1:n.Ni+1], (idx-1)*n.tf/n.Ni);
+    tm = @NLexpression(n.ocp.mdl, [idx=1:n.ocp.Ni+1], (idx-1)*n.ocp.tf/n.ocp.Ni);
     # go through each mesh interval creating time intervals; [t(i-1),t(i)] --> [-1,1]
-    ts = [Array{Any}(n.Nck[int]+1,) for int in 1:n.Ni];
-    for int in 1:n.Ni
-      ts[int][1:end-1]=@NLexpression(n.mdl,[j=1:n.Nck[int]], (tm[int+1]-tm[int])/2*n.tau[int][j] +  (tm[int+1]+tm[int])/2);
-      ts[int][end]=@NLexpression(n.mdl, n.tf/n.Ni*int) # append +1 at end of each interval
+    ts = [Array{Any}(n.ocp.Nck[int]+1,) for int in 1:n.ocp.Ni];
+    for int in 1:n.ocp.Ni
+      ts[int][1:end-1]=@NLexpression(n.ocp.mdl,[j=1:n.ocp.Nck[int]], (tm[int+1]-tm[int])/2*n.ocp.tau[int][j] +  (tm[int+1]+tm[int])/2);
+      ts[int][end]=@NLexpression(n.ocp.mdl, n.ocp.tf/n.ocp.Ni*int) # append +1 at end of each interval
     end
     tt1 = [idx for tempM in ts for idx = tempM[1:end-1]];
     tmp = [tt1;ts[end][end]];
-    n.tV = @NLexpression(n.mdl,[j=1:n.numStatePoints], n.mpc.t0_param + tmp[j]);
+    n.ocp.tV = @NLexpression(n.ocp.mdl,[j=1:n.ocp.state.pts], n.mpc.v.t0Param + tmp[j]);
   else
     # create vector with the design variable in it
-    t = Array{Any}(n.N+1,1);
-    tm = @NLexpression(n.mdl, [idx=1:n.N], n.tf/n.N*idx);
+    t = Array{Any}(n.ocp.N+1,1);
+    tm = @NLexpression(n.ocp.mdl, [idx=1:n.ocp.N], n.ocp.tf/n.ocp.N*idx);
     tmp = [0;tm];
-    n.tV = @NLexpression(n.mdl,[j=1:n.numStatePoints], n.mpc.t0_param + tmp[j]);
+    n.ocp.tV = @NLexpression(n.ocp.mdl,[j=1:n.ocp.state.pts], n.mpc.v.t0Param + tmp[j]);
   end
   return nothing
 end
@@ -91,27 +91,27 @@ Date Create: 1/2/2017, Last Modified: 9/18/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function integrate!(n::NLOpt,V::Expr)
-  if n.s.integrationMethod==:ps
-    integral_expr = [Array{Any}(n.Nck[int]) for int in 1:n.Ni]
-    for int in 1:n.Ni
-      x_int,u_int = intervals(n,int,n.r.x,n.r.u)
+  if n.s.ocp.integrationMethod==:ps
+    integral_expr = [Array{Any}(n.ocp.Nck[int]) for int in 1:n.ocp.Ni]
+    for int in 1:n.ocp.Ni
+      x_int,u_int = intervals(n,int,n.r.ocp.x,n.r.ocp.u)
       L = size(x_int)[1]-1
       integral_expr[int][:] = NLExpr(n,V,x_int,u_int,L)
     end
-    @NLexpression(n.mdl, temp[int=1:n.Ni], (n.tf-n.t0)/2*sum(n.ws[int][j]*integral_expr[int][j] for j = 1:n.Nck[int]) )
-    expression = @NLexpression(n.mdl, sum(temp[int] for int = 1:n.Ni))
-  elseif n.s.integrationMethod==:tm
-    L = size(n.r.x)[1];
-    temp = NLExpr(n,V,n.r.x,n.r.u,L);
-    if n.s.integrationScheme==:bkwEuler
-      expression = @NLexpression(n.mdl, sum(temp[j+1]*n.tf/n.N for j = 1:n.N) )
-    elseif n.s.integrationScheme==:trapezoidal
-      expression = @NLexpression(n.mdl, sum(0.5*(temp[j]+temp[j+1])*n.tf/n.N for j = 1:n.N) )
+    @NLexpression(n.ocp.mdl, temp[int=1:n.ocp.Ni], (n.ocp.tf-n.ocp.t0)/2*sum(n.ocp.ws[int][j]*integral_expr[int][j] for j = 1:n.ocp.Nck[int]) )
+    expression = @NLexpression(n.ocp.mdl, sum(temp[int] for int = 1:n.ocp.Ni))
+  elseif n.s.ocp.integrationMethod==:tm
+    L = size(n.r.ocp.x)[1];
+    temp = NLExpr(n,V,n.r.ocp.x,n.r.ocp.u,L);
+    if n.s.ocp.integrationScheme==:bkwEuler
+      expression = @NLexpression(n.ocp.mdl, sum(temp[j+1]*n.ocp.tf/n.ocp.N for j = 1:n.ocp.N) )
+    elseif n.s.ocp.integrationScheme==:trapezoidal
+      expression = @NLexpression(n.ocp.mdl, sum(0.5*(temp[j]+temp[j+1])*n.ocp.tf/n.ocp.N for j = 1:n.ocp.N) )
     else
-      error("\n $(n.s.integrationScheme) not defined in integrationSchemes\n")
+      error("\n $(n.s.ocp.integrationScheme) not defined in integrationSchemes\n")
     end
   else
-    error("\n $(n.s.integrationMethod) not defined in integrationMethods \n")
+    error("\n $(n.s.ocp.integrationMethod) not defined in integrationMethods \n")
   end
   return expression
 end
@@ -127,17 +127,17 @@ Date Create: 2/7/2017, Last Modified: 3/6/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function initConstraint!(n)
-  if n.r.constraint==nothing
-    n.r.constraint=Constraint()
+  if n.r.ocp.constraint==nothing
+    n.r.ocp.constraint=Constraint()
   end
   return nothing
 end
 
 function newConstraint!(n,handle,name::Symbol)
   initConstraint!(n)
-  n.r.constraint::Constraint=n.r.constraint
-  push!(n.r.constraint.handle,handle)
-  push!(n.r.constraint.name,name)
+  n.r.ocp.constraint::Constraint=n.r.ocp.constraint
+  push!(n.r.ocp.constraint.handle,handle)
+  push!(n.r.ocp.constraint.name,name)
   return nothing
 end
 
@@ -151,29 +151,29 @@ Date Create: 2/13/2017, Last Modified: 2/13/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function evalMaxDualInf(n::NLOpt)
-  num=length(n.r.constraint.handle); dual_con_temp=zeros(num);
-  for i = 1:length(n.r.constraint.handle)
-    if !isempty(n.r.constraint.handle[i])
-      if n.r.constraint.name[i]==:dyn_con  # state constraits
-        temp1=zeros(n.numStates);
-        for st in 1:n.numStates
-          if n.s.integrationMethod==:ps
-            temp=[getdual(n.r.constraint.handle[i][int][:,st]) for int in 1:n.Ni];
+  num=length(n.r.ocp.constraint.handle); dual_con_temp=zeros(num);
+  for i = 1:length(n.r.ocp.constraint.handle)
+    if !isempty(n.r.ocp.constraint.handle[i])
+      if n.r.ocp.constraint.name[i]==:dyn_con  # state constraits
+        temp1=zeros(n.ocp.state.num);
+        for st in 1:n.ocp.state.num
+          if n.s.ocp.integrationMethod==:ps
+            temp=[getdual(n.r.ocp.constraint.handle[i][int][:,st]) for int in 1:n.ocp.Ni];
             vals=[idx for tempM in temp for idx=tempM];
             temp1[st]=maximum(vals);
           else
-            temp1[st] = maximum(getdual(n.r.constraint.handle[i][:,st]));
+            temp1[st] = maximum(getdual(n.r.ocp.constraint.handle[i][:,st]));
           end
         end
         dual_con_temp[i]=maximum(temp1);
       else
-        S=JuMP.size(n.r.constraint.handle[i])
+        S=JuMP.size(n.r.ocp.constraint.handle[i])
         if length(S)==1
-          dual_con_temp[i]=maximum(getdual(n.r.constraint.handle[i][:]));
+          dual_con_temp[i]=maximum(getdual(n.r.ocp.constraint.handle[i][:]));
         elseif length(S)==2
           temp1=zeros(S[1]);
           for idx in 1:S[1]
-            temp1[idx] = maximum(getdual(n.r.constraint.handle[i][idx,:]));
+            temp1[idx] = maximum(getdual(n.r.ocp.constraint.handle[i][idx,:]));
           end
           dual_con_temp[i]=maximum(temp1);
         end
@@ -187,37 +187,41 @@ end
 # state data functions
 ########################################################################################
 """
-# initialize state names
+# initialize states
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/7/2017, Last Modified: 3/6/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function initStateNames(n::NLOpt)
-  State([Symbol("x$i") for i in 1:n.numStates],
-        [String("x$i") for i in 1:n.numStates]);
+function initState(numStates)
+  s = State()
+  s.num = numStates
+  s.name = [Symbol("x$i") for i in 1:numStates]
+  s.description = [String("x$i") for i in 1:numStates]
+  return s
 end
 
 function states!(n::NLOpt,names;descriptions=[])
-  if !n.define
+  if !n.f.ocp.defined
     error("\n call define() before calling states!() \n")
   end
-  if length(names)!=n.numStates
+  if length(names)!=n.ocp.state.num
     error("\n Check size of names \n")
   end
-  if !isempty(descriptions) && length(descriptions)!=n.numStates
+  if !isempty(descriptions) && length(descriptions)!=n.ocp.state.num
     error("\n Check size of descriptions \n")
   end
-  n.state::State = State() # reset
-  for i in 1:n.numStates
+
+  for i in 1:n.ocp.state.num
     if names[i]==:xxx
       error("xxx is OFF limits for a state name; please choose something else. \n")
     end
-    push!(n.state.name,names[i])
-    if !isempty(descriptions)
-        push!(n.state.description,descriptions[i])
-    end
   end
+
+   n.ocp.state.name = names
+   if !isempty(descriptions)
+     n.ocp.state.description = descriptions
+   end
   return nothing
 end
 
@@ -225,37 +229,40 @@ end
 # control data functions
 ########################################################################################
 """
-# initialize control names
+# initialize control
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/7/2017, Last Modified: 3/6/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function initControlNames(n::NLOpt)
-  Control([Symbol("u$i") for i in 1:n.numControls],
-          [String("u$i") for i in 1:n.numControls]);
+function initControl(numControls)
+  c = Control()
+  c.num = numControls
+  c.name = [Symbol("u$i") for i in 1:numControls]
+  c.description = [String("u$i") for i in 1:numControls]
+  return c
 end
 
 function controls!(n::NLOpt,names;descriptions=[])
-  if !n.define
+  if !n.f.ocp.defined
     error("\n call define() before calling controls!() \n")
   end
-  if length(names)!=n.numControls
+  if length(names)!=n.ocp.control.num
     error("\n Check sizes of names \n")
   end
-  if !isempty(descriptions) && length(descriptions)!=n.numControls
+  if !isempty(descriptions) && length(descriptions)!=n.ocp.control.num
     error("\n Check size of descriptions \n")
   end
 
-  n.control::Control = Control() # reset
-  for i in 1:n.numControls
+  for i in 1:n.ocp.control.num
     if names[i]==:uuu
       error("uuu is OFF limits for a control name; please choose something else. \n")
     end
-    push!(n.control.name,names[i])
-    if !isempty(descriptions)
-      push!(n.control.description,descriptions[i])
-    end
+   end
+
+  n.ocp.control.name = names
+  if !isempty(descriptions)
+    n.ocp.control.description = descriptions
   end
   return nothing
 end
@@ -268,7 +275,7 @@ end
 description = string(
 " *  \n ")
 
-Dir!(r;results_name,description=description)
+resultsDir!(r;resultsName=resultsName,description=description)
 # removes results folder and creates a new one
 # TODO consider putting in a warning or some sort of an interaction with user
 --------------------------------------------------------------------------------------\n
@@ -276,19 +283,19 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 3/26/2017, Last Modified: 5/29/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function resultsDir!(n;results_name::String = "",description::DataFrame = DataFrame())
- results_dir=string(n.r.main_dir,"/results/",results_name)  # define directories
- n.r.results_dir=results_dir;
+function resultsDir!(n;resultsName::String = "",description::DataFrame = DataFrame())
+ results_dir=string(n.r.mainDir,"/results/",resultsName)  # define directories
+ n.r.resultsDir=results_dir;
 
- if isdir(n.r.results_dir)
-   rm(n.r.results_dir; recursive=true)
+ if isdir(n.r.resultsDir)
+   rm(n.r.resultsDir; recursive=true)
    print("\n The old results have all been deleted! \n \n")
  end
- mkdir(n.r.results_dir)# create directory
+ mkdir(n.r.resultsDir)# create directory
 
- cd(n.r.results_dir)
+ cd(n.r.resultsDir)
    CSV.write("description.csv", description; quotechar = ' ')
- cd(n.r.main_dir)
+ cd(n.r.mainDir)
  return nothing
 end
 
@@ -300,9 +307,9 @@ Date Create: 3/26/2017, Last Modified: 2/6/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function savePlantData!(n)
-  cd(n.r.results_dir)
-    CSV.write("plant_data.csv", n.r.dfs_plantPts; quotechar = ' ');
-  cd(n.r.main_dir)
+  cd(n.r.resultsDir)
+    CSV.write("plant_data.csv", n.r.ip.dfsplantPts; quotechar = ' ');
+  cd(n.r.mainDir)
   return nothing
 end
 
@@ -317,25 +324,25 @@ function saveData(n)
   # all polynomial data
   dfs=DataFrame();
 
-  dfs[:t] = n.r.t_pts
-  for st in 1:n.numStates # state
-    dfs[n.state.name[st]]=n.r.X_pts[:,st];
+  dfs[:t] = n.r.ocp.tpts
+  for st in 1:n.ocp.state.num # state
+    dfs[n.ocp.state.name[st]]=n.r.ocp.Xpts[:,st];
   end
 
-  for ctr in 1:n.numControls # control
-    dfs[n.control.name[ctr]]=n.r.U_pts[:,ctr];
+  for ctr in 1:n.ocp.control.num # control
+    dfs[n.ocp.control.name[ctr]]=n.r.ocp.Upts[:,ctr];
   end
 
-  if n.s.evalCostates && n.s.integrationMethod == :ps && n.s.evalConstraints
-    for st in 1:n.numStates # state
-      dfs[Symbol(n.state.name[st],:cs)]=n.r.CS_pts[:,st];
+  if n.s.ocp.evalCostates && n.s.ocp.integrationMethod == :ps && n.s.ocp.evalConstraints
+    for st in 1:n.ocp.state.num # state
+      dfs[Symbol(n.ocp.state.name[st],:cs)]=n.r.ocp.CSpts[:,st];
     end
   end
 
-  cd(n.r.results_dir)
-    CSV.write("st_ctr.csv",n.r.dfs[end]; quotechar = ' '); # assuming only want the last one is needed
+  cd(n.r.resultsDir)
+    CSV.write("st_ctr.csv",n.r.ocp.dfs[end]; quotechar = ' '); # assuming only want the last one is needed
     CSV.write("st_ctr_poly.csv",dfs; quotechar = ' ');
-  cd(n.r.main_dir)
+  cd(n.r.mainDir)
   return nothing
 end
 
@@ -349,27 +356,27 @@ Date Create: 9/14/2017, Last Modified: 9/19/2017 \n
 function saveBenchMarkData!(n)
   first=2
   dfs=DataFrame();
-  temp = [n.r.dfs[jj][:t][1:end-1,:] for jj in first:length(n.r.dfs)]; # time
+  temp = [n.r.ocp.dfs[jj][:t][1:end-1,:] for jj in first:length(n.r.ocp.dfs)]; # time
   U=[idx for tempM in temp for idx=tempM]; dfs[:t]=U;
 
-  for st in 1:n.numStates # state
-    temp = [n.r.dfs[jj][n.state.name[st]][1:end-1,:] for jj in first:length(n.r.dfs)];
+  for st in 1:n.ocp.state.num # state
+    temp = [n.r.ocp.dfs[jj][n.ocp.state.name[st]][1:end-1,:] for jj in first:length(n.r.ocp.dfs)];
     U=[idx for tempM in temp for idx=tempM];
-    dfs[n.state.name[st]]=U;
+    dfs[n.ocp.state.name[st]]=U;
   end
 
-  for ctr in 1:n.numControls # control
-    temp = [n.r.dfs[jj][n.control.name[ctr]][1:end-1,:] for jj in first:length(n.r.dfs)];
+  for ctr in 1:n.ocp.control.num # control
+    temp = [n.r.ocp.dfs[jj][n.ocp.control.name[ctr]][1:end-1,:] for jj in first:length(n.r.ocp.dfs)];
     U=[idx for tempM in temp for idx=tempM];
-    dfs[n.control.name[ctr]]=U;
+    dfs[n.ocp.control.name[ctr]]=U;
   end
 
   # save optimization times
-  temp = [n.r.dfs_opt[jj][n.control.name[ctr]][1:end-1,:] for jj in first:length(n.r.dfs)];
+  temp = [n.r.ocp.dfsOpt[jj][n.ocp.control.name[ctr]][1:end-1,:] for jj in first:length(n.r.ocp.dfs)];
 
-  cd(n.r.results_dir)
+  cd(n.r.resultsDir)
     CSV.write("bench_data.csv",dfs; quotechar = ' ');
-  cd(n.r.main_dir)
+  cd(n.r.mainDir)
   return nothing
 end
 

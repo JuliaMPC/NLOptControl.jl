@@ -4,10 +4,10 @@ BrysonDenham_EXP=[:(x2[j]),:(u1[j])]; L=1/6;
   dynamics!(n,BrysonDenham_EXP)
   configure!(n;(:integrationScheme=>integrationConfig),(:finalTimeDV=>false),(:tf=>1.0));
   obj=integrate!(n,:(0.5*u1[j]^2));
-  @NLobjective(n.mdl,Min,obj);
+  @NLobjective(n.ocp.mdl,Min,obj);
   optimize!(n);
-  @show n.r.dfs_opt[:tSolve]
-  @test isapprox(4/(9*L),n.r.obj_val[1],atol=tol)
+  @show n.r.ocp.dfsOpt[:tSolve]
+  @test isapprox(4/(9*L),n.r.ocp.objVal[1],atol=tol)
 end
 
 dx=[:(sin(x2[j])),:(u1[j])]
@@ -17,10 +17,10 @@ dx=[:(sin(x2[j])),:(u1[j])]
   SS=[(:name=>:Ipopt),(:max_cpu_time=>5.0)]
   configure!(n;(:integrationScheme=>integrationConfig),(:finalTimeDV=>false),(:tf=>1.0),(:solverSettings=>SS));
   obj=integrate!(n,:( u1[j]^2 + 350*cos(x2[j]) ) )
-  @NLobjective(n.mdl,Min,obj);
+  @NLobjective(n.ocp.mdl,Min,obj);
   optimize!(n);
-  @show n.r.dfs_opt[:tSolve]
-  @test isapprox(350,n.r.obj_val[1],atol=tol)
+  @show n.r.ocp.dfsOpt[:tSolve]
+  @test isapprox(350,n.r.ocp.objVal[1],atol=tol)
 end
 
 dx=Array{Expr}(2);dx[1]=:(x[j]);dx[2]=:(u[j]-1.625);
@@ -31,10 +31,10 @@ dx=Array{Expr}(2);dx[1]=:(x[j]);dx[2]=:(u[j]-1.625);
   dynamics!(n,dx)
   configure!(n;(:integrationScheme=>integrationConfig),(:finalTimeDV=>true));
   obj=integrate!(n,:(u[j]));
-  @NLobjective(n.mdl, Min, obj);
+  @NLobjective(n.ocp.mdl, Min, obj);
   optimize!(n);
-  @show n.r.dfs_opt[:tSolve]
-  @test isapprox(8.9253,n.r.obj_val[1],atol=tol)
+  @show n.r.ocp.dfsOpt[:tSolve]
+  @test isapprox(8.9253,n.r.ocp.objVal[1],atol=tol)
 end
 
 ############################
@@ -81,9 +81,9 @@ opt_num = length(Nck_vec)
 
   for num in 1:length(col_pts)
     n=define(numStates=2,numControls=1,X0=[h0,v0],XF=[0.,0.],XL=[-20,-20],XU=[20,20],CL=[0.],CU=[3.]);
-    n.s.tf_max = 1000.0
-    n.s.numInterpPts = pts  # must be the same as above to calculate error
-    n.s.tfOptimal = tf_star # must be the same as above to calculate error
+    n.s.ocp.tfMax = 1000.0
+    n.s.ocp.numInterpPts = pts  # must be the same as above to calculate error
+    n.s.ocp.tfOptimal = tf_star # must be the same as above to calculate error
     states!(n,[:h,:v];descriptions=["h(t)","v(t)"]);
     controls!(n,[:T];descriptions=["T(t)"]);
     dx=[:(v[j]),:(T[j]-1.5)]
@@ -95,10 +95,10 @@ opt_num = length(Nck_vec)
     else
       configure!(n;(:integrationScheme=>integrationConfig),(:N=>col_pts[num]),(:finalTimeDV=>true));
     end
-    x1=n.r.x[:,1];x2=n.r.x[:,2];
+    x1=n.r.ocp.x[:,1];x2=n.r.ocp.x[:,2];
     obj=integrate!(n,:(T[j]));
-    @NLobjective(n.mdl, Min, obj);
-    setvalue(n.tf, 1.5)
+    @NLobjective(n.ocp.mdl, Min, obj);
+    setvalue(n.ocp.tf, 1.5)
     for i in 1:length(x1); setvalue(x1[i], 0.0); setvalue(x2[i], 0.0);  end
     # cache functions; inital optimization
     optimize!(n);
@@ -112,11 +112,11 @@ opt_num = length(Nck_vec)
 
     for j in 1:opt_runs
       optimize!(n);
-      if n.r.status == :Optimal
-        t_solve[j] = n.r.t_solve
-        h_error[j] = maximum(abs.(n.r.X_pts[:,1] - h_opt))
-        v_error[j] = maximum(abs.(n.r.X_pts[:,2] - v_opt))
-        u_error[j] = maximum(abs.(n.r.U_pts[:,1] - u_opt))
+      if n.r.ocp.status == :Optimal
+        t_solve[j] = n.r.ocp.tSolve
+        h_error[j] = maximum(abs.(n.r.ocp.Xpts[:,1] - h_opt))
+        v_error[j] = maximum(abs.(n.r.ocp.Xpts[:,2] - v_opt))
+        u_error[j] = maximum(abs.(n.r.ocp.Upts[:,1] - u_opt))
         max_error[j] = maximum([h_error[j], v_error[j]])
       end
     end

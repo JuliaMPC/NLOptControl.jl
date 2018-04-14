@@ -1,342 +1,210 @@
 module MPC_Module
 
 using JuMP
+using OrdinaryDiffEq
+using DiffEqBase
 
-include("Base.jl") # TODO move State and Control here
+include("Base.jl")
 using .Base
 
 export
-      autonomousControl!,
-      initializeMPC!,
-      updateX0!,
-      simPlant!,
-      simModel,
-      MPC
+      MPC,
+      defineMPC!
 
 
-const simulationModes = [:OCP,:InternalPlant,:InternalExternalPlant,:ExternalPlant]
+########################################################################################
+# MPC types
+########################################################################################
 
-"""
-initializeMPC(n)
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 4/7/2017, Last Modified: 4/8/2018 \n
---------------------------------------------------------------------------------------\n
-"""
-
-
-#function configureMPC!(n::NLOpt; kwargs... )
-function configureMPC!(n; kwargs... )
-  kw = Dict(kwargs)
-
-  # simulationMode
-  if !haskey(kw,:simulationMode)
-    n.mpc.simulationMode = :OCP
-  else
-    simulationMode = get(kw,:simulationMode,0)
-      if simulationMode in simulationModes
-        n.mpc.simulationMode = get(kw,:simulationMode,0)
-      else
-        error(simulationMode," is not in: ", simulationModes)
-      end
-  end
-
-  if isequal(n.mpc.simulationMode,:OCP)
-
-  elseif isequal(n.mpc.simulationMode,:internalPlant)
-
-  else
-  end
-
+type IP
+ control::Control
+ state::State
 end
 
+function IP()
+ IP(
+  Control(),
+  State()
+  )
+end
 
+type EP
+ control::Control
+ state::State
+end
 
+function EP()
+ EP(
+  Control(),
+  State()
+ )
+end
 
+type MPCvariables
+ # variables
+ t::Float64           # current simulation time (s)
+ tp::Any              # prediction time (if finalTimeDV == true -> this is not known before optimization)
+ tex::Float64         # execution horizon time
+ t0Actual                    # actual initial time TODO ?
+ t0::Float64                  # mpc initial time TODO ?
+ tf::Float64                  # mpc final time TODO ?
+ t0Param::Any        # parameter for mpc t0  TODO ?
+ evalNum::Int64       # parameter for keeping track of number of MPC evaluations
+ goal                 # goal location
+end
 
-
-
-
-
-
-
-
-
-
-
+function MPCvariables()
+ MPCvariables(
+              0.0,    # t
+              Any,    # tp (might be a variable)
+              0.5,    # tex
+              0.0,
+              0.0,
+              0.0,
+              Any,
+              0,
+              []
+ )
+end
 
 type MPC
-  # models
-  plantEquations
-  modelEquations
-
-  # constants
-  tp::Any              # predication time (if finalTimeDV == true -> this is not known before optimization)
-  tex::Float64         # execution horizon time
-  max_iter::Int64      # maximum number of iterations
-  numPlantControls::Int64      # number of states in plant
-  numPlantStates::Int64        # number of controls in plant
-
-  # variables
-  goal_reached::Bool           # flag to indicate that goal has been reached
-  t0_actual                    # actual initial time
-  t0::Float64                  # mpc initial time
-  tf::Float64                  # mpc final time
-  t0_param::Any                # parameter for mpc t0
-  X0p::Array{Float64,1}        # predicted controller initial states
-  X0                           # array of all controller initial states (n.X0 leads because we are in simulation)
-  X0p_plant::Array{Float64,1}  # predicted initial states
-  X0_plant                     # array of all actual initial states (n.X0 leads because we are in simulation)
-
-  # options
-  PredictX0::Bool
-  FixedTp::Bool
-  Mode
-  InternalPlantKnown::Bool    # bool to indicate if the internal plant model is assumed to be known
-  ExternalPlant::Bool         # bool to indicate if there is also an external plant model
+ v::MPCvariables
+ ip::IP
+ ep::EP
 end
 
 function MPC()
-  MPC(
-      Any,
-      Any,
-      Any,    # might be a variable tp
-      0.0,
-      0,
-      0,      # number of states in plant
-      0,      # number of controls in plant
-      false,
-      0.0,
-      0.0,
-      0.0,
-      Any,
-      Float64[],          # predicted initial state conditions
-      [],
-      Float64[],          # predicted actual initial state conditions
-      [],
-      true,
-      true,
-      true,
-      true,
-      false);
+ MPC(
+     MPCvariables(),
+     IP(),
+     EP()
+     )
 end
 
 ########################################################################################
-# mpc functions
+# MPC functions
 ########################################################################################
-
 """
-initializeMPC(n)
+defineMPC!(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 4/7/2017, Last Modified: 4/8/2018 \n
 --------------------------------------------------------------------------------------\n
 """
-function initializeMPC!(n;
-                        numPlantStates::Int64=0,
-                        numPlantControls::Int64=0,
-                        X0_plant=fill(NaN,numPlantStates,),
-                        InternalPlantKnown::Bool=true,
-                        FixedTp::Bool=true,
-                        PredictX0::Bool=true,
-                        tp::Any=NaN,tex::Float64=0.5,
-                        max_iter::Int64=10)
-  if n.mpc.t0_param!=Any
-    error("\n initializeMPC!() must be called before OCPdef!() \n")
-  end
-  # validate input
-  if numPlantControls <= 0
-      error("numPlantControls must be > 0","\n");
-  end
-  if numPlantStates <= 0
-      error("numPlantStates must be > 0","\n");
-  end
-  if length(X0_plant) != numPlantStates
-    error(string("\n Length of X0_plant must match number of plant states \n"));
-  end
+function defineMPC!(n;
+                   mode::Symbol=:OCP,
+                   predictX0::Bool=true,
+                   fixedTp::Bool=true,
+                   IPKnown::Bool=true,
+                   saveMode::Symbol=:all,
+                   maxSim::Int64=100,
+                   goal=n.XF)
+  n.s.mpc.on = true
 
-  n.s.MPC = true
   n.mpc::MPC = MPC()
-  n.mpc.InternalPlantKnown = InternalPlantKnown
-  n.mpc.numPlantControls = numPlantControls
-  n.mpc.numPlantStates = numPlantStates
-  n.mpc.X0_plant = [X0_plant]
-  n.mpc.FixedTp = FixedTp
-  n.mpc.PredictX0 = PredictX0
-  n.mpc.tp = tp
-  n.mpc.tex =tex
-  n.mpc.max_iter = max_iter
-  n.mpc.t0 = 0.0
-  n.mpc.t0_actual = 0.0
-  n.mpc.tf = tex
+  n.mpc.s.mode = mode
+  n.mpc.s.predictX0 = predictX0
+  n.mpc.s.fixedTp = fixedTp
+  n.mpc.s.IPKnown = IPKnown
+  n.mpc.s.saveMode = saveMode
+  n.mpc.s.maxSim = maxSim
+  n.mpc.v.goal = goal
+  n.mpc.f.mpcDefined = true
   return nothing
 end
 
 """
-# for simulating the model of the plant given control commands
-simModel(n,X0,t,U,t0,tf)
+defineModel!(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/14/2017, Last Modified: 6/22/2017 \n
+Date Create: 4/12/2018, Last Modified: 4/12/2018 \n
 --------------------------------------------------------------------------------------\n
 """
-function simModel(n,X0,t,U,t0,tf)
-  n.mpc.modelEquations(n,X0,t,U,t0,tf)
-end
+function defineModel!(n;
+                 stateNames=[],
+                 controlNames=[],
+                 X0a=[],
+                 model=[]
+                 )
+   if isequal(n.mpc.s.simulationMode,:OCP) # this function is called automatically for this mode
+    if !isempty(stateNames)
+     error("stateNames are set automatically for :simulationMode == :OCP and cannot be provided.")
+    end
+    if !isempty(controlNames)
+     error("controlNames are set automatically for :simulationMode == :OCP and cannot be provided.")
+    end
+    if !isempty(X0a)
+     error("X0a is set automatically for :simulationMode == :OCP and cannot be provided.")
+    end
+    if !isempty(model)
+     error("model is set automatically for :simulationMode == :OCP and cannot be provided.")
+    end
+    n.mpc.ocp.state::State = State() # reset
+    n.mpc.ocp.state.num = n.ocp.state.num
+    n.mpc.ocp.state.names = n.ocp.state.names
 
-"""
-updateStates!(n)
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/17/2017, Last Modified: 4/8/2018 \n
---------------------------------------------------------------------------------------\n
-"""
-function updateStates!(n)
-
-  # update states based off of n.mpc.X0p
-  for st in 1:n.numStates   # update states based off of n.mpc.X0p
-    if any(!isnan(n.X0_tol[st]))
-      JuMP.setRHS(n.r.x0_con[st,1], (n.mpc.X0p[st]+n.X0_tol[st]));
-      JuMP.setRHS(n.r.x0_con[st,2],-(n.mpc.X0p[st]-n.X0_tol[st]));
+   elseif isequal(n.mpc.s.simulationMode,:IP)
+    if isempty(stateNames)
+     error("unless :simulationMode == :OCP the stateNames must be provided.")
+    end
+    if isempty(controlNames)
+     error("unless :simulationMode == :OCP the controlNames must be provided.")
+    end
+    if isempty(X0a)
+     error("unless :simulationMode == :OCP X0a must be provided.")
+    end
+    if isempty(model)
+     error("A model needs to be passed for the IP simulationMode.")
     else
-      JuMP.setRHS(n.r.x0_con[st],n.mpc.X0p[st]);
+    if isequal(length(X0a),length(stateNames))
+      error(string("\n Length of X0a must match length(stateNames) \n"));
     end
-  end
-  return nothing
-end
 
-"""
-updateX0!(n,X0;(:userUpdate=>true))    # user defined update of X0
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 3/6/2017, Last Modified: 6/22/2017 \n
---------------------------------------------------------------------------------------\n
-"""
-function updateX0!(n,args...;kwargs...)
-  kw = Dict(kwargs);
-  # check to see how the initial states are being updated
-  if !haskey(kw,:userUpdate); kw_ = Dict(:userUpdate => false); userUpdate = get(kw_,:userUpdate,0);
-  else; userUpdate = get(kw,:userUpdate,0);
-  end
 
-  if userUpdate
-    X0=args[1];
-    if length(X0)!=n.numStates
-      error(string("\n Length of X0 must match number of states \n"));
+     n.mpc.ip.state::State = State() # reset
+     n.mpc.ip.state.num = length(stateNames)
+     for i in 1:n.mpc.ip.state.num
+       if stateNames[i]==:xxx
+         error("xxx is OFF limits for a state name; please choose something else. \n")
+       end
+       push!(n.mpc.ip.state.name,stateNames[i])
+     end
+
+     n.mpc.ip.control::Control = Control() # reset
+     n.mpc.ip.control.num = length(controlNames)
+     for i in 1:n.mpc.ip.control.num
+       if controlNames[i]==:xxx
+         error("xxx is OFF limits for a control name; please choose something else. \n")
+       end
+       push!(n.mpc.ip.control.name,controlNames[i])
+     end
+     n.mpc.r.ip.X0a = X0a
+     n.mpc.ip.state.model = model # TODO validate type of model
     end
-    n.X0 = X0
-  else # update using the current location of plant
-    for st in 1:n.numStates
-      n.X0[st] = n.r.dfs_plant[end][n.state.name[st]][end]
-    end
-  end
-  updateStates!(n)
-  append!(n.mpc.X0,[copy(n.X0)])
-  return nothing
+   elseif isequal(n.mpc.s.simulationMode,:EP)
+    error("not setup for :EP")
+   else
+    error("n.mpc.s.simulationMode = ",n.mpc.s.simulationMode," not defined." )
+   end
+
+   # consider calling mapNames
 end
 
+
 """
-simPlant(n)
-# consider X0=n.mpc.X0[(n.r.eval_num)] when plant and controller are different
-# NOTE if previous solution was Infeasible it will just pass the begining of the last Optimal solution again
+mapNames!(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/14/2017, Last Modified: 4/09/2018 \n
+Date Create: 4/9/2018, Last Modified: 4/12/2018 \n
 --------------------------------------------------------------------------------------\n
 """
-function simPlant!(n;X0=n.X0,t=n.r.t_ctr+n.mpc.t0,U=n.r.U,t0=n.mpc.t0_actual,tf=n.r.eval_num*n.mpc.tex)
-  sol = n.mpc.plantEquations(n,X0,t,U,t0,tf)
-  plant2dfs!(n,sol)  #TODO consider passing U, t0 etc.. and only run this if saving data
-  return nothing
-end
-
-"""
-# TODO eventually the "plant" will be different from the "model"
-t0p=predictX0(n)
-# also shifts the initial time, but this is accounted for in updateMPC()
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 4/7/2017, Last Modified: 4/8/2018 \n
---------------------------------------------------------------------------------------\n
-"""
-function predictX0!(n)
-  if n.mpc.tf==n.mpc.t0
-    error("n.mpc.tf==n.mpc.t0")
-  end
-
-  if n.mpc.FixedTp
-    t0p = n.mpc.tex
-  elseif n.r.eval_num == 0
-    t0p = n.t0
-  else
-    t0p = r.dfs_opt[end][:t_solve][1]
-  end
-
-  if n.r.eval_num != 0
-    # based off of "current X0". Even though we may have the next X0 we should not (i.e.look at @show length(n.mpc.X0)). It is because it is a simulation (in reality they would be running in parallel)
-    sol = simModel(n,n.mpc.X0[(n.r.eval_num)],n.r.t_ctr+n.mpc.t0,n.r.U,n.mpc.t0,n.mpc.t0+t0p)
-    n.mpc.X0p = sol(n.mpc.t0+t0p)[:]
-  else
-    n.mpc.X0p = n.X0  # assuming vehicle did not move
-  end
-
-  return t0p
-end
-
-"""
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 3/6/2017, Last Modified: 4/8/2018 \n
---------------------------------------------------------------------------------------\n
-"""
-function mpcUpdate!(n)
-  if n.mpc.PredictX0      # predict where X0 will be when optimized signal is actually sent to the vehicle
-    t0p = predictX0!(n)   # predicted start time -> important for time varying constraints
-  else
-    t0p = 0
-    n.mpc.X0p = n.mpc.X0[end]  # current "known" plant states  TODO make sure the plant is never simulated ahead
-  end
-  n.mpc.t0 = copy(n.mpc.t0_actual+t0p)      # there are two different time scales-> the plant leads by t0p
-  setvalue(n.mpc.t0_param,copy(n.mpc.t0))   # update for time varying constraints
-  n.mpc.tf = copy(n.mpc.t0+n.mpc.tex)
-  if n.mpc.t0_param!=Any
-    setvalue(n.mpc.t0_param,copy(n.mpc.t0))
-  end
-  return nothing
-end
-
-"""
-status = autonomousControl!(n)
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/1/2017, Last Modified: 4/8/2018 \n
---------------------------------------------------------------------------------------\n
-"""
-function autonomousControl!(n)
-  if n.r.eval_num != 0
-    mpcUpdate!(n)
-    updateStates!(n)
-  end
-  optimize!(n)
-  return n.r.status
-end
-
-"""
-mapIP!(n)
-
-
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 4/9/2018, Last Modified: 4/9/2018 \n
---------------------------------------------------------------------------------------\n
-"""
-function mapNames!(n,mode)
-  if isequal(mode,:IP)
-    s1 = n.state.name
-    c1 = n.control.name
+function mapNames!(n)
+  if isequal(n.mpc.s.simulationMode,:IP)
+    s1 = n.ocp.state.name
+    c1 = n.ocp.control.name
     s2 = n.mpc.stateIP.name
     c2 = n.mpc.controlIP.name
-  elseif isequal(mode,:EP)
+  elseif isequal(n.mpc.s.simulationMode,:EP)
     error(":EP function not ready")
   else
     error("mode must be either :IP or :EP")
@@ -386,6 +254,115 @@ function mapNames!(n,mode)
   end
 
   return nothing
+end
+
+"""
+updateX0!(n,X0;(:userUpdate=>true))    # user defined update of X0
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 3/6/2017, Last Modified: 4/12/2018 \n
+--------------------------------------------------------------------------------------\n
+"""
+function updateX0!(n,args...;kwargs...)
+  kw = Dict(kwargs)
+
+  if isequal(mode,:OCP) # push the vehicle along
+   for st in 1:n.ocp.state.num
+     n.ocp.X0[st] = n.r.ip.dfsplant[end][n.ocp.state.name[st]][end]
+   end
+  elseif isequal(mode,:IP)
+    error(":IP function not ready")
+  elseif isequal(mode,:EP)
+     error(":EP function not ready")
+     X0 = args[1]
+     if length(X0)!=n.ocp.state.num
+       error(string("\n Length of X0 must match number of states \n"));
+     end
+     n.ocp.X0 = X0
+  else
+    error("mode must be :OCP, :IP, or :EP")
+  end
+
+
+  updateStates!(n)
+  append!(n.r.ip.X0a,[copy(n.ocp.X0)])
+  return nothing
+end
+
+"""
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 4/12/2018, Last Modified: 4/12/2018 \n
+--------------------------------------------------------------------------------------\n
+"""
+function goalReached!(n)
+ if ((n.r.ip.dfsplant[end][:x][end]-c["goal"]["x"])^2 + (n.r.ip.dfsplant[end][:y][end]-c["goal"]["yVal"])^2)^0.5 < c["goal"]["tol"]
+   println("Goal Attained! \n"); n.f.mpc.goalReached=true;
+ end
+ return n.f.mpc.goalReached
+end
+"""
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 4/12/2018, Last Modified: 4/12/2018 \n
+--------------------------------------------------------------------------------------\n
+"""
+function simMpc(c)
+
+ n = initializeAutonomousControl(c)
+
+ for ii = 1:n.mpc.s.maxSim
+  println("Running model for the: ",n.mpc.v.evalNum + 1," time")
+  updateAutoParams!(n,c)                 # update model parameters
+  status = autonomousControl!(n)         # rerun optimization
+
+  if n.r.ocp.status==:Optimal || n.r.ocp.status==:Suboptimal || n.r.ocp.status==:UserLimit
+    println("Passing Optimized Signals to 3DOF Vehicle Model");
+  elseif n.r.ocp.status==:Infeasible
+    println("\n FINISH:Pass PREVIOUSLY Optimized Signals to 3DOF Vehicle Model \n"); break;
+  else
+    println("\n There status is nor Optimal or Infeaible -> create logic for this case!\n"); break;
+  end
+
+  n.mpc.t0_actual = (n.r.ocp.evalNum-1)*n.mpc.v.tex  # external so that it can be updated easily in PathFollowing
+
+  # if the vehicle is very close to the goal sometimes the optimization returns with a small final time
+  # and it can even be negative (due to tolerances in NLP solver). If this is the case, the goal is slightly
+  # expanded from the previous check and one final check is performed otherwise the run is failed
+  if getvalue(n.ocp.tf) < 0.01
+    if ((n.r.ip.dfsplant[end][:x][end]-c["goal"]["x"])^2 + (n.r.ip.dfsplant[end][:y][end]-c["goal"]["yVal"])^2)^0.5 < 2*c["goal"]["tol"]
+    println("Expanded Goal Attained! \n"); n.f.mpc.goalReached=true;
+    break;
+    else
+    warn("Expanded Goal Not Attained! -> stopping simulation! \n"); break;
+    end
+  elseif getvalue(n.ocp.tf) < 0.5 # if the vehicle is near the goal => tf may be less then 0.5 s
+    tf = (n.r.ocp.evalNum-1)*n.mpc.v.tex + getvalue(n.ocp.tf)
+  else
+    tf = (n.r.ocp.evalNum)*n.mpc.v.tex
+  end
+
+  if isequal(c["misc"]["model"],:ThreeDOFv2)
+    U = n.r.ocp.U # TODO change to v1 for plant sim
+  elseif isequal(c["misc"]["model"],:KinematicBicycle)
+    #U = hcat(n.r.ocp.U[:,1],n.r.ocp.X[:,4])# TODO change to v1 for plant sim
+    U = n.r.ocp.U
+  end
+
+  simPlant!(n;tf=tf,U=U)
+  updateX0!(n)
+  if n.r.ocp.evalNum==n.mpc.v.evalNum
+    warn(" \n This is the last itteration! \n i.e. the maximum number of iterations has been reached while closing the loop; consider increasing (max_iteration) \n")
+  end
+  if ((n.r.ip.dfsplant[end][:x][end]-c["goal"]["x"])^2 + (n.r.ip.dfsplant[end][:y][end]-c["goal"]["yVal"])^2)^0.5 < c["goal"]["tol"]
+    println("Goal Attained! \n"); n.f.mpc.goalReached=true;
+    break;
+  end
+  if checkCrash(n,c,c["misc"]["sm2"];(:plant=>true))
+    warn(" \n The vehicle crashed -> stopping simulation! \n"); break;
+  end
+ end
+ return n
 end
 
 end # module

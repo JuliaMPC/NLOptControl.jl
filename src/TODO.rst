@@ -28,7 +28,7 @@ try making an additional function where constraints can be added then putting it
 20) when integrating using :tm :trapezoidal method and minimizing the square of something it may oscillate
 22) provide an initial guess
 25) parse_DiffEq works OK except when in module
-26) what does n.s.reset do
+26) what does n.s.ocp.reset do
 27) show difference in solution for explicit and implicit in Brachistochrone
 28) WARNING: Dual solution not available. Check that the model was properly solved and no integer variables are present.
 don;t try to extract if the solution is not feasible
@@ -52,9 +52,9 @@ try to register functions with JuMP
 22) make it stop recompiling VehicleModels when it runs PrettyPlots
 23) see the number of constraints can be reduced for :ps methods
 25) update notebook
-30) if user only passes n and Expr to NLExpr automatically add n.r.x etc.
+30) if user only passes n and Expr to NLExpr automatically add n.r.ocp.x etc.
 31) make this a oneliner
- FZ_rl_con=@NLconstraint(n.mdl, [j=1:n.numStatePoints], 0 <= FZ_RL[j] - Fz_min)
+ FZ_rl_con=@NLconstraint(n.ocp.mdl, [j=1:n.numStatePoints], 0 <= FZ_RL[j] - Fz_min)
  newConstraint!(n,FZ_rl_con,:FZ_rl_con);
 33) To debug KNITRO turn up the output level
 34) Try to tune KNITRO

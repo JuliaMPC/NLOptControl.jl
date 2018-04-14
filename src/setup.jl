@@ -48,19 +48,17 @@ function define(;
     error(string("\n Length of CU must match number of controls \n"));
   end
 
-  n.numStates = numStates
-  n.numControls = numControls
-  n.state = initStateNames(n)
-  n.control = initControlNames(n)
-  n.X0 = X0
-  n.X0_tol = NaN*X0
-  n.XF = XF
-  n.XF_tol = NaN*XF
-  n.XL = XL
-  n.XU = XU
-  n.CL = CL
-  n.CU = CU
-  n.define = true
+  n.ocp.state = initState(numStates)
+  n.ocp.control = initControl(numControls)
+  n.ocp.X0 = X0
+  n.ocp.X0_tol = NaN*X0
+  n.ocp.XF = XF
+  n.ocp.XF_tol = NaN*XF
+  n.ocp.XL = XL
+  n.ocp.XU = XU
+  n.ocp.CL = CL
+  n.ocp.CU = CU
+  n.f.ocp.defined = true
   return n
 end
 
@@ -77,26 +75,26 @@ function defineSolver!(n::NLOpt,kw)
  end
 
   # get the name of the solver
-  if haskey(kw,:name); n.s.solver.name=get(kw,:name,0); end
-  if try_import(n.s.solver.name)
-  else error(string("could not import ",n.s.solver.name) )
+  if haskey(kw,:name); n.s.ocp.solver.name=get(kw,:name,0); end
+  if try_import(n.s.ocp.solver.name)
+  else error(string("could not import ",n.s.ocp.solver.name) )
   end
 
   # see if the user would like to use a standard set of solver settings for mpc
   if haskey(kw,:mpc_defaults); mpc_defaults=get(kw,:mpc_defaults,0); else mpc_defaults=false; end
   if mpc_defaults
-    if n.s.solver.name==:Ipopt
-      n.s.solver.settings=_Ipopt_MPC;
-    elseif n.s.solver.name==:KNITRO
-      n.s.solver.settings=_KNITRO_MPC;
+    if n.s.ocp.solver.name==:Ipopt
+      n.s.ocp.solver.settings=_Ipopt_MPC;
+    elseif n.s.ocp.solver.name==:KNITRO
+      n.s.ocp.solver.settings=_KNITRO_MPC;
     else
       error(string("solver ",n.s.sover.name, " not defined"))
     end
   else # default solver settings
-    if n.s.solver.name==:Ipopt  # NOTE this should already have been done by default, but could get messed up is user is playing with options
-      n.s.solver.settings=_Ipopt_defaults;
-    elseif n.s.solver.name==:KNITRO
-      n.s.solver.settings=_KNITRO_defaults;
+    if n.s.ocp.solver.name==:Ipopt  # NOTE this should already have been done by default, but could get messed up is user is playing with options
+      n.s.ocp.solver.settings=_Ipopt_defaults;
+    elseif n.s.ocp.solver.name==:KNITRO
+      n.s.ocp.solver.settings=_KNITRO_defaults;
     else
       error(string("solver ", n.s.sover.name, " not defined"))
     end
@@ -104,53 +102,53 @@ function defineSolver!(n::NLOpt,kw)
 
   # modify additional defaults individually
   for (key,value) in kw
-    if haskey(n.s.solver.settings,key)
-      n.s.solver.settings[key]=value
+    if haskey(n.s.ocp.solver.settings,key)
+      n.s.ocp.solver.settings[key]=value
     elseif key!=:name && key!=:mpc_defaults # ignore the name and default settings option TODO could remove them from the Dict
-      error(string(" \n Unknown key: ", kw, " for ", n.s.solver.name, " used in defineSolver!() \n "))
+      error(string(" \n Unknown key: ", kw, " for ", n.s.ocp.solver.name, " used in defineSolver!() \n "))
     end
   end
 
-  if n.s.solver.name==:Ipopt
-    setsolver(n.mdl,Ipopt.IpoptSolver(;max_cpu_time=n.s.solver.settings[:max_cpu_time],
-                               print_level=n.s.solver.settings[:print_level],
-                               warm_start_init_point=n.s.solver.settings[:warm_start_init_point],
-                               max_iter=n.s.solver.settings[:max_iter],
-                               tol=n.s.solver.settings[:tol],
-                               dual_inf_tol=n.s.solver.settings[:dual_inf_tol],
-                               constr_viol_tol=n.s.solver.settings[:constr_viol_tol],
-                               compl_inf_tol=n.s.solver.settings[:compl_inf_tol],
-                               acceptable_tol=n.s.solver.settings[:acceptable_tol],
-                               acceptable_constr_viol_tol=n.s.solver.settings[:acceptable_constr_viol_tol],
-                               acceptable_dual_inf_tol=n.s.solver.settings[:acceptable_dual_inf_tol],
-                               acceptable_compl_inf_tol=n.s.solver.settings[:acceptable_compl_inf_tol],
-                               acceptable_obj_change_tol=n.s.solver.settings[:acceptable_obj_change_tol],
-                               diverging_iterates_tol=n.s.solver.settings[:diverging_iterates_tol]))
-  elseif n.s.solver.name==:KNITRO
-    setsolver(n.mdl,KnitroSolver(;outlev=n.s.solver.settings[:outlev],
-                                 maxit=n.s.solver.settings[:maxit],
-                                 maxtime_real=n.s.solver.settings[:maxtime_real],
-                                 feastol=n.s.solver.settings[:feastol],
-                                 feastol_abs=n.s.solver.settings[:feastol_abs],
-                                 ftol=n.s.solver.settings[:ftol],
-                                 ftol_iters=n.s.solver.settings[:ftol_iters],
-                                 infeastol=n.s.solver.settings[:infeastol],
-                                 maxfevals=n.s.solver.settings[:maxfevals],
-                                 maxit=n.s.solver.settings[:maxit],
-                                 maxtime_cpu=n.s.solver.settings[:maxtime_cpu],
-                                 maxtime_real=n.s.solver.settings[:maxtime_real],
-                                 opttol=n.s.solver.settings[:opttol],
-                                 opttol_abs=n.s.solver.settings[:opttol_abs],
-                                 xtol=n.s.solver.settings[:xtol],
-                                 xtol_iters=n.s.solver.settings[:xtol_iters],
-                                 algorithm=n.s.solver.settings[:algorithm],
-                                 bar_initpt=n.s.solver.settings[:bar_initpt],
-                                 bar_murule=n.s.solver.settings[:bar_murule],
-                                 bar_penaltycons=n.s.solver.settings[:bar_penaltycons],
-                                 bar_penaltyrule=n.s.solver.settings[:bar_penaltyrule],
-                                 bar_switchrule=n.s.solver.settings[:bar_switchrule],
-                                 linesearch=n.s.solver.settings[:linesearch],
-                                 linsolver=n.s.solver.settings[:linsolver]))
+  if n.s.ocp.solver.name==:Ipopt
+    setsolver(n.ocp.mdl,Ipopt.IpoptSolver(;max_cpu_time=n.s.ocp.solver.settings[:max_cpu_time],
+                               print_level=n.s.ocp.solver.settings[:print_level],
+                               warm_start_init_point=n.s.ocp.solver.settings[:warm_start_init_point],
+                               max_iter=n.s.ocp.solver.settings[:max_iter],
+                               tol=n.s.ocp.solver.settings[:tol],
+                               dual_inf_tol=n.s.ocp.solver.settings[:dual_inf_tol],
+                               constr_viol_tol=n.s.ocp.solver.settings[:constr_viol_tol],
+                               compl_inf_tol=n.s.ocp.solver.settings[:compl_inf_tol],
+                               acceptable_tol=n.s.ocp.solver.settings[:acceptable_tol],
+                               acceptable_constr_viol_tol=n.s.ocp.solver.settings[:acceptable_constr_viol_tol],
+                               acceptable_dual_inf_tol=n.s.ocp.solver.settings[:acceptable_dual_inf_tol],
+                               acceptable_compl_inf_tol=n.s.ocp.solver.settings[:acceptable_compl_inf_tol],
+                               acceptable_obj_change_tol=n.s.ocp.solver.settings[:acceptable_obj_change_tol],
+                               diverging_iterates_tol=n.s.ocp.solver.settings[:diverging_iterates_tol]))
+  elseif n.s.ocp.solver.name==:KNITRO
+    setsolver(n.ocp.mdl,KnitroSolver(;outlev=n.s.ocp.solver.settings[:outlev],
+                                 maxit=n.s.ocp.solver.settings[:maxit],
+                                 maxtime_real=n.s.ocp.solver.settings[:maxtime_real],
+                                 feastol=n.s.ocp.solver.settings[:feastol],
+                                 feastol_abs=n.s.ocp.solver.settings[:feastol_abs],
+                                 ftol=n.s.ocp.solver.settings[:ftol],
+                                 ftol_iters=n.s.ocp.solver.settings[:ftol_iters],
+                                 infeastol=n.s.ocp.solver.settings[:infeastol],
+                                 maxfevals=n.s.ocp.solver.settings[:maxfevals],
+                                 maxit=n.s.ocp.solver.settings[:maxit],
+                                 maxtime_cpu=n.s.ocp.solver.settings[:maxtime_cpu],
+                                 maxtime_real=n.s.ocp.solver.settings[:maxtime_real],
+                                 opttol=n.s.ocp.solver.settings[:opttol],
+                                 opttol_abs=n.s.ocp.solver.settings[:opttol_abs],
+                                 xtol=n.s.ocp.solver.settings[:xtol],
+                                 xtol_iters=n.s.ocp.solver.settings[:xtol_iters],
+                                 algorithm=n.s.ocp.solver.settings[:algorithm],
+                                 bar_initpt=n.s.ocp.solver.settings[:bar_initpt],
+                                 bar_murule=n.s.ocp.solver.settings[:bar_murule],
+                                 bar_penaltycons=n.s.ocp.solver.settings[:bar_penaltycons],
+                                 bar_penaltyrule=n.s.ocp.solver.settings[:bar_penaltyrule],
+                                 bar_switchrule=n.s.ocp.solver.settings[:bar_switchrule],
+                                 linesearch=n.s.ocp.solver.settings[:linesearch],
+                                 linsolver=n.s.ocp.solver.settings[:linsolver]))
   else
     error(string("solver ",n.s.sover.name, " not defined"))
   end
@@ -165,164 +163,164 @@ Date Create: 1/14/2017, Last Modified: 7/1/2017 \n
 --------------------------------------------------------------------------------------\n
 """
 function OCPdef!(n::NLOpt)
-  n.r=Result();
+#  n.r=Result();
 
   # state variables
-  @variable(n.mdl,x[1:n.numStatePoints,1:n.numStates]); n.r.x=x;
-  for st in 1:n.numStates
+  @variable(n.ocp.mdl,x[1:n.ocp.state.pts,1:n.ocp.state.num]); n.r.ocp.x=x;
+  for st in 1:n.ocp.state.num
     # lower state constraint
-    if !isnan.(n.XL[st])
-      if n.mXL[st]==false
-        for j in 1:n.numStatePoints
-          setlowerbound(n.r.x[j,st], n.XL[st])
+    if !isnan.(n.ocp.XL[st])
+      if n.ocp.mXL[st]==false
+        for j in 1:n.ocp.state.pts
+          setlowerbound(n.r.ocp.x[j,st], n.ocp.XL[st])
         end
       else
-        for j in 1:n.numStatePoints
-          setlowerbound(n.r.x[j,st],n.XL_var[st,j])
+        for j in 1:n.ocp.state.pts
+          setlowerbound(n.r.ocp.x[j,st],n.ocp.XL_var[st,j])
         end
       end
     end
 
     # upper state constraint
-    if !isnan.(n.XU[st])
-      if n.XU[st]!=false
-        for j in 1:n.numStatePoints
-          setupperbound(n.r.x[j,st], n.XU[st])
+    if !isnan.(n.ocp.XU[st])
+      if n.ocp.XU[st]!=false
+        for j in 1:n.ocp.state.pts
+          setupperbound(n.r.ocp.x[j,st], n.ocp.XU[st])
         end
       else
-        for j in 1:n.numStatePoints
-          setlowerbound(n.r.x[j,st],n.XU_var[st,j])
+        for j in 1:n.ocp.state.pts
+          setlowerbound(n.r.ocp.x[j,st],n.ocp.XU_var[st,j])
         end
       end
     end
   end
 
   # control variables
-  @variable(n.mdl,u[1:n.numControlPoints,1:n.numControls]);n.r.u=u;
-  for ctr in 1:n.numControls
-    if !isnan.(n.CL[ctr])
-      for j in 1:n.numControlPoints
-        setlowerbound(n.r.u[j,ctr], n.CL[ctr])
+  @variable(n.ocp.mdl,u[1:n.ocp.control.pts,1:n.ocp.control.num]);n.r.ocp.u=u;
+  for ctr in 1:n.ocp.control.num
+    if !isnan.(n.ocp.CL[ctr])
+      for j in 1:n.ocp.control.pts
+        setlowerbound(n.r.ocp.u[j,ctr], n.ocp.CL[ctr])
       end
     end
-    if !isnan.(n.CU[ctr])
-      for j in 1:n.numControlPoints
-        setupperbound(n.r.u[j,ctr], n.CU[ctr])
+    if !isnan.(n.ocp.CU[ctr])
+      for j in 1:n.ocp.control.pts
+        setupperbound(n.r.ocp.u[j,ctr], n.ocp.CU[ctr])
       end
     end
   end
 
   # boundary constraints
-  if any(.!isnan.(n.X0_tol))              # create handles for constraining the entire initial state
-    n.r.x0_con=Array{Any}(n.numStates,2); # this is so they can be easily reference when doing MPC
+  if any(.!isnan.(n.ocp.X0_tol))              # create handles for constraining the entire initial state
+    n.r.ocp.x0Con=Array{Any}(n.ocp.state.num,2); # this is so they can be easily reference when doing MPC
   else
-    n.r.x0_con=[];
+    n.r.ocp.x0Con=[];
   end
 
-  if any(.!isnan.(n.XF_tol))              # create handles for constraining the entire final state
-    n.r.xf_con=Array{Any}(n.numStates,2); # this is so they can be easily reference when doing MPC
+  if any(.!isnan.(n.ocp.XF_tol))              # create handles for constraining the entire final state
+    n.r.ocp.xfCon=Array{Any}(n.ocp.state.num,2); # this is so they can be easily reference when doing MPC
   else
-    n.r.xf_con=[];
+    n.r.ocp.xfCon=[];
   end
 
-  for st in 1:n.numStates
-    if !isnan(n.X0[st]) # could have a bool for this
-      if !isnan(n.X0_tol[st]) #NOTE in JuMP: Modifying range constraints is currently unsupported.
-        n.r.x0_con[st,1]=@constraint(n.mdl, n.r.x[1,st] <=  (n.X0[st]+n.X0_tol[st]));
-        n.r.x0_con[st,2]=@constraint(n.mdl,-n.r.x[1,st] <= -(n.X0[st]-n.X0_tol[st]));
+  for st in 1:n.ocp.state.num
+    if !isnan(n.ocp.X0[st]) # could have a bool for this
+      if !isnan(n.ocp.X0_tol[st]) #NOTE in JuMP: Modifying range constraints is currently unsupported.
+        n.r.ocp.x0Con[st,1]=@constraint(n.ocp.mdl, n.r.ocp.x[1,st] <=  (n.ocp.X0[st]+n.ocp.X0_tol[st]));
+        n.r.ocp.x0Con[st,2]=@constraint(n.ocp.mdl,-n.r.ocp.x[1,st] <= -(n.ocp.X0[st]-n.ocp.X0_tol[st]));
       else
-        n.r.x0_con=[n.r.x0_con; @constraint(n.mdl, n.r.x[1,st]==n.X0[st])]
+        n.r.ocp.x0Con=[n.r.ocp.x0Con; @constraint(n.ocp.mdl, n.r.ocp.x[1,st]==n.ocp.X0[st])]
       end
     end
-    if !isnan(n.XF[st])
-      if any(.!isnan.(n.XF_tol))
-        n.r.xf_con[st,1]=@constraint(n.mdl, n.r.x[end,st] <=  (n.XF[st]+n.XF_tol[st]));
-        n.r.xf_con[st,2]=@constraint(n.mdl,-n.r.x[end,st] <= -(n.XF[st]-n.XF_tol[st]));
+    if !isnan(n.ocp.XF[st])
+      if any(.!isnan.(n.ocp.XF_tol))
+        n.r.ocp.xfCon[st,1]=@constraint(n.ocp.mdl, n.r.ocp.x[end,st] <=  (n.ocp.XF[st]+n.ocp.XF_tol[st]));
+        n.r.ocp.xfCon[st,2]=@constraint(n.ocp.mdl,-n.r.ocp.x[end,st] <= -(n.ocp.XF[st]-n.ocp.XF_tol[st]));
       else
-        n.r.xf_con=[n.r.xf_con; @constraint(n.mdl, n.r.x[end,st]==n.XF[st])];
+        n.r.ocp.xfCon=[n.r.ocp.xfCon; @constraint(n.ocp.mdl, n.r.ocp.x[end,st]==n.ocp.XF[st])];
       end
     end
   end
 
-  @NLparameter(n.mdl,t0_param==0.0);   # for now we just start at zero
-  n.mpc.t0_param=t0_param;
+  @NLparameter(n.ocp.mdl,t0_param==0.0);   # for now we just start at zero
+  n.mpc.v.t0Param=t0_param;
 
-  if n.s.integrationMethod==:ps
-    n.r.dyn_con=[Array{Any}(n.Nck[int],n.numStates) for int in 1:n.Ni];
-    dynamics_expr=[Array{Any}(n.Nck[int],n.numStates) for int in 1:n.Ni];
+  if n.s.ocp.integrationMethod==:ps
+    n.r.ocp.dynCon=[Array{Any}(n.ocp.Nck[int],n.ocp.state.num) for int in 1:n.ocp.Ni];
+    dynamics_expr=[Array{Any}(n.ocp.Nck[int],n.ocp.state.num) for int in 1:n.ocp.Ni];
 
-    if n.s.finalTimeDV
-      @variable(n.mdl, 0.001 <= tf <=  n.s.tf_max)
-      n.tf=tf;
+    if n.s.ocp.finalTimeDV
+      @variable(n.ocp.mdl, 0.001 <= tf <=  n.s.ocp.tfMax)
+      n.ocp.tf=tf;
       create_tV!(n)          # make a time vector
     end
 
-    for int in 1:n.Ni
-      x_int,u_int=intervals(n,int,n.r.x,n.r.u);
+    for int in 1:n.ocp.Ni
+      x_int,u_int=intervals(n,int,n.r.ocp.x,n.r.ocp.u);
 
       # dynamics
       L=size(x_int)[1]-1;
-      dx=Array{Any}(L,n.numStates)
-      for st in 1:n.numStates
+      dx=Array{Any}(L,n.ocp.state.num)
+      for st in 1:n.ocp.state.num
         dx[:,st]=DiffEq(n,x_int,u_int,L,st);
       end
 
-      for st in 1:n.numStates # TODO consider multiplying X*D to reduce computations (i.e. remove this for loop for the states)
-        if n.s.integrationScheme==:lgrExplicit
-          dynamics_expr[int][:,st]=@NLexpression(n.mdl, [j in 1:n.Nck[int]], sum(n.DMatrix[int][j,i]*x_int[i,st] for i in 1:n.Nck[int]+1) - ((n.tf)/2)*dx[j,st]  )
-        elseif n.s.integrationScheme==:lgrImplicit
-          dynamics_expr[int][:,st]=@NLexpression(n.mdl, [j in 1:n.Nck[int]], x_int[j+1,st] - x_int[1,st] - ((n.tf)/2)*sum(n.IMatrix[int][j,i]*dx[i,st] for i in 1:n.Nck[int]) )
+      for st in 1:n.ocp.state.num # TODO consider multiplying X*D to reduce computations (i.e. remove this for loop for the states)
+        if n.s.ocp.integrationScheme==:lgrExplicit
+          dynamics_expr[int][:,st]=@NLexpression(n.ocp.mdl, [j in 1:n.ocp.Nck[int]], sum(n.ocp.DMatrix[int][j,i]*x_int[i,st] for i in 1:n.ocp.Nck[int]+1) - ((n.ocp.tf)/2)*dx[j,st]  )
+        elseif n.s.ocp.integrationScheme==:lgrImplicit
+          dynamics_expr[int][:,st]=@NLexpression(n.ocp.mdl, [j in 1:n.ocp.Nck[int]], x_int[j+1,st] - x_int[1,st] - ((n.ocp.tf)/2)*sum(n.ocp.IMatrix[int][j,i]*dx[i,st] for i in 1:n.ocp.Nck[int]) )
         end
-        for j in 1:n.Nck[int]
-          n.r.dyn_con[int][j,st]=@NLconstraint(n.mdl, 0==dynamics_expr[int][j,st])
+        for j in 1:n.ocp.Nck[int]
+          n.r.ocp.dynCon[int][j,st]=@NLconstraint(n.ocp.mdl, 0==dynamics_expr[int][j,st])
         end
       end
 
       # additional constraints
-      for num in 1:length(n.NLcon)
+      for num in 1:length(n.ocp.NLcon)
          ch = addCon(n,x_int,u_int,L,num)
          newConstraint!(n,ch,Symbol(string("ch",num))) # TODO could let the user name these
       end
     end
-  elseif n.s.integrationMethod==:tm
-    n.r.dyn_con=Array{Any}(n.N,n.numStates);
-    if n.s.finalTimeDV
-     @variable(n.mdl, 0.001 <= tf <= n.s.tf_max)
-     n.tf = tf;
+  elseif n.s.ocp.integrationMethod==:tm
+    n.r.ocp.dynCon=Array{Any}(n.ocp.N,n.ocp.state.num);
+    if n.s.ocp.finalTimeDV
+     @variable(n.ocp.mdl, 0.001 <= tf <= n.s.ocp.tfMax)
+     n.ocp.tf = tf;
      create_tV!(n)          # make a time vector
     end
-    n.dt = n.tf/n.N*ones(n.N,);
+    n.ocp.dt = n.ocp.tf/n.ocp.N*ones(n.ocp.N,);
 
-    L=size(n.r.x)[1];
-    dx=Array{Any}(L,n.numStates)
-    for st in 1:n.numStates
-      dx[:,st]=DiffEq(n,n.r.x,n.r.u,L,st);
+    L=size(n.r.ocp.x)[1];
+    dx=Array{Any}(L,n.ocp.state.num)
+    for st in 1:n.ocp.state.num
+      dx[:,st]=DiffEq(n,n.r.ocp.x,n.r.ocp.u,L,st);
     end
 
-    if n.s.integrationScheme==:bkwEuler
-      for st in 1:n.numStates
-        n.r.dyn_con[:,st] = @NLconstraint(n.mdl, [j in 1:n.N], n.r.x[j+1,st] - n.r.x[j,st] ==  dx[j+1,st]*n.tf/(n.N) );
+    if n.s.ocp.integrationScheme==:bkwEuler
+      for st in 1:n.ocp.state.num
+        n.r.ocp.dynCon[:,st] = @NLconstraint(n.ocp.mdl, [j in 1:n.ocp.N], n.r.ocp.x[j+1,st] - n.r.ocp.x[j,st] ==  dx[j+1,st]*n.ocp.tf/(n.ocp.N) );
       end
-    elseif n.s.integrationScheme==:trapezoidal
-      for st in 1:n.numStates
-        n.r.dyn_con[:,st] = @NLconstraint(n.mdl, [j in 1:n.N], n.r.x[j+1,st] - n.r.x[j,st] == 0.5*(dx[j,st] + dx[j+1,st])*n.tf/(n.N) )
+    elseif n.s.ocp.integrationScheme==:trapezoidal
+      for st in 1:n.ocp.state.num
+        n.r.ocp.dynCon[:,st] = @NLconstraint(n.ocp.mdl, [j in 1:n.ocp.N], n.r.ocp.x[j+1,st] - n.r.ocp.x[j,st] == 0.5*(dx[j,st] + dx[j+1,st])*n.ocp.tf/(n.ocp.N) )
       end
     end
 
     # additional constraints
-    for num in 1:length(n.NLcon)
-       ch = addCon(n,n.r.x,n.r.u,L,num)
+    for num in 1:length(n.ocp.NLcon)
+       ch = addCon(n,n.r.ocp.x,n.r.ocp.u,L,num)
        newConstraint!(n,ch,Symbol(string("ch",num))) # TODO could let the user name these
     end
   end
 
   # save constraint data
-  newConstraint!(n,n.r.x0_con,:x0_con);
-  newConstraint!(n,n.r.xf_con,:xf_con);
-  newConstraint!(n,n.r.dyn_con,:dyn_con);
+  newConstraint!(n,n.r.ocp.x0Con,:x0_con);
+  newConstraint!(n,n.r.ocp.xfCon,:xf_con);
+  newConstraint!(n,n.r.ocp.dynCon,:dyn_con);
 
   # save the current working directory for navigation purposes
-  n.r.main_dir=pwd();
+  n.r.mainDir = pwd()
   return nothing
 end
 
@@ -337,74 +335,74 @@ function configure!(n::NLOpt; kwargs... )
   kw = Dict(kwargs)
 
   # final time
-  if !haskey(kw,:finalTimeDV);n.s.finalTimeDV=false;
-  else; n.s.finalTimeDV=get(kw,:finalTimeDV,0);
+  if !haskey(kw,:finalTimeDV);n.s.ocp.finalTimeDV=false;
+  else; n.s.ocp.finalTimeDV=get(kw,:finalTimeDV,0);
   end
 
-  if !haskey(kw,:tf) && !n.s.finalTimeDV
+  if !haskey(kw,:tf) && !n.s.ocp.finalTimeDV
     error("\n If the final is not a design variable pass it as: (:tf=>Float64(some #)) \n
         If the final time is a design variable, indicate that as: (:finalTimeDV=>true)\n")
-  elseif haskey(kw,:tf) && !n.s.finalTimeDV
-    n.tf = get(kw,:tf,0)
-  elseif n.s.finalTimeDV
-    n.tf = Any
+  elseif haskey(kw,:tf) && !n.s.ocp.finalTimeDV
+    n.ocp.tf = get(kw,:tf,0)
+  elseif n.s.ocp.finalTimeDV
+    n.ocp.tf = Any
   end
 
   # integrationScheme
-  if !haskey(kw,:integrationScheme); n.s.integrationScheme=:lgrExplicit; # default
-  else; n.s.integrationScheme=get(kw,:integrationScheme,0);
+  if !haskey(kw,:integrationScheme); n.s.ocp.integrationScheme=:lgrExplicit; # default
+  else; n.s.ocp.integrationScheme=get(kw,:integrationScheme,0);
   end
 
-  if n.s.integrationScheme==:lgrExplicit ||  n.s.integrationScheme==:lgrImplicit
-    n.s.integrationMethod = :ps
-  elseif n.s.integrationScheme==:trapezoidal || n.s.integrationScheme==:bkwEuler
-    n.s.integrationMethod = :tm
+  if n.s.ocp.integrationScheme==:lgrExplicit ||  n.s.ocp.integrationScheme==:lgrImplicit
+    n.s.ocp.integrationMethod = :ps
+  elseif n.s.ocp.integrationScheme==:trapezoidal || n.s.ocp.integrationScheme==:bkwEuler
+    n.s.ocp.integrationMethod = :tm
   else
     error("the :integrationScheme that you specified is not currently implemeted \n")
   end
 
-  if n.s.integrationMethod==:ps
+  if n.s.ocp.integrationMethod==:ps
     if haskey(kw,:N)
       error(" \n N is not an appropriate kwargs for :ps methods \n")
     end
-    if !haskey(kw,:Nck);n.Nck=[10,10,10,10]; # default
-    else; n.Nck = get(kw,:Nck,0);
+    if !haskey(kw,:Nck);n.ocp.Nck=[10,10,10,10]; # default
+    else; n.ocp.Nck = get(kw,:Nck,0);
     end
-    n.Ni=length(n.Nck);
+    n.ocp.Ni = length(n.ocp.Nck)
 
-    for int in 1:n.Ni
-        if (n.Nck[int]<0)
+    for int in 1:n.ocp.Ni
+        if (n.ocp.Nck[int]<0)
             error("\n Nck must be > 0");
         end
     end
-    n.numStatePoints=sum(n.Nck)+1;
-    n.numControlPoints=sum(n.Nck);
-    n.Nck_full=[0;cumsum(n.Nck+1)];
-    n.Nck_cum=[0;cumsum(n.Nck)];
+    n.ocp.state.pts = sum(n.ocp.Nck) + 1
+    n.ocp.control.pts = sum(n.ocp.Nck)
+    n.ocp.Nck_full = [0;cumsum(n.ocp.Nck+1)]
+    n.ocp.Nck_cum = [0;cumsum(n.ocp.Nck)]
 
     # initialize node data
-    if n.s.integrationScheme==:lgrExplicit ||  n.s.integrationScheme==:lgrImplicit
-      taus_and_weights = [gaussradau(n.Nck[int]) for int in 1:n.Ni];
+    if n.s.ocp.integrationScheme==:lgrExplicit ||  n.s.ocp.integrationScheme==:lgrImplicit
+      taus_and_weights = [gaussradau(n.ocp.Nck[int]) for int in 1:n.ocp.Ni];
     end
-    n.tau=[taus_and_weights[int][1] for int in 1:n.Ni];
-    n.w=[taus_and_weights[int][2] for int in 1:n.Ni];
-    createIntervals!(n);
-    DMatrix!(n);
+    n.ocp.tau = [taus_and_weights[int][1] for int in 1:n.ocp.Ni]
+    n.ocp.w = [taus_and_weights[int][2] for int in 1:n.ocp.Ni]
+    createIntervals!(n)
+    DMatrix!(n)
 
-  elseif n.s.integrationMethod==:tm
+  elseif n.s.ocp.integrationMethod==:tm
     if haskey(kw,:Nck)
       error(" \n Nck is not appropriate kwargs for :tm methods \n")
     end
-    if !haskey(kw,:N);n.N=100; # default
-    else; n.N = get(kw,:N,0);
+    if !haskey(kw,:N);n.ocp.N=100; # default
+    else; n.ocp.N = get(kw,:N,0);
     end
-    n.numStatePoints=n.N+1;
-    n.numControlPoints=n.N+1;
+    n.ocp.state.pts = n.ocp.N + 1
+    n.ocp.control.pts = n.ocp.N + 1
   end
-  n.mXL=falses(n.numStates);
-  n.mXU=falses(n.numStates);
-  n.XL_var=Matrix{Float64}(n.numStates,n.numStatePoints);
-  n.XU_var=Matrix{Float64}(n.numStates,n.numStatePoints);
+  n.ocp.mXL=falses(n.ocp.state.num);
+  n.ocp.mXU=falses(n.ocp.state.num);
+  n.ocp.XL_var=Matrix{Float64}(n.ocp.state.num,n.ocp.state.pts);
+  n.ocp.XU_var=Matrix{Float64}(n.ocp.state.num,n.ocp.state.pts);
 
   # solver settings
   if !haskey(kw,:solverSettings);SS=Dict((:name=>:Ipopt)); # default
@@ -415,11 +413,11 @@ function configure!(n::NLOpt; kwargs... )
   # optimal control problem
   OCPdef!(n);
 
-  if n.s.evalCostates
-     if n.s.integrationMethod != :ps
+  if n.s.ocp.evalCostates
+     if n.s.ocp.integrationMethod != :ps
        error("costates are only implmented for :ps methods")
      end
-     n.s.evalConstraints = true
+     n.s.ocp.evalConstraints = true
   end
   return nothing
 end

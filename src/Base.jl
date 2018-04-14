@@ -21,30 +21,355 @@ export
   interpolateLinear!,
   interpolate_lagrange,
   State,
-  Control
+  Control,
+  Constraint,
+  Results,
+  Settings,
+  _Ipopt_defaults,
+  _Ipopt_MPC,
+  _KNITRO_defaults,
+  _KNITRO_MPC,
+  simulationModes
 
 ################################################################################
-# Basic Types
+# Constants
+################################################################################
+#####################################
+# settings for both KNITRO and IPOPT
+####################################
+#outlev # (c.m.solver==:Ipopt) ? :print_level : :outlev # print level
+# (KNITRO) absolute stopping tolerance for the feasibility error
+# (Ipopt) Absolute tolerance on the constraint violation.
+#feastol_abs # (c.m.solver==:Ipopt) ? :constr_viol_tol : :feastol_abs
+# (KNITRO) maximum number of iterations before termination
+# (Ipopt) Maximum number of iterations.
+#maxit # (c.m.solver==:Ipopt) ? :max_iter : :maxit
+# (KNITRO) in seconds, the maximum allowable CPU time before termination
+# (Ipopt) A limit on CPU seconds that Ipopt can use to solve one problem
+#maxtime_cpu # (c.m.solver==:Ipopt) ? :max_cpu_time : :maxtime_cpu
+const _Ipopt_defaults=Dict(
+  :print_level                =>0,
+  :warm_start_init_point      =>"yes",
+  :tol                        =>1e-8,
+  :max_iter                   =>3000,
+  :max_cpu_time               =>1e6,
+  :dual_inf_tol               =>1.,
+  :constr_viol_tol            =>0.0001,
+  :compl_inf_tol              =>0.0001,
+  :acceptable_tol             =>1e-6,
+  :acceptable_constr_viol_tol =>0.01,
+  :acceptable_dual_inf_tol    =>1e-10,
+  :acceptable_compl_inf_tol   =>0.01,
+  :acceptable_obj_change_tol  =>1e20,
+  :diverging_iterates_tol     =>1e20
+)
+
+const _Ipopt_MPC=Dict(
+  :print_level                =>0,
+  :warm_start_init_point      =>"yes",
+  :tol                        =>5e-1,
+  :max_iter                   =>500,
+  :max_cpu_time               =>0.47,
+  :dual_inf_tol               =>5.,
+  :constr_viol_tol            =>1e-1,
+  :compl_inf_tol              =>1e-1,
+  :acceptable_tol             =>1e-2,
+  :acceptable_constr_viol_tol =>0.01,
+  :acceptable_dual_inf_tol    =>1e10,
+  :acceptable_compl_inf_tol   =>0.01,
+  :acceptable_obj_change_tol  =>1e20,
+  :diverging_iterates_tol     =>1e20
+)
+
+const _KNITRO_defaults=Dict(
+ :outlev                       =>1,
+ :feastol                      =>1.0e-6,
+ :feastol_abs                  =>1e-3,
+ :ftol                         =>1e-15,
+ :ftol_iters                   =>5,
+ :infeastol                    =>1.0e-8,
+ :maxfevals                    =>-1,
+ :maxit                        =>0,
+ :maxtime_cpu                  =>1e8,
+ :maxtime_real                 =>1e8,
+ :opttol                       =>1e-6,
+ :opttol_abs                   =>1e-3,
+ :xtol                         =>1e-12,
+ :xtol_iters                   =>0,
+ :algorithm                    =>0,
+ :bar_initpt                   =>0,
+ :bar_murule                   =>0,
+ :bar_penaltycons              =>0,
+ :bar_penaltyrule              =>0,
+ :bar_switchrule               =>0,
+ :linesearch                   =>0,
+ :linsolver                    =>0
+)
+
+const _KNITRO_MPC=Dict(
+ :outlev                       =>0,
+ :feastol                      =>1.0e20,
+ :feastol_abs                  =>7e-2,
+ :ftol                         =>1e-15,
+ :ftol_iters                   =>5,
+ :infeastol                    =>1e-2,
+ :maxfevals                    =>-1,
+ :maxit                        =>0,
+ :maxtime_cpu                  =>1e8,
+ :maxtime_real                 =>0.47,
+ :opttol                       =>1.0e20,
+ :opttol_abs                   =>5e-1,
+ :xtol                         =>1e-12,
+ :xtol_iters                   =>0,
+ :algorithm                    =>0,
+ :bar_initpt                   =>0,
+ :bar_murule                   =>0,
+ :bar_penaltycons              =>0,
+ :bar_penaltyrule              =>0,
+ :bar_switchrule               =>0,
+ :linesearch                   =>0,
+ :linsolver                    =>0
+)
+
+const simulationModes = [:OCP,:IP,:IPEP,:EP]
+
+################################################################################
+# Types
 ################################################################################
 ############################### control ########################################
 type Control
   name::Vector{Any}
   description::Vector{Any}
+  num::Int64
+  pts::Int64
 end
 function Control()
   Control([],
-          []);
+          [],
+          0,
+          0)
 end
-
 # ############################# state  ##########################################
 type State
   name::Vector{Any}
   description::Vector{Any}
+  num::Int64
+  pts::Int64
+  model
 end
 function State()
   State([],
-        []);
+        [],
+        0,
+        0,
+        Any)
 end
+
+############################## constraint ######################################
+type Constraint
+  name::Vector{Any}
+  handle::Vector{Any}
+  value::Vector{Any}
+  nums  # range of indecies in g(x)
+end
+function Constraint()
+  Constraint([],
+             [],
+             [],
+             []);
+end
+
+############################### solver  ########################################
+type Solver
+    name
+    settings
+end
+
+function Solver()
+       Solver(:Ipopt,
+              _Ipopt_defaults);
+end
+
+type PlantResults
+  plant
+  X0p
+  X0a
+  X0e
+  e
+  dfsplant
+  dfsplantPts::DataFrames.DataFrame # plant data extracted into a single DataFrame
+  dfsX0p
+  dfsX0a
+  dfsX0e
+  dfse
+end
+
+function PlantResults()
+ PlantResults(
+  [],               # plant data
+  Vector{Any}[],
+  Vector{Any}[],
+  Vector{Any}[],
+  Matrix{Any}[], # e
+  DataFrame(),
+  DataFrame(),
+  DataFrame(),
+  DataFrame(),
+  DataFrame(),
+  DataFrame()
+      )
+end
+
+type OCPResults
+  tctr                       # time vector for control
+  tst                        # time vector for state
+  x                           # JuMP states
+  u                           # JuMP controls
+  X                           # states
+  U                           # controls
+  CS                          # costates
+  tpolyPts                   # time sample points for polynomials
+  XpolyPts                   # state evaluated using Lagrange polynomial
+  CSpolyPts                  # costate evaluated using Lagrange polynomial
+  UpolyPts                   # control evaluated using Lagrane polynomial
+  tpts                       # vector time sample points for polynomials
+  Xpts                       # vector state evaluated using Lagrange polynomial
+  Upts                       # vector control evaluated using Lagrane polynomial
+  CSpts                      # vector costate evaluated using Lagrange polynomial
+  x0Con                      # handle for initial state constraints
+  xfCon                      # handle for final state constraints
+  dynCon                     # dynamics constraints
+  constraint::Constraint      # constraint handles and data
+  evalNum                    # number of times optimization has been run
+  iterNum                   # mics. data, perhaps an iteration number for a higher level algorithm
+  status                      # optimization status
+  tSolve                     # solve time for optimization
+  objVal                     # objective function value
+  dfs                         # results in DataFrame for plotting
+  dfsOpt                     # optimization information in DataFrame for plotting
+  dfsCon                     # constraint data
+end
+
+# Default Constructor
+function OCPResults()
+OCPResults( Vector{Any}[], # time vector for control
+        Vector{Any}[],    # time vector for state
+        Matrix{Any}[],    # JuMP states
+        Matrix{Any}[],    # JuMP controls
+        Matrix{Any}[],    # states
+        Matrix{Any}[],    # controls
+        [],               # costates
+        [],               # time sample points for polynomials
+        [],               # state evaluated using Lagrange polynomial
+        [],               # costate evaluated using Lagrange polynomial
+        [],               # control evaluated using Lagrane polynomial
+        Vector{Any}[],    # vector time sample points for polynomials
+        Vector{Any}[],    # vector state evaluated using Lagrange polynomial
+        Vector{Any}[],    # vector control evaluated using Lagrane polynomial
+        Vector{Any}[],    # vector costate evaluated using Lagrange polynomial
+        nothing,          # handle for initial state constraints
+        nothing,          # handle for final state constraints
+        nothing,          # dynamics constraint
+        Constraint(),     # constraint data
+        0,                # current evaluation number
+        [],               # mics. data, perhaps an iteration number for a higher level algorithm
+        Symbol,           # optimization status
+        Float64,          # solve time for optimization
+        Float64,          # objective function value
+        [],               # results in DataFrame for plotting
+        DataFrame(),      # optimization information in DataFrame for plotting
+        []                # constraint data
+      )
+end
+
+type Results
+  ocp::OCPResults
+  ip::PlantResults
+  ep::PlantResults
+  resultsDir                 # string that defines results folder
+  mainDir                    # string that defines main folder
+end
+
+function Results()
+  Results(
+  OCPResults(),
+  PlantResults(),
+  PlantResults(),
+  string(pwd(),"/results/"),  # string that defines results folder
+  pwd()                       # string that defines main folder
+  )
+end
+
+# MPC Settings Class
+type MPCSettings   # options
+ on::Bool
+ mode::Symbol
+ predictX0::Bool
+ fixedTp::Bool
+ IPKnown::Bool
+ saveMode::Symbol
+ maxSim::Int64      # maximum number of total MPC updates
+end
+
+function MPCSettings()
+      MPCSettings(
+      false,
+      :OCP,
+      true,
+      true,
+      true,
+      :all,
+      100
+      )
+end
+
+# OCP Settings Class
+type OCPSettings   # options
+  solver::Solver                # solver information
+  finalTimeDV::Bool
+  integrationMethod::Symbol
+  integrationScheme::Symbol
+  save::Bool                    # bool for saving data
+  reset::Bool                   # bool for reseting data
+  evalConstraints::Bool         # bool for evaluating duals of the constraints
+  evalCostates::Bool            # bool for evaluating costates
+  tfMax::Any                    # maximum final time
+  tfOptimal::Any                # known optimal final time
+  numInterpPts::Int64           # number of points to sample polynomial running through collocation points
+  cacheOnly::Bool               # bool for only caching the results when using optimize!()
+end
+
+# Default Constructor NOTE currently not using these, they get overwritten
+function OCPSettings()
+      OCPSettings(
+         Solver(),           # default solver
+         false,              # finalTimeDV
+         :ts,                # integrationMethod
+         :bkwEuler,          # integrationScheme
+         true,               # bool for saving data
+         false,              # bool for reseting data
+         false,              # bool for evaluating duals of the constraints
+         false,              # bool for evaluating costates
+         400.0,              # maximum final time
+         false,              # known optimal final time
+         250,                # number of points to sample polynomial running through collocation points
+         false               # bool for only caching the results when using optimize!()
+                )
+end
+
+type Settings
+ ocp::OCPSettings
+ mpc::MPCSettings
+end
+
+function Settings()
+ Settings(
+  OCPSettings(),
+  MPCSettings()
+       )
+end
+
+
 """
 L = lagrange_basis_poly(x,x_data,Nc,j)
 --------------------------------------------------------------------------------------\n
@@ -117,42 +442,42 @@ function intervals(n,int,x,u)
 
   if typeof(x[1,1]) == JuMP.Variable
     # states
-    x_int=Array{JuMP.Variable}(length(n.Nck_full[int]+1:n.Nck_full[int+1]),n.numStates);
-    for st in 1:n.numStates # +1 adds the DV in the next interval
-      x_int[:,st] = x[n.Nck_cum[int]+1:n.Nck_cum[int+1]+1,st];
+    x_int=Array{JuMP.Variable}(length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]),n.ocp.state.num);
+    for st in 1:n.ocp.state.num # +1 adds the DV in the next interval
+      x_int[:,st] = x[n.ocp.Nck_cum[int]+1:n.ocp.Nck_cum[int+1]+1,st];
     end
 
     # controls
-    if int!=n.Ni
-      u_int=Array{JuMP.Variable}(length(n.Nck_full[int]+1:n.Nck_full[int+1]),n.numControls);
+    if int!=n.ocp.Ni
+      u_int=Array{JuMP.Variable}(length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]),n.ocp.control.num);
     else                    # -1 -> removing control in last mesh interval
-      u_int=Array{JuMP.Variable}(length(n.Nck_full[int]+1:n.Nck_full[int+1]-1),n.numControls);
+      u_int=Array{JuMP.Variable}(length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]-1),n.ocp.control.num);
     end
-    for ctr in 1:n.numControls
-      if int!=n.Ni          # +1 adds the DV in the next interval
-        u_int[:,ctr] = u[n.Nck_cum[int]+1:n.Nck_cum[int+1]+1,ctr];
+    for ctr in 1:n.ocp.control.num
+      if int!=n.ocp.Ni          # +1 adds the DV in the next interval
+        u_int[:,ctr] = u[n.ocp.Nck_cum[int]+1:n.ocp.Nck_cum[int+1]+1,ctr];
       else
-        u_int[:,ctr] = u[n.Nck_cum[int]+1:n.Nck_cum[int+1],ctr];
+        u_int[:,ctr] = u[n.ocp.Nck_cum[int]+1:n.ocp.Nck_cum[int+1],ctr];
       end
     end
   else
     # states
-    x_int=Array{Any}(length(n.Nck_full[int]+1:n.Nck_full[int+1]),n.numStates);
-    for st in 1:n.numStates # +1 adds the DV in the next interval
-      x_int[:,st] = x[n.Nck_cum[int]+1:n.Nck_cum[int+1]+1,st];
+    x_int=Array{Any}(length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]),n.ocp.state.num);
+    for st in 1:n.ocp.state.num # +1 adds the DV in the next interval
+      x_int[:,st] = x[n.ocp.Nck_cum[int]+1:n.ocp.Nck_cum[int+1]+1,st];
     end
 
     # controls
-    if int!=n.Ni
-      u_int=Array{Any}(length(n.Nck_full[int]+1:n.Nck_full[int+1]),n.numControls);
+    if int!=n.ocp.Ni
+      u_int=Array{Any}(length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]),n.ocp.control.num);
     else                    # -1 -> removing control in last mesh interval
-      u_int=Array{Any}(length(n.Nck_full[int]+1:n.Nck_full[int+1]-1),n.numControls);
+      u_int=Array{Any}(length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]-1),n.ocp.control.num);
     end
-    for ctr in 1:n.numControls
-      if int!=n.Ni          # +1 adds the DV in the next interval
-        u_int[:,ctr] = u[n.Nck_cum[int]+1:n.Nck_cum[int+1]+1,ctr];
+    for ctr in 1:n.ocp.control.num
+      if int!=n.ocp.Ni          # +1 adds the DV in the next interval
+        u_int[:,ctr] = u[n.ocp.Nck_cum[int]+1:n.ocp.Nck_cum[int+1]+1,ctr];
       else
-        u_int[:,ctr] = u[n.Nck_cum[int]+1:n.Nck_cum[int+1],ctr];
+        u_int[:,ctr] = u[n.ocp.Nck_cum[int]+1:n.ocp.Nck_cum[int+1],ctr];
       end
     end
   end
@@ -169,10 +494,10 @@ Date Created: 9/19/2017, Last Modified: 12/13/2017 \n
 function interpolateLagrange!(n; numPts::Int64=250, tfOptimal::Any=false)
   # TODO throw an error if tfOptimal does not make sense given current solution
   if isa(tfOptimal,Bool)
-    if n.s.finalTimeDV
-      tf = getvalue(n.tf)
-    else n.s.finalTimeDV
-      tf = n.tf
+    if n.s.ocp.finalTimeDV
+      tf = getvalue(n.ocp.tf)
+    else n.s.ocp.finalTimeDV
+      tf = n.ocp.tf
     end
   else  # if there is a known optimal final time, then it is useful to evaluate the Lagrange polynomial at particular points to determine the error in the solution
     tf = tfOptimal
@@ -191,60 +516,60 @@ function interpolateLagrange!(n; numPts::Int64=250, tfOptimal::Any=false)
   end
 
   # sample points
-  n.r.t_polyPts = [linspace(tf/n.Ni*(int-1),tf/n.Ni*int,numPts) for int in 1:n.Ni]
-  n.r.X_polyPts = [[zeros(numPts) for int in 1:n.Ni] for st in 1:n.numStates]
-  n.r.U_polyPts = [[zeros(numPts) for int in 1:n.Ni] for ctr in 1:n.numControls]
-  if n.s.evalCostates; n.r.CS_polyPts = [[zeros(numPts) for int in 1:n.Ni] for st in 1:n.numStates] end
+  n.r.ocp.tpolyPts = [linspace(tf/n.ocp.Ni*(int-1),tf/n.ocp.Ni*int,numPts) for int in 1:n.ocp.Ni]
+  n.r.ocp.XpolyPts = [[zeros(numPts) for int in 1:n.ocp.Ni] for st in 1:n.ocp.state.num]
+  n.r.ocp.UpolyPts = [[zeros(numPts) for int in 1:n.ocp.Ni] for ctr in 1:n.ocp.control.num]
+  if n.s.ocp.evalCostates; n.r.ocp.CSpolyPts = [[zeros(numPts) for int in 1:n.ocp.Ni] for st in 1:n.ocp.state.num] end
 
   # time data points
-  t_st_int = [n.r.t_st[n.Nck_cum[int]+1:n.Nck_cum[int+1]+1] for int in 1:n.Ni]
-  t_ctr_int = [n.r.t_ctr[n.Nck_cum[int]+1:n.Nck_cum[int+1]+1] for int in 1:n.Ni-1]
-  t_ctr_int = push!(t_ctr_int, n.r.t_st[n.Nck_cum[n.Ni]+1:n.Nck_cum[n.Ni+1]]) # -1 -> removing control in last mesh interval
+  t_st_int = [n.r.ocp.tst[n.ocp.Nck_cum[int]+1:n.ocp.Nck_cum[int+1]+1] for int in 1:n.ocp.Ni]
+  t_ctr_int = [n.r.ocp.tctr[n.ocp.Nck_cum[int]+1:n.ocp.Nck_cum[int+1]+1] for int in 1:n.ocp.Ni-1]
+  t_ctr_int = push!(t_ctr_int, n.r.ocp.tst[n.ocp.Nck_cum[n.ocp.Ni]+1:n.ocp.Nck_cum[n.ocp.Ni+1]]) # -1 -> removing control in last mesh interval
 
-  for int in 1:n.Ni
+  for int in 1:n.ocp.Ni
 
     # controls and states for this interval
-    x_int, u_int = intervals(n, int, copy(n.r.X), n.r.U)
+    x_int, u_int = intervals(n, int, copy(n.r.ocp.X), n.r.ocp.U)
 
-    # sample polynomial in interval at n.r.t_polyPts
-     for st in 1:n.numStates
-      n.r.X_polyPts[st][int] = interpolate_lagrange(n.r.t_polyPts[int], t_st_int[int], x_int[:,st])'
+    # sample polynomial in interval at n.r.ocp.tpolyPts
+     for st in 1:n.ocp.state.num
+      n.r.ocp.XpolyPts[st][int] = interpolate_lagrange(n.r.ocp.tpolyPts[int], t_st_int[int], x_int[:,st])'
     end
 
-     for ctr in 1:n.numControls
-      n.r.U_polyPts[ctr][int] = interpolate_lagrange(n.r.t_polyPts[int], t_ctr_int[int], u_int[:,ctr])'
+     for ctr in 1:n.ocp.control.num
+      n.r.ocp.UpolyPts[ctr][int] = interpolate_lagrange(n.r.ocp.tpolyPts[int], t_ctr_int[int], u_int[:,ctr])'
     end
 
-    # sample polynomial in interval at n.r.t_polyPts NOTE costate is missing the last point, that is the t_st_int[int][1:end-1]
-    if n.s.evalCostates && n.s.evalConstraints
-       for st in 1:n.numStates
-        n.r.CS_polyPts[st][int] = interpolate_lagrange(n.r.t_polyPts[int], t_st_int[int][1:end-1], n.r.CS[st][int])'
+    # sample polynomial in interval at n.r.ocp.tpolyPts NOTE costate is missing the last point, that is the t_st_int[int][1:end-1]
+    if n.s.ocp.evalCostates && n.s.ocp.evalConstraints
+       for st in 1:n.ocp.state.num
+        n.r.ocp.CSpolyPts[st][int] = interpolate_lagrange(n.r.ocp.tpolyPts[int], t_st_int[int][1:end-1], n.r.ocp.CS[st][int])'
       end
     end
   end
 
   # extract result into vectors
-  temp = [n.r.t_polyPts[int][1:end] for int in 1:n.Ni]; # time
-  n.r.t_pts = [idx for tempM in temp for idx=tempM];
-  totalPts = length(n.r.t_pts);
+  temp = [n.r.ocp.tpolyPts[int][1:end] for int in 1:n.ocp.Ni]; # time
+  n.r.ocp.tpts = [idx for tempM in temp for idx=tempM];
+  totalPts = length(n.r.ocp.tpts);
 
-  n.r.X_pts = Matrix{Float64}(totalPts, n.numStates)
-   for st in 1:n.numStates # states
-    temp = [n.r.X_polyPts[st][int][1:end,:] for int in 1:n.Ni];
-    n.r.X_pts[:,st] = [idx for tempM in temp for idx=tempM];
+  n.r.ocp.Xpts = Matrix{Float64}(totalPts, n.ocp.state.num)
+   for st in 1:n.ocp.state.num # states
+    temp = [n.r.ocp.XpolyPts[st][int][1:end,:] for int in 1:n.ocp.Ni];
+    n.r.ocp.Xpts[:,st] = [idx for tempM in temp for idx=tempM];
   end
 
-  n.r.U_pts = Matrix{Float64}(totalPts, n.numControls)
-   for ctr in 1:n.numControls # controls
-    temp = [n.r.U_polyPts[ctr][int][1:end,:] for int in 1:n.Ni];
-    n.r.U_pts[:,ctr] = [idx for tempM in temp for idx=tempM];
+  n.r.ocp.Upts = Matrix{Float64}(totalPts, n.ocp.control.num)
+   for ctr in 1:n.ocp.control.num # controls
+    temp = [n.r.ocp.UpolyPts[ctr][int][1:end,:] for int in 1:n.ocp.Ni];
+    n.r.ocp.Upts[:,ctr] = [idx for tempM in temp for idx=tempM];
   end
 
-  if n.s.evalCostates && n.s.evalConstraints
-    n.r.CS_pts = Matrix{Float64}(totalPts, n.numStates)
-     for st in 1:n.numStates # states
-      temp = [n.r.CS_polyPts[st][int][1:end,:] for int in 1:n.Ni];
-      n.r.CS_pts[:,st] = [idx for tempM in temp for idx=tempM];
+  if n.s.ocp.evalCostates && n.s.ocp.evalConstraints
+    n.r.ocp.CSpts = Matrix{Float64}(totalPts, n.ocp.state.num)
+     for st in 1:n.ocp.state.num # states
+      temp = [n.r.ocp.CSpolyPts[st][int][1:end,:] for int in 1:n.ocp.Ni];
+      n.r.ocp.CSpts[:,st] = [idx for tempM in temp for idx=tempM];
     end
   end
 
@@ -260,10 +585,10 @@ Date Created: 10/4/2017, Last Modified: 12/13/2017 \n
 function interpolateLinear!(n; numPts::Int64=250, tfOptimal::Any=false)
   # TODO throw an error if tfOptimal does not make sense given current solution
   if isa(tfOptimal,Bool)
-    if n.s.finalTimeDV
-      tf = getvalue(n.tf)
-    else n.s.finalTimeDV
-      tf = n.tf
+    if n.s.ocp.finalTimeDV
+      tf = getvalue(n.ocp.tf)
+    else n.s.ocp.finalTimeDV
+      tf = n.ocp.tf
     end
   else  # if there is a known optimal final time, then it is useful to evaluate the Lagrange polynomial at particular points to determine the error in the solution
     tf = tfOptimal
@@ -282,19 +607,19 @@ function interpolateLinear!(n; numPts::Int64=250, tfOptimal::Any=false)
   end
 
   # sample points
-  n.r.t_pts = linspace(0,tf,numPts)
-  n.r.X_pts = Matrix{Float64}(numPts, n.numStates)
-  n.r.U_pts = Matrix{Float64}(numPts, n.numControls)
+  n.r.ocp.tpts = linspace(0,tf,numPts)
+  n.r.ocp.Xpts = Matrix{Float64}(numPts, n.ocp.state.num)
+  n.r.ocp.Upts = Matrix{Float64}(numPts, n.ocp.control.num)
 
-  knots = (n.r.t_st,)
-  for st in 1:n.numStates
-    sp_st = interpolate(knots,n.r.X[:,st],Gridded(Linear()))
-    n.r.X_pts[:,st] = sp_st[n.r.t_pts]
+  knots = (n.r.ocp.tst,)
+  for st in 1:n.ocp.state.num
+    sp_st = interpolate(knots,n.r.ocp.X[:,st],Gridded(Linear()))
+    n.r.ocp.Xpts[:,st] = sp_st[n.r.ocp.tpts]
   end
 
-   for ctr in 1:n.numControls
-    sp_ctr = interpolate(knots,n.r.U[:,ctr],Gridded(Linear()))
-    n.r.U_pts[:,ctr] = sp_ctr[n.r.t_pts]
+   for ctr in 1:n.ocp.control.num
+    sp_ctr = interpolate(knots,n.r.ocp.U[:,ctr],Gridded(Linear()))
+    n.r.ocp.Upts[:,ctr] = sp_ctr[n.r.ocp.tpts]
   end
   return nothing
 end
@@ -318,44 +643,44 @@ Date Create: 2/14/2017, Last Modified: 3/22/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function plant2dfs!(n,sol)
-  row, column = size(n.r.u)
+  row, column = size(n.r.ocp.u)
   num = maximum([2*row, 50]) # TODO let user choose this
   t_sample = linspace(sol.t[1],sol.t[end],num)
   dfs_plant = DataFrame()
   dfs_plant[:t] = t_sample
 
-  for st in 1:n.numStates
-    dfs_plant[n.state.name[st]] = [sol(t)[st] for t in t_sample]
+  for st in 1:n.ocp.state.num
+    dfs_plant[n.ocp.state.name[st]] = [sol(t)[st] for t in t_sample]
   end
 
-  for ctr in 1:n.numControls
-    dfs_plant[n.control.name[ctr]] = n.r.U[ctr]
+  for ctr in 1:n.ocp.control.num
+    dfs_plant[n.ocp.control.name[ctr]] = n.r.ocp.U[ctr]
   end
 
-  if n.s.reset
-    n.r.dfs_plant = [dfs_plant]
+  if n.s.ocp.reset
+    n.r.ip.dfsplant = [dfs_plant]
   else
-    push!(n.r.dfs_plant,dfs_plant)
+    push!(n.r.ip.dfsplant,dfs_plant)
   end
 
   # push plant states to a single DataFrame
   dfs = DataFrame()
-  temp = [n.r.dfs_plant[jj][:t][1:end-1,:] for jj in 1:length(n.r.dfs_plant)] # time
+  temp = [n.r.ip.dfsplant[jj][:t][1:end-1,:] for jj in 1:length(n.r.ip.dfsplant)] # time
   U = [idx for tempM in temp for idx=tempM]
   dfs[:t] = U
 
-  for st in 1:n.numStates # state
-    temp = [n.r.dfs_plant[jj][n.state.name[st]][1:end-1,:] for jj in 1:length(n.r.dfs_plant)];
+  for st in 1:n.ocp.state.num # state
+    temp = [n.r.ip.dfsplant[jj][n.ocp.state.name[st]][1:end-1,:] for jj in 1:length(n.r.ip.dfsplant)];
     U = [idx for tempM in temp for idx = tempM]
-    dfs[n.state.name[st]] = U
+    dfs[n.ocp.state.name[st]] = U
   end
 
-  for ctr in 1:n.numControls # control
-    temp = [n.r.dfs_plant[jj][n.control.name[ctr]][1:end-1,:] for jj in 1:length(n.r.dfs_plant)];
+  for ctr in 1:n.ocp.control.num # control
+    temp = [n.r.ip.dfsplant[jj][n.ocp.control.name[ctr]][1:end-1,:] for jj in 1:length(n.r.ip.dfsplant)];
     U = [idx for tempM in temp for idx=tempM]
-    dfs[n.control.name[ctr]] = U
+    dfs[n.ocp.control.name[ctr]] = U
   end
-  n.r.dfs_plantPts = dfs
+  n.r.ip.dfsplantPts = dfs
 
   return nothing
 end
@@ -371,27 +696,27 @@ Date Create: 2/10/2017, Last Modified: 11/10/2017 \n
 """
 function dvs2dfs(n)
   dfs=DataFrame()
-  dfs[:t]=n.r.t_st + n.mpc.t0;
-  for st in 1:n.numStates
-    dfs[n.state.name[st]]=n.r.X[:,st];
+  dfs[:t]=n.r.ocp.tst + n.mpc.v.t0;
+  for st in 1:n.ocp.state.num
+    dfs[n.ocp.state.name[st]]=n.r.ocp.X[:,st];
   end
-  for ctr in 1:n.numControls
-    if n.s.integrationMethod==:tm
-      dfs[n.control.name[ctr]]=n.r.U[:,ctr];
+  for ctr in 1:n.ocp.control.num
+    if n.s.ocp.integrationMethod==:tm
+      dfs[n.ocp.control.name[ctr]]=n.r.ocp.U[:,ctr];
     else
-      dfs[n.control.name[ctr]]=[n.r.U[:,ctr];NaN];
+      dfs[n.ocp.control.name[ctr]]=[n.r.ocp.U[:,ctr];NaN];
     end
   end
 
-  if n.s.evalCostates && n.s.integrationMethod == :ps && n.s.evalConstraints
-    CS_vector = Matrix{Float64}(n.numStatePoints, n.numStates)
-    for st in 1:n.numStates # states
-      temp = [n.r.CS[st][int][1:end,:] for int in 1:n.Ni];
+  if n.s.ocp.evalCostates && n.s.ocp.integrationMethod == :ps && n.s.ocp.evalConstraints
+    CS_vector = Matrix{Float64}(n.ocp.state.pts, n.ocp.state.num)
+    for st in 1:n.ocp.state.num # states
+      temp = [n.r.CS[st][int][1:end,:] for int in 1:n.ocp.Ni];
       CS_vector[1:end-1,st] = [idx for tempM in temp for idx=tempM];
       CS_vector[end,st] = NaN;
     end
-    for st in 1:n.numStates # states
-      dfs[Symbol(n.state.name[st],:cs)]=CS_vector[:,st];
+    for st in 1:n.ocp.state.num # states
+      dfs[Symbol(n.ocp.state.name[st],:cs)]=CS_vector[:,st];
     end
   end
 
@@ -418,27 +743,27 @@ function opt2dfs!(n;kwargs...)
   end
 
   # make sure that the feildnames are initialized
-  if isempty(n.r.dfs_opt)
-      n.r.dfs_opt = DataFrame(tSolve = [], objVal = [], status = [], iterNum = [])
+  if isempty(n.r.ocp.dfsOpt)
+      n.r.ocp.dfsOpt = DataFrame(tSolve = [], objVal = [], status = [], iterNum = [])
   end
 
   if !Init && !statusUpdate
-    push!(n.r.dfs_opt[:tSolve], n.r.t_solve)
-    push!(n.r.dfs_opt[:objVal], n.r.obj_val)
-    push!(n.r.dfs_opt[:status], n.r.status)
+    push!(n.r.ocp.dfsOpt[:tSolve], n.r.ocp.tSolve)
+    push!(n.r.ocp.dfsOpt[:objVal], n.r.ocp.objVal)
+    push!(n.r.ocp.dfsOpt[:status], n.r.ocp.status)
   else
-    push!(n.r.dfs_opt[:tSolve], NaN)
-    push!(n.r.dfs_opt[:objVal], NaN)
-    if statusUpdate && (typeof(n.r.status)==Symbol)
-      push!(n.r.dfs_opt[:status], n.r.status)
+    push!(n.r.ocp.dfsOpt[:tSolve], NaN)
+    push!(n.r.ocp.dfsOpt[:objVal], NaN)
+    if statusUpdate && (typeof(n.r.ocp.status)==Symbol)
+      push!(n.r.ocp.dfsOpt[:status], n.r.ocp.status)
     else
-      push!(n.r.dfs_opt[:status], NaN)
+      push!(n.r.ocp.dfsOpt[:status], NaN)
     end
   end
-  if n.s.MPC
-    push!(n.r.dfs_opt[:iterNum], n.r.iter_nums) # can set iter_nums for a higher/lower level algoritm
+  if n.s.mpc.on
+    push!(n.r.ocp.dfsOpt[:iterNum], n.r.ocp.iterNum) # can set iter_nums for a higher/lower level algoritm
   else
-    push!(n.r.dfs_opt[:iterNum], n.r.eval_num)
+    push!(n.r.ocp.dfsOpt[:iterNum], n.r.ocp.evalNum)
   end
   return nothing
 end
@@ -454,7 +779,7 @@ Date Create: 2/20/2017, Last Modified: 5/29/2017 \n
 """
 function con2dfs(n)
   dfs_con=DataFrame()
-  dfs_con[:con_val]=n.r.constraint.value;
+  dfs_con[:conVal]=n.r.ocp.constraint.value;
   return dfs_con
 end
 
@@ -472,84 +797,84 @@ function postProcess!(n;kwargs...)
   else; Init=get(kw,:Init,0);
   end
 
-  # even if n.r.status==:Infeasible try to get solution. For the case that user may want to look at results to see where constraints where violated
-  # in this case set =>  n.s.evalConstraints = true
+  # even if n.r.ocp.status==:Infeasible try to get solution. For the case that user may want to look at results to see where constraints where violated
+  # in this case set =>  n.s.ocp.evalConstraints = true
   # http://jump.readthedocs.io/en/latest/refmodel.html#solve-status
-  if !Init && (n.s.evalConstraints || ((n.r.status==:Optimal) || (n.r.status==:UserLimit)))
-    if n.s.integrationMethod==:ps
-      if n.s.finalTimeDV
-        t=[scale_tau(n.ts[int],0.0,getvalue(n.tf)) for int in 1:n.Ni];     # scale time from [-1,1] to [t0,tf]
+  if !Init && (n.s.ocp.evalConstraints || ((n.r.ocp.status==:Optimal) || (n.r.ocp.status==:UserLimit)))
+    if n.s.ocp.integrationMethod==:ps
+      if n.s.ocp.finalTimeDV
+        t=[scale_tau(n.ocp.ts[int],0.0,getvalue(n.ocp.tf)) for int in 1:n.ocp.Ni];     # scale time from [-1,1] to [t0,tf]
       else
-        t=[scale_tau(n.ts[int],0.0,n.tf) for int in 1:n.Ni];
+        t=[scale_tau(n.ocp.ts[int],0.0,n.ocp.tf) for int in 1:n.ocp.Ni];
       end
-      n.r.t_ctr=[idx for tempM in t for idx = tempM[1:end-1]];
-      n.r.t_st=[n.r.t_ctr;t[end][end]];
+      n.r.ocp.tctr=[idx for tempM in t for idx = tempM[1:end-1]];
+      n.r.ocp.tst=[n.r.ocp.tctr;t[end][end]];
 
-    elseif n.s.integrationMethod==:tm
-      if n.s.finalTimeDV
-        n.r.t_ctr = append!([n.t0],cumsum(getvalue(n.dt)))
+    elseif n.s.ocp.integrationMethod==:tm
+      if n.s.ocp.finalTimeDV
+        n.r.ocp.tctr = append!([n.ocp.t0],cumsum(getvalue(n.ocp.dt)))
       else
-        n.r.t_ctr = append!([n.t0],cumsum(n.dt))
+        n.r.ocp.tctr = append!([n.ocp.t0],cumsum(n.ocp.dt))
       end
-      n.r.t_st = n.r.t_ctr
+      n.r.ocp.tst = n.r.ocp.tctr
     end
-    n.r.X = zeros(Float64,n.numStatePoints,n.numStates)
-    n.r.U = zeros(Float64,n.numControlPoints,n.numControls)
+    n.r.ocp.X = zeros(Float64,n.ocp.state.pts,n.ocp.state.num)
+    n.r.ocp.U = zeros(Float64,n.ocp.control.pts,n.ocp.control.num)
 
-    for st in 1:n.numStates
-      n.r.X[:,st] = getvalue(n.r.x[:,st]);
-    end
-
-    for ctr in 1:n.numControls
-      n.r.U[:,ctr] = getvalue(n.r.u[:,ctr]);
+    for st in 1:n.ocp.state.num
+      n.r.ocp.X[:,st] = getvalue(n.r.ocp.x[:,st]);
     end
 
-    if n.s.evalConstraints && n.r.status!=:Error  # note may want to remove the && arg
+    for ctr in 1:n.ocp.control.num
+      n.r.ocp.U[:,ctr] = getvalue(n.r.ocp.u[:,ctr]);
+    end
+
+    if n.s.ocp.evalConstraints && n.r.ocp.status!=:Error  # note may want to remove the && arg
       evalConstraints!(n)
 
       # TODO make a note that costates can only be evaluated if .....
-      if n.s.evalCostates && n.s.integrationMethod == :ps
+      if n.s.ocp.evalCostates && n.s.ocp.integrationMethod == :ps
         L1 = 0       # find index where dynamics constraints start
-        for i in 1:length(n.r.constraint.name)
-          if n.r.constraint.name[i] == :dyn_con
-            L1 = n.r.constraint.nums[i][end][1]
+        for i in 1:length(n.r.ocp.constraint.name)
+          if n.r.ocp.constraint.name[i] == :dyn_con
+            L1 = n.r.ocp.constraint.nums[i][end][1]
           end
         end
 
-        mpb = JuMP.internalmodel(n.mdl)
+        mpb = JuMP.internalmodel(n.ocp.mdl)
         c = MathProgBase.getconstrduals(mpb)
-        # NOTE for now since costates are not defined for :tm methods, n.r.CS is in a different format than n.r.X
+        # NOTE for now since costates are not defined for :tm methods, n.r.CS is in a different format than n.r.ocp.X
         # in the future if costates are defined for :tm methods this can be changed
-        n.r.CS = [[zeros(Float64,n.Nck[int]) for int in 1:n.Ni] for st in 1:n.numStates]
-        for int in 1:n.Ni
+        n.r.CS = [[zeros(Float64,n.ocp.Nck[int]) for int in 1:n.ocp.Ni] for st in 1:n.ocp.state.num]
+        for int in 1:n.ocp.Ni
           b = 0
-          for st in 1:n.numStates
-            a = L1 + n.Nck[int]*(st-1)  # n.Nck[int]*(st-1) adds on indices for each additional state within the interval
-            b = a + n.Nck[int] - 1      # length of the state within this interval
-            n.r.CS[st][int] = -c[a:b]./n.ws[int]
+          for st in 1:n.ocp.state.num
+            a = L1 + n.ocp.Nck[int]*(st-1)  # n.ocp.Nck[int]*(st-1) adds on indices for each additional state within the interval
+            b = a + n.ocp.Nck[int] - 1      # length of the state within this interval
+            n.r.CS[st][int] = -c[a:b]./n.ocp.ws[int]
           end
           L1 = b + 1 # adds indices due to a change in the interval
         end
       end
     end
 
-    if n.s.save && (n.r.status != :Infeasible) && (n.r.status != :Error)
-      push!(n.r.dfs,dvs2dfs(n))
-      push!(n.r.dfs_con,con2dfs(n))
+    if n.s.ocp.save && (n.r.ocp.status != :Infeasible) && (n.r.ocp.status != :Error)
+      push!(n.r.ocp.dfs,dvs2dfs(n))
+      push!(n.r.ocp.dfsCon,con2dfs(n))
       opt2dfs!(n)
-      if n.s.integrationMethod==:ps
-        interpolateLagrange!(n;numPts = n.s.numInterpPts, tfOptimal = n.s.tfOptimal)
+      if n.s.ocp.integrationMethod==:ps
+        interpolateLagrange!(n;numPts = n.s.ocp.numInterpPts, tfOptimal = n.s.ocp.tfOptimal)
       else
-        interpolateLinear!(n;numPts = n.s.numInterpPts, tfOptimal = n.s.tfOptimal)
+        interpolateLinear!(n;numPts = n.s.ocp.numInterpPts, tfOptimal = n.s.ocp.tfOptimal)
       end
     else # always give a status update
       opt2dfs!(n;(:statusUpdate=>true))
     end
-  elseif n.s.save  # helps to line data up, also if !n.s.evalConstraints then the optimization status will be saved
+  elseif n.s.ocp.save  # helps to line data up, also if !n.s.ocp.evalConstraints then the optimization status will be saved
     # NOTE removed!
-    #push!(n.r.dfs,nothing)
-    #push!(n.r.dfs_con,nothing)
-    #if (n.r.status == :Infeasible) || (n.r.status == :Error)
+    #push!(n.r.ocp.dfs,nothing)
+    #push!(n.r.ocp.dfsCon,nothing)
+    #if (n.r.ocp.status == :Infeasible) || (n.r.ocp.status == :Error)
         opt2dfs!(n;(:statusUpdate=>true))
     #else  # no optimization ran -> i.e. drive straight to get started
     #    opt2dfs!(n,;(:Init=>true))
@@ -570,13 +895,13 @@ Date Create: 2/6/2017, Last Modified: 3/12/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function optimize!(n;Iter::Int64=0)
-  t1 = time(); status = JuMP.solve(n.mdl); t2 = time();
-  if !n.s.cacheOnly
-    n.r.status = status
-    n.r.t_solve = t2 - t1
-    n.r.obj_val = getobjectivevalue(n.mdl)
-    n.r.iter_nums = Iter    # possible iteration number for a higher level algorithm
-    n.r.eval_num = n.r.eval_num + 1
+  t1 = time(); status = JuMP.solve(n.ocp.mdl); t2 = time();
+  if !n.s.ocp.cacheOnly
+    n.r.ocp.status = status
+    n.r.ocp.tSolve = t2 - t1
+    n.r.ocp.objVal = getobjectivevalue(n.ocp.mdl)
+    n.r.ocp.iterNum = Iter    # possible iteration number for a higher level algorithm
+    n.r.ocp.evalNum = n.r.ocp.evalNum + 1
     postProcess!(n)      # temporarily save data
   end
   return nothing
@@ -591,46 +916,46 @@ Date Create: 2/7/2017, Last Modified: 6/19/2017 \n
 """
 
 function evalConstraints!(n)
-  n.r.constraint.value=[];   # reset values
-  n.r.constraint.nums=[]; s=1;
-  for i = 1:length(n.r.constraint.handle)
-    if n.r.constraint.name[i]==:dyn_con  # state constraits
-      dfs=Vector{DataFrame}(n.numStates);
+  n.r.ocp.constraint.value=[];   # reset values
+  n.r.ocp.constraint.nums=[]; s=1;
+  for i = 1:length(n.r.ocp.constraint.handle)
+    if n.r.ocp.constraint.name[i]==:dyn_con  # state constraits
+      dfs=Vector{DataFrame}(n.ocp.state.num);
       con=DataFrame(step=1);
       l=0;
-      for st in 1:n.numStates
-        if n.s.integrationMethod==:ps
-          temp=[getdual(n.r.constraint.handle[i][int][:,st]) for int in 1:n.Ni];
+      for st in 1:n.ocp.state.num
+        if n.s.ocp.integrationMethod==:ps
+          temp=[getdual(n.r.ocp.constraint.handle[i][int][:,st]) for int in 1:n.ocp.Ni];
           vals=[idx for tempM in temp for idx=tempM];
-          dfs[st]=DataFrame(step=1:sum(n.Nck);Dict(n.state.name[st] => vals)...);
+          dfs[st]=DataFrame(step=1:sum(n.ocp.Nck);Dict(n.ocp.state.name[st] => vals)...);
           l=l+length(vals);
         else
-          dfs[st]=DataFrame(step=1:n.N;Dict(n.state.name[st] => getdual(n.r.constraint.handle[i][:,st]))...);
-          l=l+length(n.r.constraint.handle[i][:,st]);
+          dfs[st]=DataFrame(step=1:n.ocp.N;Dict(n.ocp.state.name[st] => getdual(n.r.ocp.constraint.handle[i][:,st]))...);
+          l=l+length(n.r.ocp.constraint.handle[i][:,st]);
         end
         if st==1; con=dfs[st]; else; con=join(con,dfs[st],on=:step); end
       end
     else
       S=0;
       try
-        S=JuMP.size(n.r.constraint.handle[i])
+        S=JuMP.size(n.r.ocp.constraint.handle[i])
       catch
         error("\n For now, the constraints cannot be in this form: \n
-        con=@NLconstraint(mdl,n.r.u[1,1]==param); \n
+        con=@NLconstraint(mdl,n.r.ocp.u[1,1]==param); \n
         Write it in array form: \n
-          con=@NLconstraint(mdl,[i=1],n.r.u[i,1]==param); \n")
+          con=@NLconstraint(mdl,[i=1],n.r.ocp.u[i,1]==param); \n")
       end
       if length(S)==1
-        con = DataFrame(step=1:length(n.r.constraint.handle[i]);Dict(n.r.constraint.name[i] => getdual(n.r.constraint.handle[i][:]))...);
+        con = DataFrame(step=1:length(n.r.ocp.constraint.handle[i]);Dict(n.r.ocp.constraint.name[i] => getdual(n.r.ocp.constraint.handle[i][:]))...);
         l=S[1];
       elseif length(S)==2
         dfs=Vector{DataFrame}(S[1]);
         con=DataFrame(step=1);
         for idx in 1:S[1]
           try
-            dfs[idx] = DataFrame(step=1:S[2];Dict(n.r.constraint.name[i] => getdual(n.r.constraint.handle[i][idx,:]))...);
+            dfs[idx] = DataFrame(step=1:S[2];Dict(n.r.ocp.constraint.name[i] => getdual(n.r.ocp.constraint.handle[i][idx,:]))...);
           catch
-            dfs[idx] = DataFrame(step=1:S[2];Dict(n.r.constraint.name[i] => NaN)...); # fix for case where all of the states are not being constrainted, but some are within some XF_tol
+            dfs[idx] = DataFrame(step=1:S[2];Dict(n.r.ocp.constraint.name[i] => NaN)...); # fix for case where all of the states are not being constrainted, but some are within some XF_tol
           end
           if idx==1;
             con = dfs[idx]
@@ -641,11 +966,11 @@ function evalConstraints!(n)
         l = S[1]*S[2]
       end
     end
-    f=s+l-1;
-    num=(i,n.r.constraint.name[i],@sprintf("length = %0.0f",l),string("indecies in g(x) = "),(s,f));
-    push!(n.r.constraint.nums,num);
-    push!(n.r.constraint.value,con);
-    s=f+1;
+    f = s + l - 1
+    num = (i,n.r.ocp.constraint.name[i],@sprintf("length = %0.0f",l),string("indecies in g(x) = "),(s,f))
+    push!(n.r.ocp.constraint.nums,num)
+    push!(n.r.ocp.constraint.value,con)
+    s = f + 1
   end
   return nothing
 end
