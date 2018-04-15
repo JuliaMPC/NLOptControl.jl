@@ -193,7 +193,7 @@ end
 type PlantResults
   plant
   X0p
-  X0a
+  X0a  # closest one in time to X0e
   X0e
   e
   dfsplant
@@ -223,11 +223,12 @@ end
 type OCPResults
   tctr                       # time vector for control
   tst                        # time vector for state
-  x                           # JuMP states
-  u                           # JuMP controls
-  X                           # states
-  U                           # controls
-  CS                          # costates
+  x                          # JuMP states
+  u                          # JuMP controls
+  X                          # states
+  U                          # controls
+  X0                         # initial states for OCP
+  CS                         # costates
   tpolyPts                   # time sample points for polynomials
   XpolyPts                   # state evaluated using Lagrange polynomial
   CSpolyPts                  # costate evaluated using Lagrange polynomial
@@ -239,25 +240,26 @@ type OCPResults
   x0Con                      # handle for initial state constraints
   xfCon                      # handle for final state constraints
   dynCon                     # dynamics constraints
-  constraint::Constraint      # constraint handles and data
+  constraint::Constraint     # constraint handles and data
   evalNum                    # number of times optimization has been run
-  iterNum                   # mics. data, perhaps an iteration number for a higher level algorithm
-  status                      # optimization status
+  iterNum                    # mics. data, perhaps an iteration number for a higher level algorithm
+  status                     # optimization status
   tSolve                     # solve time for optimization
   objVal                     # objective function value
-  dfs                         # results in DataFrame for plotting
+  dfs                        # results in DataFrame for plotting
   dfsOpt                     # optimization information in DataFrame for plotting
   dfsCon                     # constraint data
 end
 
 # Default Constructor
 function OCPResults()
-OCPResults( Vector{Any}[], # time vector for control
+OCPResults( Vector{Any}[],# time vector for control
         Vector{Any}[],    # time vector for state
         Matrix{Any}[],    # JuMP states
         Matrix{Any}[],    # JuMP controls
         Matrix{Any}[],    # states
         Matrix{Any}[],    # controls
+        Vector{Any}[],    # initial states for OCP
         [],               # costates
         [],               # time sample points for polynomials
         [],               # state evaluated using Lagrange polynomial
@@ -315,7 +317,7 @@ function MPCSettings()
       MPCSettings(
       false,
       :OCP,
-      true,
+      false,
       true,
       true,
       :all,
@@ -641,46 +643,50 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/14/2017, Last Modified: 4/13/2018 \n
 --------------------------------------------------------------------------------------\n
 """
-function plant2dfs!(n,sol)
-  row, column = size(n.r.ocp.u) # NOTE this is wrong
-  num = maximum([2*row, 50]) # TODO let user choose this
-  t_sample = linspace(sol.t[1],sol.t[end],num)
-  dfs_plant = DataFrame()
-  dfs_plant[:t] = t_sample
+function plant2dfs!(n,sol,U)
+  tSample = linspace(sol.t[1],sol.t[end],n.mpc.ip.state.pts)
 
-  for st in 1:n.mpc.ip.state.num
-    dfs_plant[n.mpc.ip.state.name[st]] = [sol(t)[st] for t in t_sample]
-  end
+  if isempty(n.r.ip.plant)
+    n.r.ip.plant[:t] = tSample
+    for st in 1:n.mpc.ip.state.num
+      n.r.ip.plant[n.mpc.ip.state.name[st]] = [sol(t)[st] for t in tSample]
+    end
 
-  for ctr in 1:n.mpc.ip.control.num
-    dfs_plant[n.mpc.ip.control.name[ctr]] = n.r.ocp.U[ctr]
-  end
-
-  if n.s.ocp.reset
-    n.r.ip.dfsplant = [dfs_plant]
+    for ctr in 1:n.mpc.ip.control.num
+      n.r.ip.plant[n.mpc.ip.control.name[ctr]] = [U[ctr][t] for t in tSample]
+    end
   else
-    push!(n.r.ip.dfsplant,dfs_plant)
+    dfs = DataFrame()
+    dfs[:t] = [n.r.ip.plant[:t]; tSample]
+    for st in 1:n.mpc.ip.state.num  #  TODO Push
+      dfs[n.mpc.ip.state.name[st]] = [n.r.ip.plant[n.mpc.ip.state.name[st]]; [sol(t)[st] for t in tSample]]
+    end
+
+    for ctr in 1:n.mpc.ip.control.num
+      dfs[n.mpc.ip.control.name[ctr]] = [n.r.ip.plant[n.mpc.ip.control.name[ctr]]; [U[ctr][t] for t in tSample] ]
+    end
+    n.r.ip.plant = dfs
   end
 
   # push plant states to a single DataFrame
   # NOTE this should be postProcess! (at the very end!), not done every time!
-  dfs = DataFrame()
-  temp = [n.r.ip.dfsplant[jj][:t][1:end-1,:] for jj in 1:length(n.r.ip.dfsplant)] # time
-  U = [idx for tempM in temp for idx=tempM]
-  dfs[:t] = U
+#  dfs = DataFrame()
+#  temp = [n.r.ip.dfsplant[jj][:t][1:end-1,:] for jj in 1:length(n.r.ip.dfsplant)] # time
+#  U = [idx for tempM in temp for idx=tempM]
+#  dfs[:t] = U
 
-  for st in 1:n.mpc.ip.state.num # state
-    temp = [n.r.ip.dfsplant[jj][n.mpc.ip.state.name[st]][1:end-1,:] for jj in 1:length(n.r.ip.dfsplant)];
-    U = [idx for tempM in temp for idx = tempM]
-    dfs[n.mpc.ip.state.name[st]] = U
-  end
+#  for st in 1:n.mpc.ip.state.num # state
+#    temp = [n.r.ip.dfsplant[jj][n.mpc.ip.state.name[st]][1:end-1,:] for jj in 1:length(n.r.ip.dfsplant)];
+#    U = [idx for tempM in temp for idx = tempM]
+#    dfs[n.mpc.ip.state.name[st]] = U
+#  end
 
-  for ctr in 1:n.mpc.ip.control.num # control
-    temp = [n.r.ip.dfsplant[jj][n.mpc.ip.control.name[ctr]][1:end-1,:] for jj in 1:length(n.r.ip.dfsplant)];
-    U = [idx for tempM in temp for idx=tempM]
-    dfs[n.mpc.ip.control.name[ctr]] = U
-  end
-  n.r.ip.dfsplantPts = dfs
+#  for ctr in 1:n.mpc.ip.control.num # control
+#    temp = [n.r.ip.dfsplant[jj][n.mpc.ip.control.name[ctr]][1:end-1,:] for jj in 1:length(n.r.ip.dfsplant)];
+#    U = [idx for tempM in temp for idx=tempM]
+#    dfs[n.mpc.ip.control.name[ctr]] = U
+#  end
+#  n.r.ip.dfsplantPts = dfs
 
   return nothing
 end

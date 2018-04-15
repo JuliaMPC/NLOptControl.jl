@@ -49,7 +49,8 @@ type MPCvariables
  tf::Float64                  # mpc final time TODO ?
  t0Param::Any        # parameter for mpc t0  TODO ?
  evalNum::Int64       # parameter for keeping track of number of MPC evaluations
- goal                 # goal location
+ goal                 # goal location w.r.t OCP
+ goalTol             # tolerance on goal location
 end
 
 function MPCvariables()
@@ -62,6 +63,7 @@ function MPCvariables()
               0.0,
               Any,
               0,
+              [],
               []
  )
 end
@@ -97,19 +99,20 @@ function defineMPC!(n;
                    IPKnown::Bool=true,
                    saveMode::Symbol=:all,
                    maxSim::Int64=100,
-                   goal=n.ocp.XF)
-  n.s.mpc.on = true
-  n.mpc::MPC = MPC()
-  n.s.mpc.mode = mode
-  n.s.mpc.predictX0 = predictX0
-  n.s.mpc.fixedTp = fixedTp
-  n.s.mpc.IPKnown = IPKnown
-  n.s.mpc.saveMode = saveMode
-  n.s.mpc.maxSim = maxSim
-  n.mpc.v.goal = goal
-  n.f.mpc.defined = true
-
-  return nothing
+                   goal=n.ocp.XF,
+                   goalTol=0.1*abs.(n.ocp.X0 - n.ocp.XF))
+ n.s.mpc.on = true
+ n.mpc::MPC = MPC()
+ n.s.mpc.mode = mode
+ n.s.mpc.predictX0 = predictX0
+ n.s.mpc.fixedTp = fixedTp
+ n.s.mpc.IPKnown = IPKnown
+ n.s.mpc.saveMode = saveMode
+ n.s.mpc.maxSim = maxSim
+ n.mpc.v.goal = goal
+ n.mpc.v.goalTol = goalTol
+ n.f.mpc.defined = true
+ return nothing
 end
 
 
@@ -134,7 +137,7 @@ function defineIP!(n,model;stateNames=[],controlNames=[],X0a=[])
     if !isempty(X0a)
      error("X0a is set automatically for :mode == :OCP and cannot be provided.")
     end
-    n.r.ip.X0a = copy(n.ocp.X0)
+    n.r.ip.X0a = copy(n.ocp.X0)  # NEED to append time
     n.mpc.ip.state.model = model
     n.mpc.ip.state.name = n.ocp.state.name
     n.mpc.ip.state.description = n.ocp.state.description
@@ -146,6 +149,15 @@ function defineIP!(n,model;stateNames=[],controlNames=[],X0a=[])
     n.mpc.ip.control.num = n.ocp.control.num
     n.mpc.ip.control.pts = n.ocp.control.pts
 
+    # add X0 t0 plant dfs
+    n.r.ip.plant[:t] = n.mpc.v.t0
+    for st in 1:n.mpc.ip.state.num
+      n.r.ip.plant[n.mpc.ip.state.name[st]] = copy(n.ocp.X0)[st]
+    end
+    for ctr in 1:n.mpc.ip.control.num
+      n.r.ip.plant[n.mpc.ip.control.name[ctr]] = 0
+    end
+    
    elseif isequal(n.s.mpc.mode,:IP)
     if isempty(stateNames)
      error("unless :mode == :OCP the stateNames must be provided.")

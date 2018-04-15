@@ -234,6 +234,7 @@ export
        # TMP
        State,
        Control,
-       initState
+       initState,
+       plant2dfs!
 
 end # module
