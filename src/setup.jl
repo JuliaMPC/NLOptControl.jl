@@ -241,7 +241,7 @@ function OCPdef!(n::NLOpt)
   end
 
   @NLparameter(n.ocp.mdl,t0_param==0.0);   # for now we just start at zero
-  n.mpc.v.t0Param = t0_param
+  n.ocp.t0 = t0_param  # NOTE consider making a constraint that t0 < tf
 
   if n.s.ocp.integrationMethod==:ps
     n.r.ocp.dynCon = [Array{Any}(n.ocp.Nck[int],n.ocp.state.num) for int in 1:n.ocp.Ni]
