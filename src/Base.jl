@@ -645,49 +645,28 @@ Date Create: 2/14/2017, Last Modified: 4/13/2018 \n
 """
 function plant2dfs!(n,sol,U)
   tSample = linspace(sol.t[1],sol.t[end],n.mpc.ip.state.pts)
-
+  dfs = DataFrame()
   if isempty(n.r.ip.plant)
-    n.r.ip.plant[:t] = tSample
+    dfs[:t] = tSample
     for st in 1:n.mpc.ip.state.num
-      n.r.ip.plant[n.mpc.ip.state.name[st]] = [sol(t)[st] for t in tSample]
+      dfs[n.mpc.ip.state.name[st]] = [sol(t)[st] for t in tSample]
     end
-
     for ctr in 1:n.mpc.ip.control.num
-      n.r.ip.plant[n.mpc.ip.control.name[ctr]] = [U[ctr][t] for t in tSample]
+      dfs[n.mpc.ip.control.name[ctr]] = [U[ctr][t] for t in tSample]
     end
   else
-    dfs = DataFrame()
     dfs[:t] = [n.r.ip.plant[:t]; tSample]
     for st in 1:n.mpc.ip.state.num  #  TODO Push
       dfs[n.mpc.ip.state.name[st]] = [n.r.ip.plant[n.mpc.ip.state.name[st]]; [sol(t)[st] for t in tSample]]
     end
-
     for ctr in 1:n.mpc.ip.control.num
       dfs[n.mpc.ip.control.name[ctr]] = [n.r.ip.plant[n.mpc.ip.control.name[ctr]]; [U[ctr][t] for t in tSample] ]
     end
-    n.r.ip.plant = dfs
   end
+  n.r.ip.plant = dfs
 
-  # push plant states to a single DataFrame
-  # NOTE this should be postProcess! (at the very end!), not done every time!
-#  dfs = DataFrame()
-#  temp = [n.r.ip.dfsplant[jj][:t][1:end-1,:] for jj in 1:length(n.r.ip.dfsplant)] # time
-#  U = [idx for tempM in temp for idx=tempM]
-#  dfs[:t] = U
-
-#  for st in 1:n.mpc.ip.state.num # state
-#    temp = [n.r.ip.dfsplant[jj][n.mpc.ip.state.name[st]][1:end-1,:] for jj in 1:length(n.r.ip.dfsplant)];
-#    U = [idx for tempM in temp for idx = tempM]
-#    dfs[n.mpc.ip.state.name[st]] = U
-#  end
-
-#  for ctr in 1:n.mpc.ip.control.num # control
-#    temp = [n.r.ip.dfsplant[jj][n.mpc.ip.control.name[ctr]][1:end-1,:] for jj in 1:length(n.r.ip.dfsplant)];
-#    U = [idx for tempM in temp for idx=tempM]
-#    dfs[n.mpc.ip.control.name[ctr]] = U
-#  end
-#  n.r.ip.dfsplantPts = dfs
-
+  # TODO only run this if saving
+  push!(n.r.ip.dfsplant,dfs)
   return nothing
 end
 
