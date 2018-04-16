@@ -72,13 +72,13 @@ function create_tV!(n::NLOpt)
     end
     tt1 = [idx for tempM in ts for idx = tempM[1:end-1]];
     tmp = [tt1;ts[end][end]];
-    n.ocp.tV = @NLexpression(n.ocp.mdl,[j=1:n.ocp.state.pts], n.mpc.v.t0Param + tmp[j]);
+    n.ocp.tV = @NLexpression(n.ocp.mdl,[j=1:n.ocp.state.pts], n.ocp.t0 + tmp[j]);
   else
     # create vector with the design variable in it
     t = Array{Any}(n.ocp.N+1,1);
     tm = @NLexpression(n.ocp.mdl, [idx=1:n.ocp.N], n.ocp.tf/n.ocp.N*idx);
     tmp = [0;tm];
-    n.ocp.tV = @NLexpression(n.ocp.mdl,[j=1:n.ocp.state.pts], n.mpc.v.t0Param + tmp[j]);
+    n.ocp.tV = @NLexpression(n.ocp.mdl,[j=1:n.ocp.state.pts], n.ocp.t0 + tmp[j]);
   end
   return nothing
 end
