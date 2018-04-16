@@ -813,8 +813,8 @@ function postProcess!(n;kwargs...)
       else
         t=[scale_tau(n.ocp.ts[int],0.0,n.ocp.tf) for int in 1:n.ocp.Ni];
       end
-      n.r.ocp.tctr=[idx for tempM in t for idx = tempM[1:end-1]];
-      n.r.ocp.tst=[n.r.ocp.tctr;t[end][end]];
+      n.r.ocp.tctr = [idx for tempM in t for idx = tempM[1:end-1]] + getvalue(n.ocp.t0)
+      n.r.ocp.tst = [n.r.ocp.tctr; t[end][end]]
 
     elseif n.s.ocp.integrationMethod==:tm
       if n.s.ocp.finalTimeDV
