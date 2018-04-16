@@ -328,3 +328,134 @@ defineModel!(n)
 # IP
 #[:x,:y,:v,:r,:psi,:sa,:ux,:ax]
 #[:sr,:jx]
+
+
+##### funcs.jl
+function simIPlant!(n)
+  X0 = currentIPState(n)[1]
+  t = n.r.ocp.tctr
+  U = n.r.ocp.U  # NOTE this is OK for the :OCP case
+  t0 = n.mpc.v.t
+  tf = n.mpc.v.t + n.mpc.v.tex
+  sol, U = n.mpc.ip.state.model(X0,t,U,t0,tf)
+  plant2dfs!(n,sol,U)
+
+  return nothing
+end
+
+function currentIPState(n)
+  if isempty(n.r.ip.plant)
+    error("there is no data in n.r.ip.plant")
+  end
+
+  # even though may have solution for plant ahead of time
+  # can only get the state up to n.mpc.v.t
+  idx = find((n.mpc.v.t - n.r.ip.plant[:t]) .>= 0)
+  if isempty(idx)
+    error("(n.mpc.v.t - n.r.ip.plant[:t]) .>= 0) is empty.")
+  else
+    X0 = [zeros(n.mpc.ip.state.num),n.mpc.v.t]
+    for st in 1:n.mpc.ip.state.num
+      X0[1][st] = n.r.ip.plant[n.mpc.ip.state.name[st]][idx[end]]
+    end
+  end
+  return X0
+end
+
+function updateOCPState!(n)
+  # update states with n.ocp.X0
+  for st in 1:n.ocp.state.num
+    if any(!isnan(n.ocp.X0_tol[st]))
+      JuMP.setRHS(n.r.ocp.x0Con[st,1], (n.ocp.X0[st]+n.ocp.X0_tol[st]));
+      JuMP.setRHS(n.r.ocp.x0Con[st,2],-(n.ocp.X0[st]-n.ocp.X0_tol[st]));
+    else
+      JuMP.setRHS(n.r.ocp.x0Con[st],n.ocp.X0[st]);
+    end
+  end
+  return nothing
+end
+
+
+function goal!(n)
+  # TODO deal with NaNs
+  if isequal(n.s.mpc.mode,:OCP)
+    X = currentIPState(n)[1]
+  else
+    #TODO
+  end
+
+  if all((abs.(X - n.mpc.v.goal) .<= n.mpc.v.goalTol))
+    println("Goal Attained! \n")
+    n.f.mpc.goalReached = true
+  end
+
+ return n.f.mpc.goalReached
+end
+
+"""
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 4/08/2018, Last Modified: 4/08/2018 \n
+--------------------------------------------------------------------------------------\n
+"""
+function initOpt!(n)
+  n.s.ocp.save = false
+  n.s.mpc.on = false
+  n.s.ocp.evalConstraints = false
+  n.s.ocp.cacheOnly = true
+
+  if n.s.ocp.save
+   warn("saving initial optimization results where functions where cached!")
+  end
+  for k in 1:3 # initial optimization (s)  TODO make this a parameter
+   status = optimize!(n);
+   if status==:Optimal; break; end
+  end
+  # defineSolver!(n,solverConfig(c)) # modifying solver settings NOTE currently not in use
+  n.s.ocp.save = true  # NOTE set to false if running in parallel to save time
+  n.s.ocp.cacheOnly = false
+  n.s.ocp.evalConstraints = false # NOTE set to true to investigate infeasibilities
+  return nothing
+end
+
+function simMPC!(n)
+  for ii = 1:n.s.mpc.maxSim
+   println("Running model for the: ",n.mpc.v.evalNum + 1," time")
+    #############################
+    # (A) and (B) in "parallel"
+    #############################
+    # (A) solve OCP
+    if !n.s.mpc.predictX0 #  use the current known plant state to update OCP
+      # X0p is simply the current known location of the plant
+      push!(n.r.ip.X0p,currentIPState(n))
+
+      # need to map n.r.ip.X0p to n.X0 (states may be different)
+      # NOTE for the :OCP mode this is OK
+      if isequal(n.s.mpc.mode,:OCP)
+        n.ocp.X0 = n.r.ip.X0p[end][1] # the n.ocp. structure is for running things
+        push!(n.r.ocp.X0,n.ocp.X0)  # NOTE this may be for saving data
+      else
+        error("TODO")
+      end
+    else
+      error("TODO")
+    end
+    updateOCPState!(n)
+    optimize!(n)
+
+    # (B) simulate plant
+    simIPlant!(n) # the plant simulation time will lead the actual time
+
+    # advance the actual time
+    n.mpc.v.t = n.mpc.v.t + n.mpc.v.tex
+    n.mpc.v.evalNum = n.mpc.v.evalNum + 1
+
+    #NOTE want to try and avoid having time not start at 0 in OCP
+    setvalue(n.ocp.t0,copy(n.mpc.v.t))
+
+    goal!(n)     # check to see if the goal is in range
+    if n.f.mpc.goalReached
+      break
+    end
+  end
+end

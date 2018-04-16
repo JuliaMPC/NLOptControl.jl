@@ -656,7 +656,7 @@ function plant2dfs!(n,sol,U)
     end
   else
     dfs[:t] = [n.r.ip.plant[:t]; tSample]
-    for st in 1:n.mpc.ip.state.num  #  TODO Push
+    for st in 1:n.mpc.ip.state.num
       dfs[n.mpc.ip.state.name[st]] = [n.r.ip.plant[n.mpc.ip.state.name[st]]; [sol(t)[st] for t in tSample]]
     end
     for ctr in 1:n.mpc.ip.control.num
@@ -665,14 +665,21 @@ function plant2dfs!(n,sol,U)
   end
   n.r.ip.plant = dfs
 
-  # TODO only run this if saving
+  # TODO only run this if saving, it is redundant data, or maybe put time stamps or something in the above data
+  dfs = DataFrame()
+  dfs[:t] = tSample
+  for st in 1:n.mpc.ip.state.num
+    dfs[n.mpc.ip.state.name[st]] = [sol(t)[st] for t in tSample]
+  end
+  for ctr in 1:n.mpc.ip.control.num
+    dfs[n.mpc.ip.control.name[ctr]] = [U[ctr][t] for t in tSample]
+  end
   push!(n.r.ip.dfsplant,dfs)
   return nothing
 end
 
 """
 dvs2dfs(n)
-
 # funtionality to save state, costate, and control data from optimization
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
@@ -680,28 +687,28 @@ Date Create: 2/10/2017, Last Modified: 4/13/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function dvs2dfs(n)
-  dfs=DataFrame()
-  dfs[:t]=n.r.ocp.tst + n.mpc.v.t0;
+  dfs = DataFrame()
+  dfs[:t] = n.r.ocp.tst
   for st in 1:n.ocp.state.num
-    dfs[n.ocp.state.name[st]]=n.r.ocp.X[:,st];
+    dfs[n.ocp.state.name[st]] = n.r.ocp.X[:,st]
   end
   for ctr in 1:n.ocp.control.num
     if n.s.ocp.integrationMethod==:tm
-      dfs[n.ocp.control.name[ctr]]=n.r.ocp.U[:,ctr];
+      dfs[n.ocp.control.name[ctr]] = n.r.ocp.U[:,ctr]
     else
-      dfs[n.ocp.control.name[ctr]]=[n.r.ocp.U[:,ctr];NaN];
+      dfs[n.ocp.control.name[ctr]] = [n.r.ocp.U[:,ctr];NaN]
     end
   end
 
   if n.s.ocp.evalCostates && n.s.ocp.integrationMethod == :ps && n.s.ocp.evalConstraints
     CS_vector = Matrix{Float64}(n.ocp.state.pts, n.ocp.state.num)
     for st in 1:n.ocp.state.num # states
-      temp = [n.r.CS[st][int][1:end,:] for int in 1:n.ocp.Ni];
-      CS_vector[1:end-1,st] = [idx for tempM in temp for idx=tempM];
-      CS_vector[end,st] = NaN;
+      temp = [n.r.CS[st][int][1:end,:] for int in 1:n.ocp.Ni]
+      CS_vector[1:end-1,st] = [idx for tempM in temp for idx=tempM]
+      CS_vector[end,st] = NaN
     end
     for st in 1:n.ocp.state.num # states
-      dfs[Symbol(n.ocp.state.name[st],:cs)]=CS_vector[:,st];
+      dfs[Symbol(n.ocp.state.name[st],:cs)] = CS_vector[:,st]
     end
   end
 
@@ -776,10 +783,10 @@ Date Create: 1/27/2017, Last Modified: 4/13/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function postProcess!(n;kwargs...)
-  kw = Dict(kwargs);
+  kw = Dict(kwargs)
   # check to see if the user is initializing while compensating for control delay
-  if !haskey(kw,:Init);Init=false;
-  else; Init=get(kw,:Init,0);
+  if !haskey(kw,:Init); Init = false;
+  else; Init = get(kw,:Init,0);
   end
 
   # even if n.r.ocp.status==:Infeasible try to get solution. For the case that user may want to look at results to see where constraints where violated
@@ -788,12 +795,12 @@ function postProcess!(n;kwargs...)
   if !Init && (n.s.ocp.evalConstraints || ((n.r.ocp.status==:Optimal) || (n.r.ocp.status==:UserLimit)))
     if n.s.ocp.integrationMethod==:ps
       if n.s.ocp.finalTimeDV
-        t=[scale_tau(n.ocp.ts[int],0.0,getvalue(n.ocp.tf)) for int in 1:n.ocp.Ni];     # scale time from [-1,1] to [t0,tf]
+        t = [scale_tau(n.ocp.ts[int],0.0,getvalue(n.ocp.tf)) for int in 1:n.ocp.Ni]     # scale time from [-1,1] to [t0,tf]
       else
-        t=[scale_tau(n.ocp.ts[int],0.0,n.ocp.tf) for int in 1:n.ocp.Ni];
+        t = [scale_tau(n.ocp.ts[int],0.0,n.ocp.tf) for int in 1:n.ocp.Ni]
       end
       n.r.ocp.tctr = [idx for tempM in t for idx = tempM[1:end-1]] + getvalue(n.ocp.t0)
-      n.r.ocp.tst = [n.r.ocp.tctr; t[end][end]]
+      n.r.ocp.tst = [n.r.ocp.tctr; t[end][end] + getvalue(n.ocp.t0)]
 
     elseif n.s.ocp.integrationMethod==:tm
       if n.s.ocp.finalTimeDV
@@ -807,11 +814,11 @@ function postProcess!(n;kwargs...)
     n.r.ocp.U = zeros(Float64,n.ocp.control.pts,n.ocp.control.num)
 
     for st in 1:n.ocp.state.num
-      n.r.ocp.X[:,st] = getvalue(n.r.ocp.x[:,st]);
+      n.r.ocp.X[:,st] = getvalue(n.r.ocp.x[:,st])
     end
 
     for ctr in 1:n.ocp.control.num
-      n.r.ocp.U[:,ctr] = getvalue(n.r.ocp.u[:,ctr]);
+      n.r.ocp.U[:,ctr] = getvalue(n.r.ocp.u[:,ctr])
     end
 
     if n.s.ocp.evalConstraints && n.r.ocp.status!=:Error  # note may want to remove the && arg
