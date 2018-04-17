@@ -303,14 +303,16 @@ function Results()
 end
 
 # MPC Settings Class
-type MPCSettings   # options
+type MPCSettings
  on::Bool
  mode::Symbol
  predictX0::Bool
  fixedTp::Bool
  IPKnown::Bool
  saveMode::Symbol
- maxSim::Int64      # maximum number of total MPC updates
+ maxSim::Int64          # maximum number of total MPC updates
+ shiftX0::Bool   # a bool to indicate that a check on the feasibility of the linear constraints for the initial conditions should be performed
+ lastOptimal::Bool # a bool to indicate that the previous solution should be used if the current solution in not optimal
 end
 
 function MPCSettings()
@@ -321,7 +323,9 @@ function MPCSettings()
       true,
       true,
       :all,
-      100
+      100,
+      true,
+      true
       )
 end
 
@@ -726,10 +730,6 @@ Date Create: 2/10/2017, Last Modified: 4/13/2018 \n
 function opt2dfs!(n;kwargs...)
   kw = Dict(kwargs);
 
-  if !haskey(kw,:Init); Init=false;
-  else; Init=get(kw,:Init,0);
-  end
-
   if !haskey(kw,:statusUpdate); statusUpdate=false;
   else; statusUpdate=get(kw,:statusUpdate,0);
   end
@@ -739,11 +739,11 @@ function opt2dfs!(n;kwargs...)
       n.r.ocp.dfsOpt = DataFrame(tSolve = [], objVal = [], status = [], iterNum = [])
   end
 
-  if !Init && !statusUpdate
+  if !statusUpdate
     push!(n.r.ocp.dfsOpt[:tSolve], n.r.ocp.tSolve)
     push!(n.r.ocp.dfsOpt[:objVal], n.r.ocp.objVal)
     push!(n.r.ocp.dfsOpt[:status], n.r.ocp.status)
-  else
+  else  # TODO consider removing and cleaning this up
     push!(n.r.ocp.dfsOpt[:tSolve], NaN)
     push!(n.r.ocp.dfsOpt[:objVal], NaN)
     if statusUpdate && (typeof(n.r.ocp.status)==Symbol)
@@ -789,6 +789,10 @@ function postProcess!(n;kwargs...)
   else; Init = get(kw,:Init,0);
   end
 
+  if n.s.ocp.save
+    opt2dfs!(n)
+  end
+
   # even if n.r.ocp.status==:Infeasible try to get solution. For the case that user may want to look at results to see where constraints where violated
   # in this case set =>  n.s.ocp.evalConstraints = true
   # http://jump.readthedocs.io/en/latest/refmodel.html#solve-status
@@ -810,20 +814,35 @@ function postProcess!(n;kwargs...)
       end
       n.r.ocp.tst = n.r.ocp.tctr
     end
-    n.r.ocp.X = zeros(Float64,n.ocp.state.pts,n.ocp.state.num)
-    n.r.ocp.U = zeros(Float64,n.ocp.control.pts,n.ocp.control.num)
 
-    for st in 1:n.ocp.state.num
-      n.r.ocp.X[:,st] = getvalue(n.r.ocp.x[:,st])
+    if n.r.ocp.status==:Optimal
+      n.r.ocp.X = zeros(Float64,n.ocp.state.pts,n.ocp.state.num)
+      n.r.ocp.U = zeros(Float64,n.ocp.control.pts,n.ocp.control.num)
+      for st in 1:n.ocp.state.num
+        n.r.ocp.X[:,st] = getvalue(n.r.ocp.x[:,st])
+      end
+      for ctr in 1:n.ocp.control.num
+        n.r.ocp.U[:,ctr] = getvalue(n.r.ocp.u[:,ctr])
+      end
+    elseif n.s.mpc.on && n.s.mpc.lastOptimal
+      if !n.s.ocp.save
+        error("This functionality currently needs to have n.s.save==true")
+      end
+      optIdx = find(n.r.ocp.dfsOpt[:status].==:Optimal)[end]  # use the last :Optimal solution
+      timeIdx = find(n.r.ocp.dfs[optIdx][:t] - n.mpc.v.t .<= 0)[end]     # find the nearest index in time
+      n.r.ocp.tst = n.r.ocp.dfs[optIdx][:t][timeIdx:end]
+      n.r.ocp.tctr = n.r.ocp.dfs[optIdx][:t][timeIdx:end-1]
+      n.r.ocp.X = zeros(Float64,length(n.r.ocp.dfs[optIdx][n.ocp.state.name[1]][timeIdx:end]),n.ocp.state.num)
+      n.r.ocp.U = zeros(Float64,length(n.r.ocp.dfs[optIdx][n.ocp.control.name[1]][timeIdx:end-1]),n.ocp.control.num)
+      for st in 1:n.ocp.state.num
+        n.r.ocp.X[:,st] = n.r.ocp.dfs[optIdx][n.ocp.state.name[st]][timeIdx:end]
+      end
+      for ctr in 1:n.ocp.control.num
+        n.r.ocp.U[:,ctr] = n.r.ocp.dfs[optIdx][n.ocp.control.name[ctr]][timeIdx:end-1]
+      end
     end
-
-    for ctr in 1:n.ocp.control.num
-      n.r.ocp.U[:,ctr] = getvalue(n.r.ocp.u[:,ctr])
-    end
-
     if n.s.ocp.evalConstraints && n.r.ocp.status!=:Error  # note may want to remove the && arg
       evalConstraints!(n)
-
       # TODO make a note that costates can only be evaluated if .....
       if n.s.ocp.evalCostates && n.s.ocp.integrationMethod == :ps
         L1 = 0       # find index where dynamics constraints start
@@ -832,7 +851,6 @@ function postProcess!(n;kwargs...)
             L1 = n.r.ocp.constraint.nums[i][end][1]
           end
         end
-
         mpb = JuMP.internalmodel(n.ocp.mdl)
         c = MathProgBase.getconstrduals(mpb)
         # NOTE for now since costates are not defined for :tm methods, n.r.CS is in a different format than n.r.ocp.X
@@ -849,30 +867,17 @@ function postProcess!(n;kwargs...)
         end
       end
     end
-
-    if n.s.ocp.save && (n.r.ocp.status != :Infeasible) && (n.r.ocp.status != :Error)
+    if n.s.ocp.save
       push!(n.r.ocp.dfs,dvs2dfs(n))
       push!(n.r.ocp.dfsCon,con2dfs(n))
-      opt2dfs!(n)
-      if n.s.ocp.integrationMethod==:ps
-        interpolateLagrange!(n;numPts = n.s.ocp.numInterpPts, tfOptimal = n.s.ocp.tfOptimal)
-      else
-        interpolateLinear!(n;numPts = n.s.ocp.numInterpPts, tfOptimal = n.s.ocp.tfOptimal)
+      if (n.r.ocp.status != :Infeasible) && (n.r.ocp.status != :Error)
+        if n.s.ocp.integrationMethod==:ps
+          interpolateLagrange!(n;numPts = n.s.ocp.numInterpPts, tfOptimal = n.s.ocp.tfOptimal)
+        else
+          interpolateLinear!(n;numPts = n.s.ocp.numInterpPts, tfOptimal = n.s.ocp.tfOptimal)
+        end
       end
-    else # always give a status update
-      opt2dfs!(n;(:statusUpdate=>true))
     end
-  elseif n.s.ocp.save  # helps to line data up, also if !n.s.ocp.evalConstraints then the optimization status will be saved
-    # NOTE removed!
-    #push!(n.r.ocp.dfs,nothing)
-    #push!(n.r.ocp.dfsCon,nothing)
-    #if (n.r.ocp.status == :Infeasible) || (n.r.ocp.status == :Error)
-        opt2dfs!(n;(:statusUpdate=>true))
-    #else  # no optimization ran -> i.e. drive straight to get started
-    #    opt2dfs!(n,;(:Init=>true))
-    #end
-  else
-    warn("postProcess.jl did not do anything")
   end
   return nothing
 end

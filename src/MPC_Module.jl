@@ -51,6 +51,8 @@ type MPCvariables
  evalNum::Int64       # parameter for keeping track of number of MPC evaluations
  goal                 # goal location w.r.t OCP
  goalTol             # tolerance on goal location
+ initOptNum::Int64  # number of initial optimization
+ previousSolutionNum::Int64  # number of times the previous solution should be used
 end
 
 function MPCvariables()
@@ -64,7 +66,9 @@ function MPCvariables()
               Any,
               0,
               [],
-              []
+              [],
+              3,
+              3
  )
 end
 
@@ -157,7 +161,7 @@ function defineIP!(n,model;stateNames=[],controlNames=[],X0a=[])
     for ctr in 1:n.mpc.ip.control.num
       n.r.ip.plant[n.mpc.ip.control.name[ctr]] = 0
     end
-    
+
    elseif isequal(n.s.mpc.mode,:IP)
     if isempty(stateNames)
      error("unless :mode == :OCP the stateNames must be provided.")
@@ -312,8 +316,6 @@ function updateX0!(n,args...;kwargs...)
   else
     error("mode must be :OCP, :IP, or :EP")
   end
-
-
   updateStates!(n)
   append!(n.r.ip.X0a,[copy(n.ocp.X0)])
   return nothing

@@ -298,8 +298,6 @@ function resultsDir!(n;resultsName::String = "",description::DataFrame = DataFra
  cd(n.r.mainDir)
  return nothing
 end
-
-
 """
 ------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
@@ -319,7 +317,6 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 10/3/2017, Last Modified: 11/11/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-
 function saveData(n)
   # all polynomial data
   dfs=DataFrame();
@@ -345,8 +342,6 @@ function saveData(n)
   cd(n.r.mainDir)
   return nothing
 end
-
-
 """
 ------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
@@ -427,15 +422,17 @@ end
 
 
 """
+# t must be the time vector
+# V is any vector that you are interpolating
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/06/2017, Last Modified: 2/06/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function linearSpline(t::Vector,V::Vector)
-  # t must be the time vector
-  # V is any vector that you are interpolating
-
+  if !isequal(length(t),length(V))
+    error("!isequal(length(t),length(V))")
+  end
   # remove any repeating values
   M = Array{Bool}(length(t)); M[1:length(t)] = false;
   for i in 1:length(t)-1
@@ -445,24 +442,21 @@ function linearSpline(t::Vector,V::Vector)
           M[i]=false
       end
   end
-
   rm_idx = find(M)
-
   if (length(t)==length(rm_idx))
     error("No time has elapsed and there will be an issue with interpolation. \n
           Cannot simulate the vehicle.")
   end
 
   # initialize vetors
-  t_new = Array{Float64}(length(t)-length(rm_idx));
-  V_new = Array{Float64}(length(t)-length(rm_idx));
-
-  q=1;
+  t_new = Array{Float64}(length(t)-length(rm_idx))
+  V_new = Array{Float64}(length(t)-length(rm_idx))
+  q = 1
   for i in 1:length(V) #TODO put an error message here if V and t are different sizes
       if !M[i]
-          t_new[q] = t[i];
-          V_new[q] = V[i];
-          q=q+1
+          t_new[q] = t[i]
+          V_new[q] = V[i]
+          q = q + 1
       end
   end
 
