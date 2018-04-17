@@ -210,6 +210,7 @@ export
        savePlantData!,
        saveData,
        linearSpline,
+       goalRange!,
 
        # MPC_Module.jl
        defineMPC!,

@@ -467,3 +467,38 @@ function linearSpline(t::Vector,V::Vector)
   knots = (t_new,)
   return interpolate(knots,V_new,Gridded(Linear()))
 end
+
+"""
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 4/08/2018, Last Modified: 4/08/2018 \n
+--------------------------------------------------------------------------------------\n
+"""
+function goalRange!(n)
+  # TODO deal with NaNs
+  if isequal(n.s.mpc.mode,:OCP)
+    X = currentIPState(n)[1]
+  else
+    #TODO
+  end
+  if all((abs.(X - n.mpc.v.goal) .<= n.mpc.v.goalTol))
+    println("Goal Attained! \n")
+    n.f.mpc.goalReached = true
+  end
+ return n.f.mpc.goalReached
+end
+# if the vehicle is very close to the goal sometimes the optimization returns with a small final time
+# and it can even be negative (due to tolerances in NLP solver). If this is the case, the goal is slightly
+# expanded from the previous check and one final check is performed otherwise the run is failed
+#if getvalue(n.ocp.tf) < 0.01
+#  if ((n.r.ip.dfplant[end][:x][end]-c["goal"]["x"])^2 + (n.r..ip.dfplant[end][:y][end]-c["goal"]["yVal"])^2)^0.5 < 2*c["goal"]["tol"]
+#  println("Expanded Goal Attained! \n"); n.f.mpc.goal_reached=true;
+#  break;
+#  else
+#  warn("Expanded Goal Not Attained! -> stopping simulation! \n"); break;
+#  end
+#elseif getvalue(n.ocp.tf) < 0.5 # if the vehicle is near the goal => tf may be less then 0.5 s
+#  tf = (n.r.evalNum-1)*n.mpc.v.tex + getvalue(n.ocp.tf)
+#else
+#  tf = (n.r.evalNum)*n.mpc.v.tex
+#end

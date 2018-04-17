@@ -100,6 +100,8 @@ function defineMPC!(n;
                    mode::Symbol=:OCP,
                    predictX0::Bool=true,
                    fixedTp::Bool=true,
+                   tp::Any=Any,
+                   tex::Float64=0.5,
                    IPKnown::Bool=true,
                    saveMode::Symbol=:all,
                    maxSim::Int64=100,
@@ -110,6 +112,8 @@ function defineMPC!(n;
  n.s.mpc.mode = mode
  n.s.mpc.predictX0 = predictX0
  n.s.mpc.fixedTp = fixedTp
+ n.mpc.v.tp = tp
+ n.mpc.v.tex = tex
  n.s.mpc.IPKnown = IPKnown
  n.s.mpc.saveMode = saveMode
  n.s.mpc.maxSim = maxSim
