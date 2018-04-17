@@ -8,9 +8,18 @@ include("Base.jl")
 using .Base
 
 export
-      MPC,
-      defineMPC!,
-      defineIP!
+     MPC,
+     defineMPC!,
+     initOpt!,
+     defineIP!,
+     mapNames!,
+     simIPlant!,
+     updateX0!,
+     currentIPState,
+     updateOCPState!,
+     goalReached!,
+     simMPC!
+
 ########################################################################################
 # MPC types
 ########################################################################################
@@ -106,7 +115,9 @@ function defineMPC!(n;
                    saveMode::Symbol=:all,
                    maxSim::Int64=100,
                    goal=n.ocp.XF,
-                   goalTol=0.1*abs.(n.ocp.X0 - n.ocp.XF))
+                   goalTol=0.1*abs.(n.ocp.X0 - n.ocp.XF),
+                   lastOptimal::Bool=true,
+                   printLevel::Int64=2)
  n.s.mpc.on = true
  n.mpc::MPC = MPC()
  n.s.mpc.mode = mode
@@ -119,10 +130,37 @@ function defineMPC!(n;
  n.s.mpc.maxSim = maxSim
  n.mpc.v.goal = goal
  n.mpc.v.goalTol = goalTol
+ n.s.mpc.lastOptimal = lastOptimal
+ n.s.mpc.printLevel = printLevel
  n.f.mpc.defined = true
  return nothing
 end
 
+"""
+# TODO consider letting user pass options
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 4/08/2018, Last Modified: 4/08/2018 \n
+--------------------------------------------------------------------------------------\n
+"""
+function initOpt!(n)
+  n.s.ocp.save = false
+  n.s.mpc.on = false
+  n.s.ocp.evalConstraints = false
+  n.s.ocp.cacheOnly = true
+  if n.s.ocp.save
+   warn("saving initial optimization results where functions where cached!")
+  end
+  for k in 1:n.mpc.v.initOptNum # initial optimization (s)
+   status = optimize!(n)
+   if status==:Optimal; break; end
+  end
+  # defineSolver!(n,solverConfig(c)) # modifying solver settings NOTE currently not in use
+  n.s.ocp.save = true  # NOTE set to false if running in parallel to save time
+  n.s.ocp.cacheOnly = false
+  n.s.ocp.evalConstraints = true # NOTE set to true to investigate infeasibilities
+  return nothing
+end
 
 """
 # add a mode that solves as quickly as possible
@@ -280,17 +318,19 @@ function mapNames!(n)
 end
 
 """
-simPlant(n)
-# consider X0=n.r.ip.X0a[(n.r.ocp.evalNum)] when plant and controller are different
-# NOTE if previous solution was Infeasible it will just pass the begining of the last Optimal solution again
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/14/2017, Last Modified: 4/09/2018 \n
 --------------------------------------------------------------------------------------\n
 """
-function simPlant!(n;X0=n.ocp.X0,t=n.r.ocp.tctr+n.mpc.v.t0,U=n.r.ocp.U,t0=n.mpc.v.t0Actual,tf=n.r.ocp.evalNum*n.mpc.v.tex)
-  sol = n.mpc.ip.state.model(n,X0,t,U,t0,tf)
-  plant2dfs!(n,sol)  #TODO consider passing U, t0 etc.. and only run this if saving data
+function simIPlant!(n)
+  X0 = currentIPState(n)[1]
+  t = n.r.ocp.tctr
+  U = n.r.ocp.U  # NOTE this is OK for the :OCP case
+  t0 = n.mpc.v.t
+  tf = n.mpc.v.t + n.mpc.v.tex
+  sol, U = n.mpc.ip.state.model(n,X0,t,U,t0,tf)
+  plant2dfs!(n,sol,U)
   return nothing
 end
 
@@ -325,80 +365,148 @@ function updateX0!(n,args...;kwargs...)
   return nothing
 end
 
+
 """
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 4/12/2018, Last Modified: 4/12/2018 \n
+Date Create: 4/08/2018, Last Modified: 4/08/2018 \n
+--------------------------------------------------------------------------------------\n
+"""
+function currentIPState(n)
+  if isempty(n.r.ip.plant)
+    error("there is no data in n.r.ip.plant")
+  end
+
+  # even though may have solution for plant ahead of time
+  # can only get the state up to n.mpc.v.t
+  idx = find((n.mpc.v.t - n.r.ip.plant[:t]) .>= 0)
+  if isempty(idx)
+    error("(n.mpc.v.t - n.r.ip.plant[:t]) .>= 0) is empty.")
+  else
+    X0 = [zeros(n.mpc.ip.state.num),n.mpc.v.t]
+    for st in 1:n.mpc.ip.state.num
+      X0[1][st] = n.r.ip.plant[n.mpc.ip.state.name[st]][idx[end]]
+    end
+  end
+  return X0
+end
+
+"""
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 4/08/2018, Last Modified: 4/08/2018 \n
+--------------------------------------------------------------------------------------\n
+"""
+function updateOCPState!(n)
+  if n.s.mpc.shiftX0 # TODO consider saving linear shifting occurances
+    for st in 1:n.ocp.state.num
+      if n.ocp.X0[st] < n.ocp.XL[st]
+        n.ocp.X0[st] = n.ocp.XL[st]
+      end
+      if n.ocp.X0[st] > n.ocp.XU[st]
+        n.ocp.X0[st] = n.ocp.XU[st]
+      end
+    end
+  end
+  # update states with n.ocp.X0
+  for st in 1:n.ocp.state.num
+    if any(!isnan(n.ocp.X0_tol[st]))
+      JuMP.setRHS(n.r.ocp.x0Con[st,1], (n.ocp.X0[st]+n.ocp.X0_tol[st]));
+      JuMP.setRHS(n.r.ocp.x0Con[st,2],-(n.ocp.X0[st]-n.ocp.X0_tol[st]));
+    else
+      JuMP.setRHS(n.r.ocp.x0Con[st],n.ocp.X0[st]);
+    end
+  end
+  return nothing
+end
+
+
+"""
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 4/08/2018, Last Modified: 4/08/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function goalReached!(n)
- if ((n.r.ip.dfsplant[end][:x][end]-c["goal"]["x"])^2 + (n.r.ip.dfsplant[end][:y][end]-c["goal"]["yVal"])^2)^0.5 < c["goal"]["tol"]
-   println("Goal Attained! \n"); n.f.mpc.goalReached=true;
- end
+  # TODO deal with NaNs
+  if isequal(n.s.mpc.mode,:OCP)
+    X = currentIPState(n)[1]
+  else
+    #TODO
+  end
+  if all((abs.(X - n.mpc.v.goal) .<= n.mpc.v.goalTol))
+   if isequal(n.s.mpc.printLevel,2)
+    println("Goal Attained! \n")
+   end
+    n.f.mpc.goalReached = true
+  end
  return n.f.mpc.goalReached
 end
+# if the vehicle is very close to the goal sometimes the optimization returns with a small final time
+# and it can even be negative (due to tolerances in NLP solver). If this is the case, the goal is slightly
+# expanded from the previous check and one final check is performed otherwise the run is failed
+#if getvalue(n.ocp.tf) < 0.01
+#  if ((n.r.ip.dfplant[end][:x][end]-c["goal"]["x"])^2 + (n.r..ip.dfplant[end][:y][end]-c["goal"]["yVal"])^2)^0.5 < 2*c["goal"]["tol"]
+#  println("Expanded Goal Attained! \n"); n.f.mpc.goal_reached=true;
+#  break;
+#  else
+#  warn("Expanded Goal Not Attained! -> stopping simulation! \n"); break;
+#  end
+#elseif getvalue(n.ocp.tf) < 0.5 # if the vehicle is near the goal => tf may be less then 0.5 s
+#  tf = (n.r.evalNum-1)*n.mpc.v.tex + getvalue(n.ocp.tf)
+#else
+#  tf = (n.r.evalNum)*n.mpc.v.tex
+#end
+
 """
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 4/12/2018, Last Modified: 4/12/2018 \n
+Date Create: 2/06/2018, Last Modified: 4/08/2018 \n
 --------------------------------------------------------------------------------------\n
 """
-function simMpc(c)
-
- n = initializeAutonomousControl(c)
-
- for ii = 1:n.mpc.s.maxSim
-  println("Running model for the: ",n.mpc.v.evalNum + 1," time")
-  updateAutoParams!(n,c)                 # update model parameters
-  status = autonomousControl!(n)         # rerun optimization
-
-  if n.r.ocp.status==:Optimal || n.r.ocp.status==:Suboptimal || n.r.ocp.status==:UserLimit
-    println("Passing Optimized Signals to 3DOF Vehicle Model");
-  elseif n.r.ocp.status==:Infeasible
-    println("\n FINISH:Pass PREVIOUSLY Optimized Signals to 3DOF Vehicle Model \n"); break;
-  else
-    println("\n There status is nor Optimal or Infeaible -> create logic for this case!\n"); break;
-  end
-
-  n.mpc.t0_actual = (n.r.ocp.evalNum-1)*n.mpc.v.tex  # external so that it can be updated easily in PathFollowing
-
-  # if the vehicle is very close to the goal sometimes the optimization returns with a small final time
-  # and it can even be negative (due to tolerances in NLP solver). If this is the case, the goal is slightly
-  # expanded from the previous check and one final check is performed otherwise the run is failed
-  if getvalue(n.ocp.tf) < 0.01
-    if ((n.r.ip.dfsplant[end][:x][end]-c["goal"]["x"])^2 + (n.r.ip.dfsplant[end][:y][end]-c["goal"]["yVal"])^2)^0.5 < 2*c["goal"]["tol"]
-    println("Expanded Goal Attained! \n"); n.f.mpc.goalReached=true;
-    break;
-    else
-    warn("Expanded Goal Not Attained! -> stopping simulation! \n"); break;
+function simMPC!(n;updateFunction::Any=[])
+  for ii = 1:n.s.mpc.maxSim
+    if isequal(n.s.mpc.printLevel,2)
+     println("Running model for the: ",n.mpc.v.evalNum + 1," time")
     end
-  elseif getvalue(n.ocp.tf) < 0.5 # if the vehicle is near the goal => tf may be less then 0.5 s
-    tf = (n.r.ocp.evalNum-1)*n.mpc.v.tex + getvalue(n.ocp.tf)
-  else
-    tf = (n.r.ocp.evalNum)*n.mpc.v.tex
-  end
+    #############################
+    # (A) and (B) in "parallel"
+    #############################
+    # (A) solve OCP
+    if !isequal(typeof(updateFunction),Array{Any,1})
+      updateFunction(n)
+    end
 
-  if isequal(c["misc"]["model"],:ThreeDOFv2)
-    U = n.r.ocp.U # TODO change to v1 for plant sim
-  elseif isequal(c["misc"]["model"],:KinematicBicycle)
-    #U = hcat(n.r.ocp.U[:,1],n.r.ocp.X[:,4])# TODO change to v1 for plant sim
-    U = n.r.ocp.U
-  end
+    if !n.s.mpc.predictX0 #  use the current known plant state to update OCP
+      # X0p is simply the current known location of the plant
+      push!(n.r.ip.X0p,currentIPState(n))
 
-  simPlant!(n;tf=tf,U=U)
-  updateX0!(n)
-  if n.r.ocp.evalNum==n.mpc.v.evalNum
-    warn(" \n This is the last itteration! \n i.e. the maximum number of iterations has been reached while closing the loop; consider increasing (max_iteration) \n")
+      # need to map n.r.ip.X0p to n.X0 (states may be different)
+      # NOTE for the :OCP mode this is OK
+      if isequal(n.s.mpc.mode,:OCP)
+        n.ocp.X0 = n.r.ip.X0p[end][1] # the n.ocp. structure is for running things
+        push!(n.r.ocp.X0,n.ocp.X0)  # NOTE this may be for saving data
+      else
+        error("TODO")
+      end
+    else
+      error("TODO")
+    end
+    updateOCPState!(n)
+    optimize!(n)
+
+    # (B) simulate plant
+    simIPlant!(n) # the plant simulation time will lead the actual time
+
+    # advance the actual time
+    n.mpc.v.t = n.mpc.v.t + n.mpc.v.tex
+    n.mpc.v.evalNum = n.mpc.v.evalNum + 1
+
+    setvalue(n.ocp.t0,copy(n.mpc.v.t))
+
+    # check to see if the goal has been reached
+    if goalReached!(n); break; end
   end
-  if ((n.r.ip.dfsplant[end][:x][end]-c["goal"]["x"])^2 + (n.r.ip.dfsplant[end][:y][end]-c["goal"]["yVal"])^2)^0.5 < c["goal"]["tol"]
-    println("Goal Attained! \n"); n.f.mpc.goalReached=true;
-    break;
-  end
-  if checkCrash(n,c,c["misc"]["sm2"];(:plant=>true))
-    warn(" \n The vehicle crashed -> stopping simulation! \n"); break;
-  end
- end
- return n
 end
 
 end # module

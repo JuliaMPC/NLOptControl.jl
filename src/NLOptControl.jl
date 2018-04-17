@@ -210,12 +210,19 @@ export
        savePlantData!,
        saveData,
        linearSpline,
-       goalRange!,
 
        # MPC_Module.jl
-       defineMPC!,
-       defineIP!,
        MPC,
+       defineMPC!,
+       initOpt!,
+       defineIP!,
+       mapNames!,
+       simIPlant!,
+       updateX0!,
+       currentIPState,
+       updateOCPState!,
+       goalReached!,
+       simMPC!,
 
        # Objects
        NLOpt,

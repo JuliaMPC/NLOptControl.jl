@@ -313,6 +313,7 @@ type MPCSettings
  maxSim::Int64          # maximum number of total MPC updates
  shiftX0::Bool   # a bool to indicate that a check on the feasibility of the linear constraints for the initial conditions should be performed
  lastOptimal::Bool # a bool to indicate that the previous solution should be used if the current solution in not optimal
+ printLevel::Int64
 end
 
 function MPCSettings()
@@ -325,7 +326,8 @@ function MPCSettings()
       :all,
       100,
       true,
-      true
+      true,
+      2
       )
 end
 
@@ -533,25 +535,24 @@ function interpolateLagrange!(n; numPts::Int64=250, tfOptimal::Any=false)
   t_ctr_int = push!(t_ctr_int, n.r.ocp.tst[n.ocp.Nck_cum[n.ocp.Ni]+1:n.ocp.Nck_cum[n.ocp.Ni+1]]) # -1 -> removing control in last mesh interval
 
   for int in 1:n.ocp.Ni
-
     # controls and states for this interval
     x_int, u_int = intervals(n, int, copy(n.r.ocp.X), n.r.ocp.U)
 
-    # sample polynomial in interval at n.r.ocp.tpolyPts
+     # sample polynomial in interval at n.r.ocp.tpolyPts
      for st in 1:n.ocp.state.num
       n.r.ocp.XpolyPts[st][int] = interpolate_lagrange(n.r.ocp.tpolyPts[int], t_st_int[int], x_int[:,st])'
-    end
+     end
 
      for ctr in 1:n.ocp.control.num
       n.r.ocp.UpolyPts[ctr][int] = interpolate_lagrange(n.r.ocp.tpolyPts[int], t_ctr_int[int], u_int[:,ctr])'
-    end
+     end
 
-    # sample polynomial in interval at n.r.ocp.tpolyPts NOTE costate is missing the last point, that is the t_st_int[int][1:end-1]
-    if n.s.ocp.evalCostates && n.s.ocp.evalConstraints
-       for st in 1:n.ocp.state.num
-        n.r.ocp.CSpolyPts[st][int] = interpolate_lagrange(n.r.ocp.tpolyPts[int], t_st_int[int][1:end-1], n.r.ocp.CS[st][int])'
+      # sample polynomial in interval at n.r.ocp.tpolyPts NOTE costate is missing the last point, that is the t_st_int[int][1:end-1]
+      if n.s.ocp.evalCostates && n.s.ocp.evalConstraints
+         for st in 1:n.ocp.state.num
+          n.r.ocp.CSpolyPts[st][int] = interpolate_lagrange(n.r.ocp.tpolyPts[int], t_st_int[int][1:end-1], n.r.ocp.CS[st][int])'
+        end
       end
-    end
   end
 
   # extract result into vectors
@@ -616,14 +617,13 @@ function interpolateLinear!(n; numPts::Int64=250, tfOptimal::Any=false)
   n.r.ocp.tpts = linspace(0,tf,numPts)
   n.r.ocp.Xpts = Matrix{Float64}(numPts, n.ocp.state.num)
   n.r.ocp.Upts = Matrix{Float64}(numPts, n.ocp.control.num)
-
   knots = (n.r.ocp.tst,)
   for st in 1:n.ocp.state.num
     sp_st = interpolate(knots,n.r.ocp.X[:,st],Gridded(Linear()))
     n.r.ocp.Xpts[:,st] = sp_st[n.r.ocp.tpts]
   end
 
-   for ctr in 1:n.ocp.control.num
+  for ctr in 1:n.ocp.control.num
     sp_ctr = interpolate(knots,n.r.ocp.U[:,ctr],Gridded(Linear()))
     n.r.ocp.Upts[:,ctr] = sp_ctr[n.r.ocp.tpts]
   end
@@ -762,7 +762,6 @@ end
 
 """
 con2dfs(n)
-
 # funtionality to save constraint data
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
@@ -808,11 +807,11 @@ function postProcess!(n;kwargs...)
 
     elseif n.s.ocp.integrationMethod==:tm
       if n.s.ocp.finalTimeDV
-        n.r.ocp.tctr = append!([n.ocp.t0],cumsum(getvalue(n.ocp.dt)))
-      else
-        n.r.ocp.tctr = append!([n.ocp.t0],cumsum(n.ocp.dt))
+        n.r.ocp.tctr = append!([0.0],cumsum(getvalue(n.ocp.dt)))
+      else  # NOTE getvalue(n.ocp.t0) may not be appropriate here
+        n.r.ocp.tctr = append!([0.0],cumsum(n.ocp.dt))
       end
-      n.r.ocp.tst = n.r.ocp.tctr
+      n.r.ocp.tst = n.r.ocp.tctr + getvalue(n.ocp.t0)
     end
 
     if n.r.ocp.status==:Optimal
@@ -881,7 +880,7 @@ function postProcess!(n;kwargs...)
   end
   return nothing
 end
-
+# TODO add some "finalPostProcess" to sace time
 """
 optimize!(n)
 
@@ -903,15 +902,12 @@ function optimize!(n;Iter::Int64=0)
   end
   return nothing
 end
-
 """
-
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/7/2017, Last Modified: 4/13/2018 \n
 --------------------------------------------------------------------------------------\n
 """
-
 function evalConstraints!(n)
   n.r.ocp.constraint.value=[];   # reset values
   n.r.ocp.constraint.nums=[]; s=1;
