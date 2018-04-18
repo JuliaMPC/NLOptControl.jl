@@ -144,6 +144,9 @@ Date Create: 4/08/2018, Last Modified: 4/08/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function initOpt!(n)
+  if n.s.mpc.on
+   error("call initOpt!() before defineMPC!(). initOpt!() will destroy n")
+  end
   n.s.ocp.save = false
   n.s.mpc.on = false
   n.s.ocp.evalConstraints = false
@@ -251,7 +254,6 @@ function defineIP!(n,model;stateNames=[],controlNames=[],X0a=[])
    return nothing
 end
 
-
 """
 mapNames!(n)
 --------------------------------------------------------------------------------------\n
@@ -324,6 +326,9 @@ Date Create: 2/14/2017, Last Modified: 4/09/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function simIPlant!(n)
+  if isequal(n.mpc.ip.state.pts,0)
+   error("isqual(n.mpc.ip.state.pts,0), cannot simulate with zero points.")
+  end
   X0 = currentIPState(n)[1]
   t = n.r.ocp.tctr
   U = n.r.ocp.U  # NOTE this is OK for the :OCP case
