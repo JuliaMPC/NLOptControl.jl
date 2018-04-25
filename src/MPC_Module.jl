@@ -540,8 +540,10 @@ function simMPC!(n;updateFunction::Any=[])
     optimize!(n)
 
     # (B) simulate plant
-    sol, U = simIPlant!(n) # the plant simulation time will lead the actual time
-    plant2dfs!(n,sol,U)
+  #  if !isequal(ii,1)
+     sol, U = simIPlant!(n) # the plant simulation time will lead the actual time
+     plant2dfs!(n,sol,U)
+   # end
 
     # advance the actual time
     n.mpc.v.t = n.mpc.v.t + n.mpc.v.tex

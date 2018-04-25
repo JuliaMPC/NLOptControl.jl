@@ -25,7 +25,7 @@ end
   obj=integrate!(n,:(T[j]))
   @NLobjective(n.ocp.mdl, Min, obj)
   initOpt!(n)
-  defineMPC!(n;predictX0=false,tex=0.1,printLevel=0)
+  defineMPC!(n;predictX0=false,tex=0.1,printLevel=0,maxSim=50)
   defineIP!(n,IPplant)
   simMPC!(n)
   @test n.f.mpc.goalReached
@@ -43,7 +43,7 @@ end
   obj=integrate!(n,:(T[j]))
   @NLobjective(n.ocp.mdl, Min, obj)
   initOpt!(n)
-  defineMPC!(n;predictX0=false,tex=0.1,lastOptimal=false,printLevel=0)
+  defineMPC!(n;predictX0=false,tex=0.1,lastOptimal=false,printLevel=0,maxSim=50)
   defineIP!(n,IPplant)
   simMPC!(n)
   @test n.f.mpc.goalReached
@@ -58,7 +58,7 @@ end
   obj=integrate!(n,:(T[j]))
   @NLobjective(n.ocp.mdl, Min, obj)
   initOpt!(n)
-  defineMPC!(n;predictX0=false,tex=0.1,printLevel=0)
+  defineMPC!(n;predictX0=false,tex=0.1,printLevel=0,maxSim=50)
   defineIP!(n,IPplant)
   simMPC!(n)
   @test n.f.mpc.goalReached

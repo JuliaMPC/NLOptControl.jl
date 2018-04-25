@@ -233,6 +233,10 @@ type OCPResults
   XpolyPts                   # state evaluated using Lagrange/Linear polynomial
   CSpolyPts                  # costate evaluated using Lagrange/Linear polynomial
   UpolyPts                   # control evaluated using Lagrane/Linear polynomial
+  AlltpolyPts                   # time sample points for polynomials
+  AllXpolyPts                   # state evaluated using Lagrange/Linear polynomial
+  AllCSpolyPts                  # costate evaluated using Lagrange/Linear polynomial
+  AllUpolyPts                   # control evaluated using Lagrane/Linear polynomial
   tpts                       # vector time sample points for polynomials
   Xpts                       # vector state evaluated using Lagrange polynomial
   Upts                       # vector control evaluated using Lagrane polynomial
@@ -264,7 +268,11 @@ OCPResults( Vector{Any}[],# time vector for control
         [],               # time sample points for polynomials
         [],               # state evaluated using Lagrange polynomial
         [],               # costate evaluated using Lagrange polynomial
-        [],               # control evaluated using Lagrane polynomial
+        [],               # control evaluated using Lagrange polynomial
+        [],
+        [],
+        [],
+        [],
         Vector{Any}[],    # vector time sample points for polynomials
         Vector{Any}[],    # vector state evaluated using Lagrange polynomial
         Vector{Any}[],    # vector control evaluated using Lagrane polynomial
@@ -551,8 +559,16 @@ function interpolateLagrange!(n; numPts::Int64=250, tfOptimal::Any=false)
       if n.s.ocp.evalCostates && n.s.ocp.evalConstraints
          for st in 1:n.ocp.state.num
           n.r.ocp.CSpolyPts[st][int] = interpolate_lagrange(n.r.ocp.tpolyPts[int], t_st_int[int][1:end-1], n.r.ocp.CS[st][int])'
-        end
+         end
       end
+  end
+  if n.s.ocp.save
+      push!(n.r.ocp.AlltpolyPts,n.r.ocp.tpolyPts)
+      push!(n.r.ocp.AllXpolyPts,n.r.ocp.XpolyPts)
+      push!(n.r.ocp.AllUpolyPts,n.r.ocp.UpolyPts)
+    if n.s.ocp.evalCostates && n.s.ocp.evalConstraints
+      push!(n.r.ocp.AllCSpolyPts,n.r.ocp.CSpolyPts)
+    end
   end
 
   # extract result into vectors
