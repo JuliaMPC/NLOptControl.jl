@@ -614,7 +614,7 @@ function interpolateLinear!(n; numPts::Int64=250, tfOptimal::Any=false)
   end
 
   # sample points
-  n.r.ocp.tpts = linspace(0,tf,numPts)
+  n.r.ocp.tpts = linspace(0,tf,numPts) + n.r.ocp.tst[1] # NOTE not tested
   n.r.ocp.Xpts = Matrix{Float64}(numPts, n.ocp.state.num)
   n.r.ocp.Upts = Matrix{Float64}(numPts, n.ocp.control.num)
   knots = (n.r.ocp.tst,)
