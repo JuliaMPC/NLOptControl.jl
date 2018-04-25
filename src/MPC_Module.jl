@@ -330,7 +330,6 @@ function simIPlant!(n)
    error("isqual(n.mpc.ip.state.pts,0), cannot simulate with zero points.")
   end
   X0 = currentIPState(n)[1]
-  t = n.r.ocp.tctr
   U = n.r.ocp.U  # NOTE this is OK for the :OCP case
   t0 = n.mpc.v.t
   tf = n.mpc.v.t + n.mpc.v.tex
