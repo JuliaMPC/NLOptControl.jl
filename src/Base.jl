@@ -230,9 +230,9 @@ type OCPResults
   X0                         # initial states for OCP
   CS                         # costates
   tpolyPts                   # time sample points for polynomials
-  XpolyPts                   # state evaluated using Lagrange polynomial
-  CSpolyPts                  # costate evaluated using Lagrange polynomial
-  UpolyPts                   # control evaluated using Lagrane polynomial
+  XpolyPts                   # state evaluated using Lagrange/Linear polynomial
+  CSpolyPts                  # costate evaluated using Lagrange/Linear polynomial
+  UpolyPts                   # control evaluated using Lagrane/Linear polynomial
   tpts                       # vector time sample points for polynomials
   Xpts                       # vector state evaluated using Lagrange polynomial
   Upts                       # vector control evaluated using Lagrane polynomial
@@ -524,7 +524,7 @@ function interpolateLagrange!(n; numPts::Int64=250, tfOptimal::Any=false)
   end
 
   # sample points
-  n.r.ocp.tpolyPts = [linspace(tf/n.ocp.Ni*(int-1),tf/n.ocp.Ni*int,numPts) for int in 1:n.ocp.Ni]
+  n.r.ocp.tpolyPts = [linspace(tf/n.ocp.Ni*(int-1),tf/n.ocp.Ni*int,numPts) + n.r.ocp.tst[1] for int in 1:n.ocp.Ni]
   n.r.ocp.XpolyPts = [[zeros(numPts) for int in 1:n.ocp.Ni] for st in 1:n.ocp.state.num]
   n.r.ocp.UpolyPts = [[zeros(numPts) for int in 1:n.ocp.Ni] for ctr in 1:n.ocp.control.num]
   if n.s.ocp.evalCostates; n.r.ocp.CSpolyPts = [[zeros(numPts) for int in 1:n.ocp.Ni] for st in 1:n.ocp.state.num] end
@@ -536,7 +536,7 @@ function interpolateLagrange!(n; numPts::Int64=250, tfOptimal::Any=false)
 
   for int in 1:n.ocp.Ni
     # controls and states for this interval
-    x_int, u_int = intervals(n, int, copy(n.r.ocp.X), n.r.ocp.U)
+    x_int, u_int = intervals(n, int, copy(n.r.ocp.X), copy(n.r.ocp.U))
 
      # sample polynomial in interval at n.r.ocp.tpolyPts
      for st in 1:n.ocp.state.num
@@ -556,27 +556,27 @@ function interpolateLagrange!(n; numPts::Int64=250, tfOptimal::Any=false)
   end
 
   # extract result into vectors
-  temp = [n.r.ocp.tpolyPts[int][1:end] for int in 1:n.ocp.Ni]; # time
-  n.r.ocp.tpts = [idx for tempM in temp for idx=tempM];
-  totalPts = length(n.r.ocp.tpts);
+  temp = [n.r.ocp.tpolyPts[int][1:end] for int in 1:n.ocp.Ni] # time
+  n.r.ocp.tpts = [idx for tempM in temp for idx=tempM]
+  totalPts = length(n.r.ocp.tpts)
 
   n.r.ocp.Xpts = Matrix{Float64}(totalPts, n.ocp.state.num)
-   for st in 1:n.ocp.state.num # states
-    temp = [n.r.ocp.XpolyPts[st][int][1:end,:] for int in 1:n.ocp.Ni];
-    n.r.ocp.Xpts[:,st] = [idx for tempM in temp for idx=tempM];
+  for st in 1:n.ocp.state.num # states
+    temp = [n.r.ocp.XpolyPts[st][int][1:end,:] for int in 1:n.ocp.Ni]
+    n.r.ocp.Xpts[:,st] = [idx for tempM in temp for idx=tempM]
   end
 
   n.r.ocp.Upts = Matrix{Float64}(totalPts, n.ocp.control.num)
-   for ctr in 1:n.ocp.control.num # controls
-    temp = [n.r.ocp.UpolyPts[ctr][int][1:end,:] for int in 1:n.ocp.Ni];
-    n.r.ocp.Upts[:,ctr] = [idx for tempM in temp for idx=tempM];
+  for ctr in 1:n.ocp.control.num # controls
+    temp = [n.r.ocp.UpolyPts[ctr][int][1:end,:] for int in 1:n.ocp.Ni]
+    n.r.ocp.Upts[:,ctr] = [idx for tempM in temp for idx=tempM]
   end
 
   if n.s.ocp.evalCostates && n.s.ocp.evalConstraints
     n.r.ocp.CSpts = Matrix{Float64}(totalPts, n.ocp.state.num)
-     for st in 1:n.ocp.state.num # states
-      temp = [n.r.ocp.CSpolyPts[st][int][1:end,:] for int in 1:n.ocp.Ni];
-      n.r.ocp.CSpts[:,st] = [idx for tempM in temp for idx=tempM];
+    for st in 1:n.ocp.state.num # states
+      temp = [n.r.ocp.CSpolyPts[st][int][1:end,:] for int in 1:n.ocp.Ni]
+      n.r.ocp.CSpts[:,st] = [idx for tempM in temp for idx=tempM]
     end
   end
 
@@ -831,7 +831,7 @@ function postProcess!(n;kwargs...)
       timeIdx = find(n.r.ocp.dfs[optIdx][:t] - n.mpc.v.t .<= 0)[end]     # find the nearest index in time
       n.r.ocp.tst = n.r.ocp.dfs[optIdx][:t][timeIdx:end]
       n.r.ocp.X = zeros(Float64,length(n.r.ocp.dfs[optIdx][n.ocp.state.name[1]][timeIdx:end]),n.ocp.state.num)
-      if n.s.ocp.integrationMethod==:tm  # TODO try to clean this up!
+      if n.s.ocp.integrationMethod==:tm  # TODO try to
         n.r.ocp.tctr = n.r.ocp.dfs[optIdx][:t][timeIdx:end]
         n.r.ocp.U = zeros(Float64,length(n.r.ocp.dfs[optIdx][n.ocp.control.name[1]][timeIdx:end]),n.ocp.control.num)
       else
@@ -871,7 +871,7 @@ function postProcess!(n;kwargs...)
             b = a + n.ocp.Nck[int] - 1      # length of the state within this interval
             n.r.CS[st][int] = -c[a:b]./n.ocp.ws[int]
           end
-          L1 = b + 1 # adds indices due to a change in the interval
+          L1 = b + 1 # adds indicies due to a change in the interval
         end
       end
     end

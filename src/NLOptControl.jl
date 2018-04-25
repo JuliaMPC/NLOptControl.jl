@@ -243,6 +243,9 @@ export
        State,
        Control,
        initState,
-       plant2dfs!
+       plant2dfs!,
+       scale_tau,
+       intervals,
+       interpolate_lagrange
 
 end # module

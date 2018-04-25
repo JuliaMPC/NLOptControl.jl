@@ -551,5 +551,13 @@ function simMPC!(n;updateFunction::Any=[])
     if goalReached!(n); break; end
   end
 end
+# practical concerns/questions
+#################################
+# 1) predict X0
+# 2) shift X0 for NLP feasibility
+# 3) ensuring that U passed to the plant is feasible
+     # effected by interpolation
+     # seems to be a major problem with LGR nodes, possibly due to Runge effect
+# 4) fixedTp or variableTp
 
 end # module
