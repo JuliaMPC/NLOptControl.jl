@@ -3,7 +3,7 @@ using OrdinaryDiffEq, DiffEqBase
 
 function IPplant(n,x0::Vector,t::Vector,U::Matrix,t0::Float64,tf::Float64)
   spU = linearSpline(t,U[:,1])   # create spline
-  f = (dx,x,p,t) -> begin         # diff eqs.
+  f = (dx,x,p,t) -> begin        # diff eqs.
     dx[1] = x[2]
     dx[2] = spU[t] - 1.625
   end

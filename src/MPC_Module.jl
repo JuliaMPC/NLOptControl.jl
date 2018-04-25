@@ -308,9 +308,9 @@ function mapNames!(n)
     idxOCP = idxOCP + 1
   end
 
-  if isequal(mode,:IP)
+  if isequal(n.s.mpc.mode,:IP)
     n.mpc.mIP = m
-  elseif isequal(mode,:EP)
+  elseif isequal(n.s.mpc.mode,:EP)
     error(":EP function not ready")
   else
     error("mode must be either :IP or :EP")
@@ -330,12 +330,18 @@ function simIPlant!(n)
    error("isqual(n.mpc.ip.state.pts,0), cannot simulate with zero points.")
   end
   X0 = currentIPState(n)[1]
-  U = n.r.ocp.U  # NOTE this is OK for the :OCP case
+  # t = n.r.ocp.tctr
+  t = n.r.ocp.tpts
+  if isequal(n.s.mpc.mode,:OCP)
+   # U = n.r.ocp.U  # NOTE this is OK for the :OCP case
+   U = n.r.ocp.Upts
+  else
+   error("TODO")
+  end
   t0 = n.mpc.v.t
   tf = n.mpc.v.t + n.mpc.v.tex
   sol, U = n.mpc.ip.state.model(n,X0,t,U,t0,tf)
-  plant2dfs!(n,sol,U)
-  return nothing
+  return sol, U
 end
 
 """
@@ -348,13 +354,13 @@ Date Create: 3/6/2017, Last Modified: 4/12/2018 \n
 function updateX0!(n,args...;kwargs...)
   kw = Dict(kwargs)
 
-  if isequal(mode,:OCP) # push the vehicle along
+  if isequal(n.s.mpc.mode,:OCP) # push the vehicle along
    for st in 1:n.ocp.state.num
      n.ocp.X0[st] = n.r.ip.dfsplant[end][n.ocp.state.name[st]][end]
    end
-  elseif isequal(mode,:IP)
+  elseif isequal(n.s.mpc.mode,:IP)
     error(":IP function not ready")
-  elseif isequal(mode,:EP)
+  elseif isequal(n.s.mpc.mode,:EP)
      error(":EP function not ready")
      X0 = args[1]
      if length(X0)!=n.ocp.state.num
@@ -402,6 +408,16 @@ Date Create: 4/08/2018, Last Modified: 4/08/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function updateOCPState!(n)
+ # need to map n.r.ip.X0p to n.X0 (states may be different)
+ # NOTE for the :OCP mode this is OK
+ if isequal(n.s.mpc.mode,:OCP)
+   n.ocp.X0 = n.r.ip.X0p[end][1] # the n.ocp. structure is for running things
+   push!(n.r.ocp.X0,n.ocp.X0)    # NOTE this may be for saving data
+   setvalue(n.ocp.t0,copy(n.r.ip.X0p[end][2]))
+ else
+   error("TODO")
+ end
+
   if n.s.mpc.shiftX0 # TODO consider saving linear shifting occurances
     for st in 1:n.ocp.state.num
       if n.ocp.X0[st] < n.ocp.XL[st]
@@ -424,6 +440,39 @@ function updateOCPState!(n)
   return nothing
 end
 
+"""
+# TODO eventually the "plant" will be different from the "model"
+predictX0!(n)
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 4/7/2017, Last Modified: 4/25/2018 \n
+--------------------------------------------------------------------------------------\n
+"""
+function predictX0!(n)
+
+  if n.s.mpc.fixedTp
+   # NOTE consider passing back (n.mpc.v.t + n.mpc.v.tex) from simIPlant!()
+   tp = n.mpc.v.t + n.mpc.v.tex
+  else
+   error("TODO")
+  end
+
+  if n.r.ocp.evalNum != 0
+    if isequal(n.s.mpc.mode,:OCP)
+     sol, U = simIPlant!(n)
+     X0p = [sol(sol.t[end])[:],tp]
+     push!(n.r.ip.X0p,X0p)
+    else
+      error("TODO")
+    end
+  else
+   # with no control signals to follow, X0p is simply the current known location of the plant
+   X0 = currentIPState(n)
+   X0p = [X0[1], tp]  # modify X0 to predict the time
+   push!(n.r.ip.X0p,X0p)
+  end
+  return nothing
+end
 
 """
 --------------------------------------------------------------------------------------\n
@@ -462,6 +511,7 @@ end
 #  tf = (n.r.evalNum)*n.mpc.v.tex
 #end
 
+
 """
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
@@ -482,31 +532,20 @@ function simMPC!(n;updateFunction::Any=[])
     end
 
     if !n.s.mpc.predictX0 #  use the current known plant state to update OCP
-      # X0p is simply the current known location of the plant
       push!(n.r.ip.X0p,currentIPState(n))
-
-      # need to map n.r.ip.X0p to n.X0 (states may be different)
-      # NOTE for the :OCP mode this is OK
-      if isequal(n.s.mpc.mode,:OCP)
-        n.ocp.X0 = n.r.ip.X0p[end][1] # the n.ocp. structure is for running things
-        push!(n.r.ocp.X0,n.ocp.X0)  # NOTE this may be for saving data
-      else
-        error("TODO")
-      end
     else
-      error("TODO")
+      predictX0!(n)
     end
     updateOCPState!(n)
     optimize!(n)
 
     # (B) simulate plant
-    simIPlant!(n) # the plant simulation time will lead the actual time
+    sol, U = simIPlant!(n) # the plant simulation time will lead the actual time
+    plant2dfs!(n,sol,U)
 
     # advance the actual time
     n.mpc.v.t = n.mpc.v.t + n.mpc.v.tex
     n.mpc.v.evalNum = n.mpc.v.evalNum + 1
-
-    setvalue(n.ocp.t0,copy(n.mpc.v.t))
 
     # check to see if the goal has been reached
     if goalReached!(n); break; end
