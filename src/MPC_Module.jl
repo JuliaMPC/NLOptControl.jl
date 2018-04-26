@@ -73,7 +73,7 @@ function MPCvariables()
               0.0,
               0.0,
               Any,
-              0,
+              1,
               [],
               [],
               3,
@@ -330,15 +330,24 @@ function simIPlant!(n)
    error("isqual(n.mpc.ip.state.pts,0), cannot simulate with zero points.")
   end
   X0 = currentIPState(n)[1]
-  # t = n.r.ocp.tctr
-  t = n.r.ocp.tpts
+  t0 = round(n.mpc.v.t,1)
+  tf = n.mpc.v.t + n.mpc.v.tex
+
   if isequal(n.s.mpc.mode,:OCP)
-   # U = n.r.ocp.U  # NOTE this is OK for the :OCP case
-   U = n.r.ocp.Upts
+   if isequal(n.mpc.v.evalNum,1)
+    U = 0*Matrix{Float64}(n.ocp.control.pts,n.ocp.control.num)
+    t = Vector(linspace(t0,tf,n.ocp.control.pts))
+   elseif n.s.ocp.interpolationOn
+    U = n.r.ocp.Upts
+    t = n.r.ocp.tpts
+   else
+    U = n.r.ocp.U
+    t = n.r.ocp.tctr
+   end
   else
    error("TODO")
   end
-  t0 = n.mpc.v.t
+  t0 = round(n.mpc.v.t,1)
   tf = n.mpc.v.t + n.mpc.v.tex
   sol, U = n.mpc.ip.state.model(n,X0,t,U,t0,tf)
   return sol, U
@@ -452,12 +461,12 @@ function predictX0!(n)
 
   if n.s.mpc.fixedTp
    # NOTE consider passing back (n.mpc.v.t + n.mpc.v.tex) from simIPlant!()
-   tp = n.mpc.v.t + n.mpc.v.tex
+   tp = round(n.mpc.v.t + n.mpc.v.tex,1)
   else
    error("TODO")
   end
 
-  if n.r.ocp.evalNum != 0
+  #if n.r.ocp.evalNum != 0
     if isequal(n.s.mpc.mode,:OCP)
      sol, U = simIPlant!(n)
      X0p = [sol(sol.t[end])[:],tp]
@@ -465,12 +474,12 @@ function predictX0!(n)
     else
       error("TODO")
     end
-  else
+ # else
    # with no control signals to follow, X0p is simply the current known location of the plant
-   X0 = currentIPState(n)
-   X0p = [X0[1], tp]  # modify X0 to predict the time
-   push!(n.r.ip.X0p,X0p)
-  end
+ #  X0 = currentIPState(n)
+ #  X0p = [X0[1], tp]  # modify X0 to predict the time
+  # push!(n.r.ip.X0p,X0p)
+ # end
   return nothing
 end
 
@@ -521,7 +530,7 @@ Date Create: 2/06/2018, Last Modified: 4/08/2018 \n
 function simMPC!(n;updateFunction::Any=[])
   for ii = 1:n.s.mpc.maxSim
     if isequal(n.s.mpc.printLevel,2)
-     println("Running model for the: ",n.mpc.v.evalNum + 1," time")
+     println("Running model for the: ",n.mpc.v.evalNum," time")
     end
     #############################
     # (A) and (B) in "parallel"
@@ -540,17 +549,15 @@ function simMPC!(n;updateFunction::Any=[])
     optimize!(n)
 
     # (B) simulate plant
-  #  if !isequal(ii,1)
-     sol, U = simIPlant!(n) # the plant simulation time will lead the actual time
-     plant2dfs!(n,sol,U)
-   # end
-
-    # advance the actual time
-    n.mpc.v.t = n.mpc.v.t + n.mpc.v.tex
-    n.mpc.v.evalNum = n.mpc.v.evalNum + 1
+    sol, U = simIPlant!(n) # the plant simulation time will lead the actual time
+    plant2dfs!(n,sol,U)
 
     # check to see if the goal has been reached
     if goalReached!(n); break; end
+
+    # advance time
+    n.mpc.v.t = n.mpc.v.t + n.mpc.v.tex
+    n.mpc.v.evalNum = n.mpc.v.evalNum + 1
   end
 end
 # practical concerns/questions
@@ -558,8 +565,10 @@ end
 # 1) predict X0
 # 2) shift X0 for NLP feasibility
 # 3) ensuring that U passed to the plant is feasible
-     # effected by interpolation
+     # effected by interpolation, demonstrate by varying numPts
      # seems to be a major problem with LGR nodes, possibly due to Runge effect
 # 4) fixedTp or variableTp
+# 5) usePrevious optimal.
+     # at some point will be unable to do this
 
 end # module

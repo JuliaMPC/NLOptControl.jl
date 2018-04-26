@@ -229,7 +229,7 @@ type OCPResults
   U                          # controls
   X0                         # initial states for OCP
   CS                         # costates
-  tpolyPts                   # time sample points for polynomials
+  tpolyPts                   # time sample points for polynomials  (NOTE these interpolated solutions were developed for calulaing error, between them and a known Optimal solution)
   XpolyPts                   # state evaluated using Lagrange/Linear polynomial
   CSpolyPts                  # costate evaluated using Lagrange/Linear polynomial
   UpolyPts                   # control evaluated using Lagrane/Linear polynomial
@@ -237,10 +237,10 @@ type OCPResults
   AllXpolyPts                   # state evaluated using Lagrange/Linear polynomial
   AllCSpolyPts                  # costate evaluated using Lagrange/Linear polynomial
   AllUpolyPts                   # control evaluated using Lagrane/Linear polynomial
-  tpts                       # vector time sample points for polynomials
-  Xpts                       # vector state evaluated using Lagrange polynomial
-  Upts                       # vector control evaluated using Lagrane polynomial
-  CSpts                      # vector costate evaluated using Lagrange polynomial
+  tpts                       # vector time sample points
+  Xpts                       # vector state sample points
+  Upts                       # vector control sample points
+  CSpts                      # vector costate sample points
   x0Con                      # handle for initial state constraints
   xfCon                      # handle for final state constraints
   dynCon                     # dynamics constraints
@@ -273,15 +273,15 @@ OCPResults( Vector{Any}[],# time vector for control
         [],
         [],
         [],
-        Vector{Any}[],    # vector time sample points for polynomials
-        Vector{Any}[],    # vector state evaluated using Lagrange polynomial
-        Vector{Any}[],    # vector control evaluated using Lagrane polynomial
-        Vector{Any}[],    # vector costate evaluated using Lagrange polynomial
+        Vector{Any}[],    # vector time sample points
+        Vector{Any}[],    # vector state sample points
+        Vector{Any}[],    # vector control sample points
+        Vector{Any}[],    # vector costate sample points
         nothing,          # handle for initial state constraints
         nothing,          # handle for final state constraints
         nothing,          # dynamics constraint
         Constraint(),     # constraint data
-        0,                # current evaluation number
+        1,                # current evaluation number
         [],               # mics. data, perhaps an iteration number for a higher level algorithm
         Symbol,           # optimization status
         Float64,          # solve time for optimization
@@ -353,6 +353,8 @@ type OCPSettings   # options
   tfOptimal::Any                # known optimal final time
   numInterpPts::Int64           # number of points to sample polynomial running through collocation points
   cacheOnly::Bool               # bool for only caching the results when using optimize!()
+  linearInterpolation::Bool     # bool for using linear interpolation even if integrationMethod ==:ps
+  interpolationOn::Bool         # bool to indicate if user wants solution interpolated for them
 end
 
 # Default Constructor NOTE currently not using these, they get overwritten
@@ -369,7 +371,9 @@ function OCPSettings()
          400.0,              # maximum final time
          false,              # known optimal final time
          250,                # number of points to sample polynomial running through collocation points
-         false               # bool for only caching the results when using optimize!()
+         false,              # bool for only caching the results when using optimize!()
+         false,              # bool for using linear interpolation even if integrationMethod ==:ps
+         false               # bool to indicate if user wants solution interpolated for them
                 )
 end
 
@@ -562,14 +566,6 @@ function interpolateLagrange!(n; numPts::Int64=250, tfOptimal::Any=false)
          end
       end
   end
-  if n.s.ocp.save
-      push!(n.r.ocp.AlltpolyPts,n.r.ocp.tpolyPts)
-      push!(n.r.ocp.AllXpolyPts,n.r.ocp.XpolyPts)
-      push!(n.r.ocp.AllUpolyPts,n.r.ocp.UpolyPts)
-    if n.s.ocp.evalCostates && n.s.ocp.evalConstraints
-      push!(n.r.ocp.AllCSpolyPts,n.r.ocp.CSpolyPts)
-    end
-  end
 
   # extract result into vectors
   temp = [n.r.ocp.tpolyPts[int][1:end] for int in 1:n.ocp.Ni] # time
@@ -630,7 +626,8 @@ function interpolateLinear!(n; numPts::Int64=250, tfOptimal::Any=false)
   end
 
   # sample points
-  n.r.ocp.tpts = linspace(0,tf,numPts) + n.r.ocp.tst[1] # NOTE not tested
+  t = linspace(0,tf,numPts) + n.r.ocp.tst[1] # NOTE not tested
+  n.r.ocp.tpts = convert(Array{Float64,1},t)
   n.r.ocp.Xpts = Matrix{Float64}(numPts, n.ocp.state.num)
   n.r.ocp.Upts = Matrix{Float64}(numPts, n.ocp.control.num)
   knots = (n.r.ocp.tst,)
@@ -640,7 +637,11 @@ function interpolateLinear!(n; numPts::Int64=250, tfOptimal::Any=false)
   end
 
   for ctr in 1:n.ocp.control.num
-    sp_ctr = interpolate(knots,n.r.ocp.U[:,ctr],Gridded(Linear()))
+    if isequal(n.s.ocp.integrationMethod,:ps)
+      sp_ctr = interpolate(knots,[n.r.ocp.U[:,ctr];0],Gridded(Linear()))
+    else
+      sp_ctr = interpolate(knots,n.r.ocp.U[:,ctr],Gridded(Linear()))
+    end
     n.r.ocp.Upts[:,ctr] = sp_ctr[n.r.ocp.tpts]
   end
   return nothing
@@ -820,14 +821,14 @@ function postProcess!(n;kwargs...)
       end
       n.r.ocp.tctr = [idx for tempM in t for idx = tempM[1:end-1]] + getvalue(n.ocp.t0)
       n.r.ocp.tst = [n.r.ocp.tctr; t[end][end] + getvalue(n.ocp.t0)]
-
+      # TODO check the above line... is t0 getting added on twice?
     elseif n.s.ocp.integrationMethod==:tm
       if n.s.ocp.finalTimeDV
-        n.r.ocp.tctr = append!([0.0],cumsum(getvalue(n.ocp.dt)))
+        n.r.ocp.tctr = append!([0.0],cumsum(getvalue(n.ocp.dt))) + getvalue(n.ocp.t0)
       else  # NOTE getvalue(n.ocp.t0) may not be appropriate here
-        n.r.ocp.tctr = append!([0.0],cumsum(n.ocp.dt))
+        n.r.ocp.tctr = append!([0.0],cumsum(n.ocp.dt)) + getvalue(n.ocp.t0)
       end
-      n.r.ocp.tst = n.r.ocp.tctr + getvalue(n.ocp.t0)
+      n.r.ocp.tst = n.r.ocp.tctr #+ getvalue(n.ocp.t0)
     end
 
     if n.r.ocp.status==:Optimal
@@ -845,6 +846,7 @@ function postProcess!(n;kwargs...)
       end
       optIdx = find(n.r.ocp.dfsOpt[:status].==:Optimal)[end]  # use the last :Optimal solution
       timeIdx = find(n.r.ocp.dfs[optIdx][:t] - n.mpc.v.t .<= 0)[end]     # find the nearest index in time
+      # TODO make an error message or fix      ERROR: LoadError: BoundsError: attempt to access 0-element Array{Int64,1} at index [0]
       n.r.ocp.tst = n.r.ocp.dfs[optIdx][:t][timeIdx:end]
       n.r.ocp.X = zeros(Float64,length(n.r.ocp.dfs[optIdx][n.ocp.state.name[1]][timeIdx:end]),n.ocp.state.num)
       if n.s.ocp.integrationMethod==:tm  # TODO try to
@@ -894,13 +896,29 @@ function postProcess!(n;kwargs...)
     if n.s.ocp.save
       push!(n.r.ocp.dfs,dvs2dfs(n))
       push!(n.r.ocp.dfsCon,con2dfs(n))
-      if (n.r.ocp.status != :Infeasible) && (n.r.ocp.status != :Error)
-        if n.s.ocp.integrationMethod==:ps
-          interpolateLagrange!(n;numPts = n.s.ocp.numInterpPts, tfOptimal = n.s.ocp.tfOptimal)
-        else
-          interpolateLinear!(n;numPts = n.s.ocp.numInterpPts, tfOptimal = n.s.ocp.tfOptimal)
+      if n.s.ocp.interpolationOn
+        if (n.r.ocp.status != :Error) # (n.r.ocp.status != :Infeasible) &&
+          if n.s.ocp.integrationMethod==:ps && (n.r.ocp.status != :Infeasible) && !n.s.ocp.linearInterpolation
+            interpolateLagrange!(n;numPts = n.s.ocp.numInterpPts, tfOptimal = n.s.ocp.tfOptimal)
+            push!(n.r.ocp.AlltpolyPts,n.r.ocp.tpolyPts)
+            push!(n.r.ocp.AllXpolyPts,n.r.ocp.XpolyPts)
+            push!(n.r.ocp.AllUpolyPts,n.r.ocp.UpolyPts)
+            if n.s.ocp.evalCostates && n.s.ocp.evalConstraints
+              push!(n.r.ocp.AllCSpolyPts,n.r.ocp.CSpolyPts)
+            end
+          else
+            interpolateLinear!(n;numPts = n.s.ocp.numInterpPts, tfOptimal = n.s.ocp.tfOptimal)
+            if n.s.ocp.integrationMethod==:ps && !n.s.ocp.linearInterpolation
+              push!(n.r.ocp.AlltpolyPts,nothing)
+              push!(n.r.ocp.AllXpolyPts,nothing)
+              push!(n.r.ocp.AllUpolyPts,nothing)
+              if n.s.ocp.evalCostates && n.s.ocp.evalConstraints
+                push!(n.r.ocp.AllCSpolyPts,nothing)
+              end
+            end
+          end
         end
-      end
+      end  # TODO save [] of interpolated pts for :tm methods
     end
   end
   return nothing

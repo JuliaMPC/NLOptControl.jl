@@ -101,10 +101,12 @@ function integrate!(n::NLOpt,V::Expr)
     @NLexpression(n.ocp.mdl, temp[int=1:n.ocp.Ni], (n.ocp.tf-n.ocp.t0)/2*sum(n.ocp.ws[int][j]*integral_expr[int][j] for j = 1:n.ocp.Nck[int]) )
     expression = @NLexpression(n.ocp.mdl, sum(temp[int] for int = 1:n.ocp.Ni))
   elseif n.s.ocp.integrationMethod==:tm
-    L = size(n.r.ocp.x)[1];
+    L = size(n.r.ocp.x)[1]
     temp = NLExpr(n,V,n.r.ocp.x,n.r.ocp.u,L);
     if n.s.ocp.integrationScheme==:bkwEuler
-      expression = @NLexpression(n.ocp.mdl, sum(temp[j+1]*n.ocp.tf/n.ocp.N for j = 1:n.ocp.N) )
+      # NOTE integration this way does not penalize the first control
+      #expression = @NLexpression(n.ocp.mdl, sum(temp[j+1]*n.ocp.tf/n.ocp.N for j = 1:n.ocp.N) )
+      expression = @NLexpression(n.ocp.mdl, sum(temp[j]*n.ocp.tf/n.ocp.N for j = 1:n.ocp.N) )
     elseif n.s.ocp.integrationScheme==:trapezoidal
       expression = @NLexpression(n.ocp.mdl, sum(0.5*(temp[j]+temp[j+1])*n.ocp.tf/n.ocp.N for j = 1:n.ocp.N) )
     else
@@ -465,5 +467,7 @@ function linearSpline(t::Vector,V::Vector)
 
   # make interpolant using Interpolations.jl
   knots = (t_new,)
-  return interpolate(knots,V_new,Gridded(Linear()))
+  it = interpolate(knots,V_new,Gridded(Linear()))
+  et = extrapolate(it, Flat())
+  return et
 end
