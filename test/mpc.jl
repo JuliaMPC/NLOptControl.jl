@@ -72,21 +72,7 @@ end
   # Test #7
   @test MoonLander(:trapezoidal;interpolationOn=false,predictX0=true)
 
-  # Test #4
+  # Test #8
   # :tm methods with an infeasibe solution and a restoration error
-#  @test MoonLander(:bkwEuler;predictX0=false)
-#  n=define(numStates=2,numControls=1,X0=[10.,-2],XF=[0.,0.],CL=[0.],CU=[3.])
-#  states!(n,[:h,:v];descriptions=["h(t)","v(t)"])
-#  controls!(n,[:T];descriptions=["T(t)"])
-#  dx=[:(v[j]),:(T[j]-1.625)]
-#  dynamics!(n,dx)
-#  configure!(n;(:integrationScheme=>:bkwEuler),(:finalTimeDV=>true))
-#  obj=integrate!(n,:(T[j]))
-#  @NLobjective(n.ocp.mdl, Min, obj)
-#  initOpt!(n)
-#  defineMPC!(n;predictX0=false,tex=0.1,printLevel=0,maxSim=50)
-#  defineIP!(n,IPplant)
-#  simMPC!(n)
-#  @test n.f.mpc.goalReached
-
+  @test MoonLander(:bkwEuler;predictX0=false)
 end

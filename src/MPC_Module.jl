@@ -320,6 +320,10 @@ function mapNames!(n)
 end
 
 """
+# TODO fix this so that prediction simulation time is ahead. May not effect results.
+# NOTE this may be ok... we are getting X0p for initialization of the OCP
+# as long as the OCP pushes the time ahead. which it does then everything is fine!!
+# consider making user pass X0, t0, tf
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/14/2017, Last Modified: 4/09/2018 \n
@@ -331,7 +335,7 @@ function simIPlant!(n)
   end
   X0 = currentIPState(n)[1]
   t0 = round(n.mpc.v.t,1)
-  tf = n.mpc.v.t + n.mpc.v.tex
+  tf = round(n.mpc.v.t + n.mpc.v.tex,1)
 
   if isequal(n.s.mpc.mode,:OCP)
    if isequal(n.mpc.v.evalNum,1)
@@ -347,12 +351,11 @@ function simIPlant!(n)
   else
    error("TODO")
   end
+  # chop of first control point for bkwEuler as it is typically 0
   if isequal(n.s.ocp.integrationScheme,:bkwEuler)
    U = U[2:end,:]
    t = t[2:end]
   end
-  #@show U
-  #@show t
   t0 = round(n.mpc.v.t,1)
   tf = n.mpc.v.t + n.mpc.v.tex
   sol, U = n.mpc.ip.state.model(n,X0,t,U,t0,tf)
@@ -389,7 +392,6 @@ function updateX0!(n,args...;kwargs...)
   append!(n.r.ip.X0a,[copy(n.ocp.X0)])
   return nothing
 end
-
 
 """
 --------------------------------------------------------------------------------------\n
@@ -467,19 +469,18 @@ function predictX0!(n)
 
   if n.s.mpc.fixedTp
    # NOTE consider passing back (n.mpc.v.t + n.mpc.v.tex) from simIPlant!()
-   tp = round(n.mpc.v.t + n.mpc.v.tex,1)
+   tp = round(n.mpc.v.t + n.mpc.v.tex,1)  # TODO add 1 as an MPCparamss
   else
    error("TODO")
   end
-
-  #if n.r.ocp.evalNum != 0
-    if isequal(n.s.mpc.mode,:OCP)
-     sol, U = simIPlant!(n)
-     X0p = [sol(sol.t[end])[:],tp]
-     push!(n.r.ip.X0p,X0p)
-    else
-      error("TODO")
-    end
+#TODO
+  if isequal(n.s.mpc.mode,:OCP)
+   sol, U = simIPlant!(n)
+   X0p = [sol(sol.t[end])[:],tp]
+   push!(n.r.ip.X0p,X0p)
+  else
+    error("TODO")
+  end
  # else
    # with no control signals to follow, X0p is simply the current known location of the plant
  #  X0 = currentIPState(n)
@@ -549,7 +550,7 @@ function simMPC!(n;updateFunction::Any=[])
     # check to see if the goal has been reached
     if goalReached!(n); break; end
 
-    # (A) solve OCP
+    # (A) solve OCP  TODO the time should be ahead here as it runs
     if !isequal(typeof(updateFunction),Array{Any,1})
       updateFunction(n)
     end
