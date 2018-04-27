@@ -63,22 +63,22 @@ function create_tV!(n::NLOpt)
 
   if n.s.ocp.integrationMethod==:ps
     # create mesh points, interval size = tf_var/Ni
-    tm = @NLexpression(n.ocp.mdl, [idx=1:n.ocp.Ni+1], (idx-1)*n.ocp.tf/n.ocp.Ni);
+    tm = @NLexpression(n.ocp.mdl, [idx=1:n.ocp.Ni+1], (idx-1)*n.ocp.tf/n.ocp.Ni)
     # go through each mesh interval creating time intervals; [t(i-1),t(i)] --> [-1,1]
-    ts = [Array{Any}(n.ocp.Nck[int]+1,) for int in 1:n.ocp.Ni];
+    ts = [Array{Any}(n.ocp.Nck[int]+1,) for int in 1:n.ocp.Ni]
     for int in 1:n.ocp.Ni
-      ts[int][1:end-1]=@NLexpression(n.ocp.mdl,[j=1:n.ocp.Nck[int]], (tm[int+1]-tm[int])/2*n.ocp.tau[int][j] +  (tm[int+1]+tm[int])/2);
-      ts[int][end]=@NLexpression(n.ocp.mdl, n.ocp.tf/n.ocp.Ni*int) # append +1 at end of each interval
+      ts[int][1:end-1] = @NLexpression(n.ocp.mdl,[j=1:n.ocp.Nck[int]], (tm[int+1]-tm[int])/2*n.ocp.tau[int][j] +  (tm[int+1]+tm[int])/2);
+      ts[int][end] = @NLexpression(n.ocp.mdl, n.ocp.tf/n.ocp.Ni*int) # append +1 at end of each interval
     end
-    tt1 = [idx for tempM in ts for idx = tempM[1:end-1]];
-    tmp = [tt1;ts[end][end]];
-    n.ocp.tV = @NLexpression(n.ocp.mdl,[j=1:n.ocp.state.pts], n.ocp.t0 + tmp[j]);
+    tt1 = [idx for tempM in ts for idx = tempM[1:end-1]]
+    tmp = [tt1;ts[end][end]]
+    n.ocp.tV = @NLexpression(n.ocp.mdl,[j=1:n.ocp.state.pts], n.ocp.t0 + tmp[j])
   else
     # create vector with the design variable in it
-    t = Array{Any}(n.ocp.N+1,1);
-    tm = @NLexpression(n.ocp.mdl, [idx=1:n.ocp.N], n.ocp.tf/n.ocp.N*idx);
-    tmp = [0;tm];
-    n.ocp.tV = @NLexpression(n.ocp.mdl,[j=1:n.ocp.state.pts], n.ocp.t0 + tmp[j]);
+    t = Array{Any}(n.ocp.N+1,1)
+    tm = @NLexpression(n.ocp.mdl, [idx=1:n.ocp.N], n.ocp.tf/n.ocp.N*idx)
+    tmp = [0;tm]
+    n.ocp.tV = @NLexpression(n.ocp.mdl,[j=1:n.ocp.state.pts], n.ocp.t0 + tmp[j])
   end
   return nothing
 end
@@ -130,14 +130,14 @@ Date Create: 2/7/2017, Last Modified: 4/13/2018 \n
 """
 function initConstraint!(n)
   if n.r.ocp.constraint==nothing
-    n.r.ocp.constraint=Constraint()
+    n.r.ocp.constraint = Constraint()
   end
   return nothing
 end
 
 function newConstraint!(n,handle,name::Symbol)
   initConstraint!(n)
-  n.r.ocp.constraint::Constraint=n.r.ocp.constraint
+  n.r.ocp.constraint::Constraint = n.r.ocp.constraint
   push!(n.r.ocp.constraint.handle,handle)
   push!(n.r.ocp.constraint.name,name)
   return nothing

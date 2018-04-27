@@ -347,6 +347,12 @@ function simIPlant!(n)
   else
    error("TODO")
   end
+  if isequal(n.s.ocp.integrationScheme,:bkwEuler)
+   U = U[2:end,:]
+   t = t[2:end]
+  end
+  #@show U
+  #@show t
   t0 = round(n.mpc.v.t,1)
   tf = n.mpc.v.t + n.mpc.v.tex
   sol, U = n.mpc.ip.state.model(n,X0,t,U,t0,tf)
@@ -535,6 +541,14 @@ function simMPC!(n;updateFunction::Any=[])
     #############################
     # (A) and (B) in "parallel"
     #############################
+
+    # (B) simulate plant
+    sol, U = simIPlant!(n) # the plant simulation time will lead the actual time
+    plant2dfs!(n,sol,U)
+
+    # check to see if the goal has been reached
+    if goalReached!(n); break; end
+
     # (A) solve OCP
     if !isequal(typeof(updateFunction),Array{Any,1})
       updateFunction(n)
@@ -547,13 +561,6 @@ function simMPC!(n;updateFunction::Any=[])
     end
     updateOCPState!(n)
     optimize!(n)
-
-    # (B) simulate plant
-    sol, U = simIPlant!(n) # the plant simulation time will lead the actual time
-    plant2dfs!(n,sol,U)
-
-    # check to see if the goal has been reached
-    if goalReached!(n); break; end
 
     # advance time
     n.mpc.v.t = n.mpc.v.t + n.mpc.v.tex
