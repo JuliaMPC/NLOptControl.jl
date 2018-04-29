@@ -497,13 +497,15 @@ Date Create: 4/08/2018, Last Modified: 4/08/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function goalReached!(n)
-  # TODO deal with NaNs
   if isequal(n.s.mpc.mode,:OCP)
     X = currentIPState(n)[1]
   else
     #TODO
   end
-  if all((abs.(X - n.mpc.v.goal) .<= n.mpc.v.goalTol))
+  A = abs.(X - n.mpc.v.goal) .<= n.mpc.v.goalTol)
+  B = isnan.(n.mpc.v.goal)
+  C = [A[i]||B[i] for i in 1:length(A)]
+  if all(C)
    if isequal(n.s.mpc.printLevel,2)
     println("Goal Attained! \n")
    end
