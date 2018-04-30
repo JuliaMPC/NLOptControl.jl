@@ -105,8 +105,8 @@ function integrate!(n::NLOpt,V::Expr)
     temp = NLExpr(n,V,n.r.ocp.x,n.r.ocp.u,L);
     if n.s.ocp.integrationScheme==:bkwEuler
       # NOTE integration this way does not penalize the first control
-      #expression = @NLexpression(n.ocp.mdl, sum(temp[j+1]*n.ocp.tf/n.ocp.N for j = 1:n.ocp.N) )
-      expression = @NLexpression(n.ocp.mdl, sum(temp[j]*n.ocp.tf/n.ocp.N for j = 1:n.ocp.N) )
+      expression = @NLexpression(n.ocp.mdl, sum(temp[j+1]*n.ocp.tf/n.ocp.N for j = 1:n.ocp.N) )
+      #expression = @NLexpression(n.ocp.mdl, sum(temp[j]*n.ocp.tf/n.ocp.N for j = 1:n.ocp.N) )
     elseif n.s.ocp.integrationScheme==:trapezoidal
       expression = @NLexpression(n.ocp.mdl, sum(0.5*(temp[j]+temp[j+1])*n.ocp.tf/n.ocp.N for j = 1:n.ocp.N) )
     else

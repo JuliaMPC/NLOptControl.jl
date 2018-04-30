@@ -81,6 +81,7 @@ opt_num = length(Nck_vec)
 
   for num in 1:length(col_pts)
     n=define(numStates=2,numControls=1,X0=[h0,v0],XF=[0.,0.],XL=[-20,-20],XU=[20,20],CL=[0.],CU=[3.]);
+    n.s.ocp.interpolationOn = true
     n.s.ocp.tfMax = 1000.0
     n.s.ocp.numInterpPts = pts  # must be the same as above to calculate error
     n.s.ocp.tfOptimal = tf_star # must be the same as above to calculate error
