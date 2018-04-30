@@ -515,10 +515,16 @@ function goalReached!(n)
   elseif n.s.mpc.expandGoal && (getvalue(n.ocp.tf) < n.mpc.v.tex)
     A =( abs.(X - n.mpc.v.goal) .<= n.s.mpc.enlargeGoalTolFactor*n.mpc.v.goalTol)
     C = [A[i]||B[i] for i in 1:length(A)]
-    if isequal(n.s.mpc.printLevel,2)
-     println("Expanded Goal Attained! \n")
+    if all(C)
+     if isequal(n.s.mpc.printLevel,2)
+      println("Expanded Goal Attained! \n")
+     end
+     n.f.mpc.goalReached = true
+    else
+     println("Expanded Goal Not Attained! \n
+              Stopping Simulation")
+     n.f.mpc.simFailed = true
     end
-    n.f.mpc.goalReached = true
   end
 
  return n.f.mpc.goalReached
@@ -569,6 +575,7 @@ function simMPC!(n;updateFunction::Any=[],checkFunction::Any=[])
 
     # check to see if the goal has been reached
     if goalReached!(n); break; end
+    if n.f.mpc.simFailed; break; end
 
     # (A) solve OCP  TODO the time should be ahead here as it runs
     if !isequal(typeof(updateFunction),Array{Any,1})
