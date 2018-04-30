@@ -122,12 +122,14 @@ end
 type MPCFlags
  defined::Bool
  goalReached::Bool
+ simFailed::Bool   # a bool to indicate that the simulation failed. 
  ipDefined::Bool
  epDefined::Bool
 end
 
 function MPCFlags()
  MPCFlags(
+  false,
   false,
   false,
   false,

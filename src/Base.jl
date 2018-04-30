@@ -318,10 +318,12 @@ type MPCSettings
  fixedTp::Bool
  IPKnown::Bool
  saveMode::Symbol
- maxSim::Int64          # maximum number of total MPC updates
- shiftX0::Bool   # a bool to indicate that a check on the feasibility of the linear constraints for the initial conditions should be performed
- lastOptimal::Bool # a bool to indicate that the previous solution should be used if the current solution in not optimal
+ maxSim::Int64                # maximum number of total MPC updates
+ shiftX0::Bool                # a bool to indicate that a check on the feasibility of the linear constraints for the initial conditions should be performed
+ lastOptimal::Bool            # a bool to indicate that the previous solution should be used if the current solution in not optimal
  printLevel::Int64
+ expandGoal::Bool             # bool to indicate if the goal needs to be expanded
+ enlargeGoalTolFactor::Int64  # scaling factor to enlare the goal
 end
 
 function MPCSettings()
@@ -335,12 +337,14 @@ function MPCSettings()
       100,
       true,
       true,
+      2,
+      true,
       2
       )
 end
 
 # OCP Settings Class
-type OCPSettings   # options
+type OCPSettings
   solver::Solver                # solver information
   finalTimeDV::Bool
   integrationMethod::Symbol
@@ -388,7 +392,6 @@ function Settings()
   MPCSettings()
        )
 end
-
 
 """
 L = lagrange_basis_poly(x,x_data,Nc,j)
@@ -440,16 +443,15 @@ function interpolate_lagrange{T<:Number}(x::AbstractArray{T},x_data,y_data)
                     )
             )
     end
-    ns = length(x);
-    L = zeros(Float64,Nc+1,ns);
+    ns = length(x)
+    L = zeros(Float64,Nc+1,ns)
     x = x[:]; x_data = x_data[:]; y_data = y_data[:]; # make sure data is in a column
     for idx in 1:Nc+1
       for j in 1:ns
           L[idx,j] = lagrange_basis_poly(x[j],x_data,Nc,idx);
       end
     end
-    y = y_data'*L;
-    return y
+    return y_data'*L
 end
 
 """
@@ -462,16 +464,16 @@ function intervals(n,int,x,u)
 
   if typeof(x[1,1]) == JuMP.Variable
     # states
-    x_int=Array{JuMP.Variable}(length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]),n.ocp.state.num);
+    x_int = Array{JuMP.Variable}(length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]),n.ocp.state.num)
     for st in 1:n.ocp.state.num # +1 adds the DV in the next interval
       x_int[:,st] = x[n.ocp.Nck_cum[int]+1:n.ocp.Nck_cum[int+1]+1,st];
     end
 
     # controls
     if int!=n.ocp.Ni
-      u_int=Array{JuMP.Variable}(length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]),n.ocp.control.num);
+      u_int = Array{JuMP.Variable}(length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]),n.ocp.control.num)
     else                    # -1 -> removing control in last mesh interval
-      u_int=Array{JuMP.Variable}(length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]-1),n.ocp.control.num);
+      u_int = Array{JuMP.Variable}(length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]-1),n.ocp.control.num)
     end
     for ctr in 1:n.ocp.control.num
       if int!=n.ocp.Ni          # +1 adds the DV in the next interval
@@ -489,15 +491,15 @@ function intervals(n,int,x,u)
 
     # controls
     if int!=n.ocp.Ni
-      u_int=Array{Any}(length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]),n.ocp.control.num);
+      u_int = Array{Any}(length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]),n.ocp.control.num)
     else                    # -1 -> removing control in last mesh interval
-      u_int=Array{Any}(length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]-1),n.ocp.control.num);
+      u_int = Array{Any}(length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]-1),n.ocp.control.num)
     end
     for ctr in 1:n.ocp.control.num
       if int!=n.ocp.Ni          # +1 adds the DV in the next interval
-        u_int[:,ctr] = u[n.ocp.Nck_cum[int]+1:n.ocp.Nck_cum[int+1]+1,ctr];
+        u_int[:,ctr] = u[n.ocp.Nck_cum[int]+1:n.ocp.Nck_cum[int+1]+1,ctr]
       else
-        u_int[:,ctr] = u[n.ocp.Nck_cum[int]+1:n.ocp.Nck_cum[int+1],ctr];
+        u_int[:,ctr] = u[n.ocp.Nck_cum[int]+1:n.ocp.Nck_cum[int+1],ctr]
       end
     end
   end

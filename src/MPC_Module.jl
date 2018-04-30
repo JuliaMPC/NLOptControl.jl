@@ -132,6 +132,7 @@ function defineMPC!(n;
  n.mpc.v.goalTol = goalTol
  n.s.mpc.lastOptimal = lastOptimal
  n.s.mpc.printLevel = printLevel
+
  n.f.mpc.defined = true
  return nothing
 end
@@ -500,17 +501,26 @@ function goalReached!(n)
   if isequal(n.s.mpc.mode,:OCP)
     X = currentIPState(n)[1]
   else
-    #TODO
+    error("TODO")
   end
-  A = abs.(X - n.mpc.v.goal) .<= n.mpc.v.goalTol)
+  A = (abs.(X - n.mpc.v.goal) .<= n.mpc.v.goalTol)
   B = isnan.(n.mpc.v.goal)
   C = [A[i]||B[i] for i in 1:length(A)]
+
   if all(C)
    if isequal(n.s.mpc.printLevel,2)
     println("Goal Attained! \n")
    end
     n.f.mpc.goalReached = true
+  elseif n.s.mpc.expandGoal && (getvalue(n.ocp.tf) < n.mpc.v.tex)
+    A =( abs.(X - n.mpc.v.goal) .<= n.s.mpc.enlargeGoalTolFactor*n.mpc.v.goalTol)
+    C = [A[i]||B[i] for i in 1:length(A)]
+    if isequal(n.s.mpc.printLevel,2)
+     println("Expanded Goal Attained! \n")
+    end
+    n.f.mpc.goalReached = true
   end
+
  return n.f.mpc.goalReached
 end
 # if the vehicle is very close to the goal sometimes the optimization returns with a small final time
@@ -519,7 +529,7 @@ end
 #if getvalue(n.ocp.tf) < 0.01
 #  if ((n.r.ip.dfplant[end][:x][end]-c["goal"]["x"])^2 + (n.r..ip.dfplant[end][:y][end]-c["goal"]["yVal"])^2)^0.5 < 2*c["goal"]["tol"]
 #  println("Expanded Goal Attained! \n"); n.f.mpc.goal_reached=true;
-#  break;
+#  break;/
 #  else
 #  warn("Expanded Goal Not Attained! -> stopping simulation! \n"); break;
 #  end
@@ -536,7 +546,7 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/06/2018, Last Modified: 4/08/2018 \n
 --------------------------------------------------------------------------------------\n
 """
-function simMPC!(n;updateFunction::Any=[])
+function simMPC!(n;updateFunction::Any=[],checkFunction::Any=[])
   for ii = 1:n.s.mpc.maxSim
     if isequal(n.s.mpc.printLevel,2)
      println("Running model for the: ",n.mpc.v.evalNum," time")
@@ -548,6 +558,14 @@ function simMPC!(n;updateFunction::Any=[])
     # (B) simulate plant
     sol, U = simIPlant!(n) # the plant simulation time will lead the actual time
     plant2dfs!(n,sol,U)
+
+    # check to see if the simulation failed (i.e. plant crashed)
+    if !isequal(typeof(checkFunction),Array{Any,1})
+     if checkFunction(n)
+       n.f.mpc.simFailed = true
+      break
+     end
+    end
 
     # check to see if the goal has been reached
     if goalReached!(n); break; end
@@ -581,4 +599,8 @@ end
 # 5) usePrevious optimal.
      # at some point will be unable to do this
 
+
+# TODO
+# 1) plot the goal, the tolerances on X0p
+# 2) calculate the error and plot
 end # module
