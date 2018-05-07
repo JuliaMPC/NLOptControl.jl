@@ -239,15 +239,5 @@ export
        @NLconstraint,
        setvalue,
        getvalue,
-       setRHS,
-
-       # TMP
-       State,
-       Control,
-       initState,
-       plant2dfs!,
-       scale_tau,
-       intervals,
-       interpolate_lagrange
-
+       setRHS
 end # module
