@@ -133,6 +133,7 @@ function defineMPC!(n;
  n.s.mpc.lastOptimal = lastOptimal
  n.s.mpc.printLevel = printLevel
 
+ n.f.mpc.simFailed[1] = false # for some reason it is getting defined as 0.0, not false during initialization
  n.f.mpc.defined = true
  return nothing
 end
@@ -523,7 +524,7 @@ function goalReached!(n)
     else
      println("Expanded Goal Not Attained! \n
               Stopping Simulation")
-     n.f.mpc.simFailed = true
+     n.f.mpc.simFailed = [true, :expandedGoal]
     end
   end
 
@@ -567,15 +568,16 @@ function simMPC!(n;updateFunction::Any=[],checkFunction::Any=[])
 
     # check to see if the simulation failed (i.e. plant crashed)
     if !isequal(typeof(checkFunction),Array{Any,1})
-     if checkFunction(n)
-       n.f.mpc.simFailed = true
+     val, sym = checkFunction(n)
+     if val
+       n.f.mpc.simFailed = [val, sym]
       break
      end
     end
 
     # check to see if the goal has been reached
     if goalReached!(n); break; end
-    if n.f.mpc.simFailed; break; end
+    if n.f.mpc.simFailed[1]; break; end
 
     # (A) solve OCP  TODO the time should be ahead here as it runs
     if !isequal(typeof(updateFunction),Array{Any,1})
@@ -589,6 +591,7 @@ function simMPC!(n;updateFunction::Any=[],checkFunction::Any=[])
     end
     updateOCPState!(n)
     optimize!(n)
+    if n.f.mpc.simFailed[1]; break; end
 
     # advance time
     n.mpc.v.t = n.mpc.v.t + n.mpc.v.tex

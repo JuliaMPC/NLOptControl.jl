@@ -122,7 +122,7 @@ end
 type MPCFlags
  defined::Bool
  goalReached::Bool
- simFailed::Bool   # a bool to indicate that the simulation failed. 
+ simFailed::Array{Any,1}   # a bool to indicate that the simulation failed and a symbol to indicate why
  ipDefined::Bool
  epDefined::Bool
 end
@@ -131,10 +131,10 @@ function MPCFlags()
  MPCFlags(
   false,
   false,
-  false,
+  [false, NaN],
   false,
   false
- )
+  )
 end
 
 type Flags
