@@ -16,9 +16,9 @@ export
      simIPlant!,
      updateX0!,
      currentIPState,
-     updateOCPState!,
      goalReached!,
-     simMPC!
+     simMPC!,
+     predictX0!
 
 ########################################################################################
 # MPC types
@@ -365,37 +365,6 @@ function simIPlant!(n)
 end
 
 """
-updateX0!(n,X0;(:userUpdate=>true))    # user defined update of X0
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 3/6/2017, Last Modified: 4/12/2018 \n
---------------------------------------------------------------------------------------\n
-"""
-function updateX0!(n,args...;kwargs...)
-  kw = Dict(kwargs)
-
-  if isequal(n.s.mpc.mode,:OCP) # push the vehicle along
-   for st in 1:n.ocp.state.num
-     n.ocp.X0[st] = n.r.ip.dfsplant[end][n.ocp.state.name[st]][end]
-   end
-  elseif isequal(n.s.mpc.mode,:IP)
-    error(":IP function not ready")
-  elseif isequal(n.s.mpc.mode,:EP)
-     error(":EP function not ready")
-     X0 = args[1]
-     if length(X0)!=n.ocp.state.num
-       error(string("\n Length of X0 must match number of states \n"));
-     end
-     n.ocp.X0 = X0
-  else
-    error("mode must be :OCP, :IP, or :EP")
-  end
-  updateStates!(n)
-  append!(n.r.ip.X0a,[copy(n.ocp.X0)])
-  return nothing
-end
-
-"""
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 4/08/2018, Last Modified: 4/08/2018 \n
@@ -423,18 +392,25 @@ end
 """
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 4/08/2018, Last Modified: 4/08/2018 \n
+Date Create: 3/06/2018, Last Modified: 4/08/2018 \n
 --------------------------------------------------------------------------------------\n
 """
-function updateOCPState!(n)
+function updateX0!(n,args...)
  # need to map n.r.ip.X0p to n.X0 (states may be different)
  # NOTE for the :OCP mode this is OK
  if isequal(n.s.mpc.mode,:OCP)
+   if !isequal(length(args),0)
+    error("cannot pass X0 in this mode.")
+   end
    n.ocp.X0 = n.r.ip.X0p[end][1] # the n.ocp. structure is for running things
    push!(n.r.ocp.X0,n.ocp.X0)    # NOTE this may be for saving data
    setvalue(n.ocp.t0,copy(n.r.ip.X0p[end][2]))
  else
-   error("TODO")
+  X0 = args[1]
+  if length(X0)!=n.ocp.state.num
+    error(string("\n Length of X0 must match number of states \n"));
+  end
+  n.ocp.X0 = X0
  end
 
   if n.s.mpc.shiftX0 # TODO consider saving linear shifting occurances
@@ -498,10 +474,11 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 4/08/2018, Last Modified: 4/08/2018 \n
 --------------------------------------------------------------------------------------\n
 """
-function goalReached!(n)
+function goalReached!(n,args...)
   if isequal(n.s.mpc.mode,:OCP)
     X = currentIPState(n)[1]
   else
+    X = args[1]
     error("TODO")
   end
   A = (abs.(X - n.mpc.v.goal) .<= n.mpc.v.goalTol)
@@ -589,7 +566,7 @@ function simMPC!(n;updateFunction::Any=[],checkFunction::Any=[])
     else
       predictX0!(n)
     end
-    updateOCPState!(n)
+    updateX0!(n)
     optimize!(n)
     if n.f.mpc.simFailed[1]; break; end
 

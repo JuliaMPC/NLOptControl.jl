@@ -222,9 +222,10 @@ export
        simIPlant!,
        updateX0!,
        currentIPState,
-       updateOCPState!,
        goalReached!,
        simMPC!,
+       plant2dfs!,
+       predictX0!,
 
        # Objects
        NLOpt,
