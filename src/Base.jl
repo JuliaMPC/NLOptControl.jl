@@ -827,13 +827,19 @@ function postProcess!(n;kwargs...)
     elseif n.s.ocp.integrationMethod==:tm
       if n.s.ocp.finalTimeDV
         n.r.ocp.tctr = append!([0.0],cumsum(getvalue(n.ocp.dt))) + getvalue(n.ocp.t0)
-      else  # NOTE getvalue(n.ocp.t0) may not be appropriate here
+      else
         n.r.ocp.tctr = append!([0.0],cumsum(n.ocp.dt)) + getvalue(n.ocp.t0)
       end
-      n.r.ocp.tst = n.r.ocp.tctr #+ getvalue(n.ocp.t0)
+      n.r.ocp.tst = n.r.ocp.tctr
     end
 
-    if n.r.ocp.status==:Optimal
+    if n.r.ocp.status==:Optimal || (n.s.mpc.on && isequal(n.mpc.v.evalNum,1))
+      if (!isequal(n.r.ocp.status,:Optimal) && n.s.mpc.on && isequal(n.mpc.v.evalNum,1))
+        warn("There is no previous :Optimal solution to use since isequal(n.mpc.v.evalNum,1). \n
+            Attemting to extract: ",n.r.ocp.status," solution. \n
+            Setting: n.f.mpc.simFailed = [true, n.r.ocp.status] ")
+         n.f.mpc.simFailed = [true, n.r.ocp.status]
+      end
       n.r.ocp.X = zeros(Float64,n.ocp.state.pts,n.ocp.state.num)
       n.r.ocp.U = zeros(Float64,n.ocp.control.pts,n.ocp.control.num)
       for st in 1:n.ocp.state.num
@@ -842,6 +848,7 @@ function postProcess!(n;kwargs...)
       for ctr in 1:n.ocp.control.num
         n.r.ocp.U[:,ctr] = getvalue(n.r.ocp.u[:,ctr])
       end
+
     elseif n.s.mpc.on && n.s.mpc.lastOptimal
       if !n.s.ocp.save
         error("This functionality currently needs to have n.s.save==true")
@@ -928,7 +935,6 @@ end
 # TODO add some "finalPostProcess" to sace time
 """
 optimize!(n)
-
 # solves JuMP model and saves optimization data
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
