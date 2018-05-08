@@ -854,7 +854,15 @@ function postProcess!(n;kwargs...)
         error("This functionality currently needs to have n.s.save==true")
       end
       optIdx = find(n.r.ocp.dfsOpt[:status].==:Optimal)[end]  # use the last :Optimal solution
-      timeIdx = find(n.r.ocp.dfs[optIdx][:t] - n.mpc.v.t .<= 0)[end]     # find the nearest index in time
+      @show n.r.ocp.dfsOpt
+      @show optIdx
+      @show n.r.ocp.dfs[optIdx]
+      @show n.mpc.v.t
+      if n.r.ocp.dfs[optIdx][:t][1] > n.mpc.v.t
+        timeIdx = 1
+      else
+        timeIdx = find(n.r.ocp.dfs[optIdx][:t] - n.mpc.v.t .<= 0)[end]     # find the nearest index in time
+      end
       # TODO make an error message or fix      ERROR: LoadError: BoundsError: attempt to access 0-element Array{Int64,1} at index [0]
       n.r.ocp.tst = n.r.ocp.dfs[optIdx][:t][timeIdx:end]
       n.r.ocp.X = zeros(Float64,length(n.r.ocp.dfs[optIdx][n.ocp.state.name[1]][timeIdx:end]),n.ocp.state.num)

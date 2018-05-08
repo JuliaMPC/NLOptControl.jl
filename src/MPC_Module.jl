@@ -390,6 +390,39 @@ function currentIPState(n)
 end
 
 """
+# TODO eventually the "plant" will be different from the "model"
+predictX0!(n)
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 4/7/2017, Last Modified: 4/25/2018 \n
+--------------------------------------------------------------------------------------\n
+"""
+function predictX0!(n)
+
+  if n.s.mpc.fixedTp
+   # NOTE consider passing back (n.mpc.v.t + n.mpc.v.tex) from simIPlant!()
+   tp = round(n.mpc.v.t + n.mpc.v.tex,1)  # TODO add 1 as an MPCparamss
+  else
+   error("TODO")
+  end
+
+  if isequal(n.s.mpc.mode,:OCP)
+   sol, U = simIPlant!(n)
+   X0p = [sol(sol.t[end])[:],tp]
+   push!(n.r.ip.X0p,X0p)
+  else
+    error("TODO")
+  end
+ # else
+   # with no control signals to follow, X0p is simply the current known location of the plant
+ #  X0 = currentIPState(n)
+ #  X0p = [X0[1], tp]  # modify X0 to predict the time
+  # push!(n.r.ip.X0p,X0p)
+ # end
+  return nothing
+end
+
+"""
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 3/06/2018, Last Modified: 4/08/2018 \n
@@ -398,19 +431,27 @@ Date Create: 3/06/2018, Last Modified: 4/08/2018 \n
 function updateX0!(n,args...)
  # need to map n.r.ip.X0p to n.X0 (states may be different)
  # NOTE for the :OCP mode this is OK
+
+ if !n.s.mpc.predictX0 #  use the current known plant state to update OCP
+   push!(n.r.ip.X0p,currentIPState(n))
+ else
+   predictX0!(n)
+ end
+
  if isequal(n.s.mpc.mode,:OCP)
    if !isequal(length(args),0)
-    error("cannot pass X0 in this mode.")
+    X0 = args[1]
+    if length(X0)!=n.ocp.state.num
+      error(string("\n Length of X0 must match number of states \n"));
+    end
+    n.ocp.X0 = X0
+   else
+    n.ocp.X0 = n.r.ip.X0p[end][1] # the n.ocp. structure is for running things
    end
-   n.ocp.X0 = n.r.ip.X0p[end][1] # the n.ocp. structure is for running things
    push!(n.r.ocp.X0,n.ocp.X0)    # NOTE this may be for saving data
    setvalue(n.ocp.t0,copy(n.r.ip.X0p[end][2]))
  else
-  X0 = args[1]
-  if length(X0)!=n.ocp.state.num
-    error(string("\n Length of X0 must match number of states \n"));
-  end
-  n.ocp.X0 = X0
+  error("not set up for this mode")
  end
 
   if n.s.mpc.shiftX0 # TODO consider saving linear shifting occurances
@@ -435,38 +476,6 @@ function updateX0!(n,args...)
   return nothing
 end
 
-"""
-# TODO eventually the "plant" will be different from the "model"
-predictX0!(n)
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 4/7/2017, Last Modified: 4/25/2018 \n
---------------------------------------------------------------------------------------\n
-"""
-function predictX0!(n)
-
-  if n.s.mpc.fixedTp
-   # NOTE consider passing back (n.mpc.v.t + n.mpc.v.tex) from simIPlant!()
-   tp = round(n.mpc.v.t + n.mpc.v.tex,1)  # TODO add 1 as an MPCparamss
-  else
-   error("TODO")
-  end
-#TODO
-  if isequal(n.s.mpc.mode,:OCP)
-   sol, U = simIPlant!(n)
-   X0p = [sol(sol.t[end])[:],tp]
-   push!(n.r.ip.X0p,X0p)
-  else
-    error("TODO")
-  end
- # else
-   # with no control signals to follow, X0p is simply the current known location of the plant
- #  X0 = currentIPState(n)
- #  X0p = [X0[1], tp]  # modify X0 to predict the time
-  # push!(n.r.ip.X0p,X0p)
- # end
-  return nothing
-end
 
 """
 --------------------------------------------------------------------------------------\n
@@ -561,11 +570,6 @@ function simMPC!(n;updateFunction::Any=[],checkFunction::Any=[])
       updateFunction(n)
     end
 
-    if !n.s.mpc.predictX0 #  use the current known plant state to update OCP
-      push!(n.r.ip.X0p,currentIPState(n))
-    else
-      predictX0!(n)
-    end
     updateX0!(n)
     optimize!(n)
     if n.f.mpc.simFailed[1]; break; end
