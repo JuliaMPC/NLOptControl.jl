@@ -103,7 +103,8 @@ const _KNITRO_defaults=Dict(
  :bar_penaltyrule              =>0,
  :bar_switchrule               =>0,
  :linesearch                   =>0,
- :linsolver                    =>0
+ :linsolver                    =>0,
+ :cg_pmem                      =>10
 )
 
 const _KNITRO_MPC=Dict(
@@ -121,14 +122,15 @@ const _KNITRO_MPC=Dict(
  :opttol_abs                   =>5e-1,
  :xtol                         =>1e-12,
  :xtol_iters                   =>0,
- :algorithm                    =>0,
+ :algorithm                    =>1,
  :bar_initpt                   =>0,
- :bar_murule                   =>0,
+ :bar_murule                   =>1,
  :bar_penaltycons              =>0,
  :bar_penaltyrule              =>0,
  :bar_switchrule               =>0,
  :linesearch                   =>0,
- :linsolver                    =>0
+ :linsolver                    =>4,
+ :cg_pmem                      =>0
 )
 
 const simulationModes = [:OCP,:IP,:IPEP,:EP]
