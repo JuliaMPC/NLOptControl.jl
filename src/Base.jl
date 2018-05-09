@@ -860,6 +860,11 @@ function postProcess!(n;kwargs...)
       @show n.mpc.v.t
       if n.r.ocp.dfs[optIdx][:t][1] > n.mpc.v.t
         timeIdx = 1
+      elseif n.r.ocp.dfs[optIdx][:t][end] < n.mpc.v.t
+        warn("the current time is past the final time in the last :Optimal soultion.\n
+              Setting: n.f.mpc.simFailed = [true, n.r.ocp.status]")
+        n.f.mpc.simFailed = [true, n.r.ocp.status]
+        return nothing
       else
         timeIdx = find(n.r.ocp.dfs[optIdx][:t] - n.mpc.v.t .<= 0)[end]     # find the nearest index in time
       end

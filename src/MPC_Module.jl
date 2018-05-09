@@ -267,8 +267,8 @@ function mapNames!(n)
   if isequal(n.s.mpc.mode,:IP)
     s1 = n.ocp.state.name
     c1 = n.ocp.control.name
-    s2 = n.mpc.stateIP.name
-    c2 = n.mpc.controlIP.name
+    s2 = n.mpc.ip.state.name
+    c2 = n.mpc.ip.control.name
   elseif isequal(n.s.mpc.mode,:EP)
     error(":EP function not ready")
   else
@@ -467,10 +467,10 @@ function updateX0!(n,args...)
   # update states with n.ocp.X0
   for st in 1:n.ocp.state.num
     if any(!isnan(n.ocp.X0_tol[st]))
-      JuMP.setRHS(n.r.ocp.x0Con[st,1], (n.ocp.X0[st]+n.ocp.X0_tol[st]));
-      JuMP.setRHS(n.r.ocp.x0Con[st,2],-(n.ocp.X0[st]-n.ocp.X0_tol[st]));
+      JuMP.setRHS(n.r.ocp.x0Con[st,1], (n.ocp.X0[st]+n.ocp.X0_tol[st]))
+      JuMP.setRHS(n.r.ocp.x0Con[st,2],-(n.ocp.X0[st]-n.ocp.X0_tol[st]))
     else
-      JuMP.setRHS(n.r.ocp.x0Con[st],n.ocp.X0[st]);
+      JuMP.setRHS(n.r.ocp.x0Con[st],n.ocp.X0[st])
     end
   end
   return nothing
