@@ -145,7 +145,7 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 4/08/2018, Last Modified: 4/08/2018 \n
 --------------------------------------------------------------------------------------\n
 """
-function initOpt!(n)
+function initOpt!(n;save::Bool=true, evalConstraints::Bool=false)
   if n.s.mpc.on
    error("call initOpt!() before defineMPC!(). initOpt!() will destroy n")
   end
@@ -161,9 +161,9 @@ function initOpt!(n)
    if status==:Optimal; break; end
   end
   # defineSolver!(n,solverConfig(c)) # modifying solver settings NOTE currently not in use
-  n.s.ocp.save = true  # NOTE set to false if running in parallel to save time
+  n.s.ocp.save = save  # set to false if running in parallel to save time
   n.s.ocp.cacheOnly = false
-  n.s.ocp.evalConstraints = true # NOTE set to true to investigate infeasibilities
+  n.s.ocp.evalConstraints = evalConstraints # set to true to investigate infeasibilities
   return nothing
 end
 
@@ -358,8 +358,7 @@ function simIPlant!(n)
    U = U[2:end,:]
    t = t[2:end]
   end
-  t0 = round(n.mpc.v.t,1)
-  tf = n.mpc.v.t + n.mpc.v.tex
+
   sol, U = n.mpc.ip.state.model(n,X0,t,U,t0,tf)
   return sol, U
 end
@@ -566,11 +565,11 @@ function simMPC!(n;updateFunction::Any=[],checkFunction::Any=[])
     if n.f.mpc.simFailed[1]; break; end
 
     # (A) solve OCP  TODO the time should be ahead here as it runs
+    updateX0!(n)  # before updateFunction()
     if !isequal(typeof(updateFunction),Array{Any,1})
       updateFunction(n)
     end
 
-    updateX0!(n)
     optimize!(n)
     if n.f.mpc.simFailed[1]; break; end
 
@@ -589,7 +588,7 @@ end
 # 4) fixedTp or variableTp
 # 5) usePrevious optimal.
      # at some point will be unable to do this
-
+# 6) infeasibilities, soft constraint on inital conditions
 
 # TODO
 # 1) plot the goal, the tolerances on X0p
