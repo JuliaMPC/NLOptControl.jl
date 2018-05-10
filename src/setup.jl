@@ -149,7 +149,7 @@ function defineSolver!(n::NLOpt,kw)
                                  bar_switchrule=n.s.ocp.solver.settings[:bar_switchrule],
                                  linesearch=n.s.ocp.solver.settings[:linesearch],
                                  linsolver=n.s.ocp.solver.settings[:linsolver],
-                                 tuner=0,
+                                 tuner=n.s.ocp.solver.settings[:tuner],
                                  cg_pmem=n.s.ocp.solver.settings[:cg_pmem]))
   else
     error(string("solver ",n.s.sover.name, " not defined"))
