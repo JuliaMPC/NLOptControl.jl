@@ -224,12 +224,15 @@ function OCPdef!(n::NLOpt)
     n.r.ocp.xfCon = []
   end
 
-  if n.s.ocp.slackVariables # currently adding slack variables for all initial and final states even if there are no constraints on them
+  if n.s.ocp.x0slackVariables # currently adding slack variables for all initial states even if there are no constraints on them
     @variable(n.ocp.mdl,x0s[1:n.ocp.state.num])
-    @variable(n.ocp.mdl,xFs[1:n.ocp.state.num])
     n.ocp.x0s = x0s
+  end
+  if n.s.ocp.xFslackVariables # currently adding slack variables for all final states even if there are no constraints on them
+    @variable(n.ocp.mdl,xFs[1:n.ocp.state.num])
     n.ocp.xFs = xFs
   end
+
 
   for st in 1:n.ocp.state.num
     if !isnan(n.ocp.X0[st]) # could have a bool for this
@@ -362,9 +365,14 @@ function configure!(n::NLOpt; kwargs... )
     n.ocp.tf = Any
   end
 
-  # slack variables
-  if !haskey(kw,:slackVariables); n.s.ocp.slackVariables=false; # default
-  else; n.s.ocp.slackVariables=get(kw,:slackVariables,0);
+  # x0 slack variables
+  if !haskey(kw,:x0slackVariables); n.s.ocp.x0slackVariables=false; # default
+  else; n.s.ocp.x0slackVariables=get(kw,:x0slackVariables,0);
+  end
+
+  # xF slack variables
+  if !haskey(kw,:xFslackVariables); n.s.ocp.xFslackVariables=false; # default
+  else; n.s.ocp.xFslackVariables=get(kw,:xFslackVariables,0);
   end
 
   # integrationScheme
