@@ -31,8 +31,10 @@ type OCP
   # boundary constraits
   X0::Array{Float64,1}      # initial state conditions
   X0_tol::Array{Float64,1}  # initial state tolerance
+  x0s::Array{JuMP.Variable,1}
   XF::Array{Float64,1}      # final state conditions
   XF_tol::Array{Float64,1}  # final state tolerance
+  xFs::Array{JuMP.Variable,1}
 
   # constant bounds on state variables
   XL::Array{Float64,1}
@@ -80,7 +82,9 @@ OCP(
       Any,                # optional vector for use with time varying constraints
       Float64[],          # initial state conditions
       Float64[],          # tolerances on inital state constraint
+      Vector{Any}[],
       Float64[],          # final state conditions
+      Vector{Any}[],
       Float64[],          # tolerances on final state constraint
       Float64[],          # XL
       Float64[],          # XU

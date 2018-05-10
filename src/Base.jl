@@ -373,6 +373,7 @@ type OCPSettings
   cacheOnly::Bool               # bool for only caching the results when using optimize!()
   linearInterpolation::Bool     # bool for using linear interpolation even if integrationMethod ==:ps
   interpolationOn::Bool         # bool to indicate if user wants solution interpolated for them
+  slackVariables::Bool
 end
 
 # Default Constructor NOTE currently not using these, they get overwritten
@@ -391,7 +392,8 @@ function OCPSettings()
          250,                # number of points to sample polynomial running through collocation points
          false,              # bool for only caching the results when using optimize!()
          false,              # bool for using linear interpolation even if integrationMethod ==:ps
-         false               # bool to indicate if user wants solution interpolated for them
+         false,              # bool to indicate if user wants solution interpolated for them
+         false
                 )
 end
 
