@@ -233,7 +233,7 @@ function OCPdef!(n::NLOpt)
 
   for st in 1:n.ocp.state.num
     if !isnan(n.ocp.X0[st]) # could have a bool for this
-      if n.s.ocp.slackVariables
+      if n.s.ocp.x0slackVariables
         n.r.ocp.x0Con[st,1] = @constraint(n.ocp.mdl, n.r.ocp.x[1,st] <=  (n.ocp.X0[st]+n.ocp.x0s[st]))
         n.r.ocp.x0Con[st,2] = @constraint(n.ocp.mdl,-n.r.ocp.x[1,st] <= -(n.ocp.X0[st]-n.ocp.x0s[st]))
       elseif !isnan(n.ocp.X0_tol[st]) #NOTE in JuMP: Modifying range constraints is currently unsupported.
@@ -244,7 +244,7 @@ function OCPdef!(n::NLOpt)
       end
     end
     if !isnan(n.ocp.XF[st])
-      if n.s.ocp.slackVariables
+      if n.s.ocp.xFslackVariables
         n.r.ocp.xfCon[st,1] = @constraint(n.ocp.mdl, n.r.ocp.x[end,st] <=  (n.ocp.XF[st]+n.ocp.xFs[st]))
         n.r.ocp.xfCon[st,2] = @constraint(n.ocp.mdl,-n.r.ocp.x[end,st] <= -(n.ocp.XF[st]-n.ocp.xFs[st]))
       elseif any(.!isnan.(n.ocp.XF_tol))

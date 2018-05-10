@@ -14,7 +14,7 @@ BrysonDenham_EXP=[:(x2[j]),:(u1[j])]; L=1/6;
 @testset "BrysonDenham using slackVariables with (:integrationScheme=>$(integrationConfig)) using expressions)" for integrationConfig in integrationConfigs
   n=define(numStates=2,numControls=1,X0=[0.,1],XF=[0.,-1.],XL=[0.,NaN],XU=[L,NaN]);
   dynamics!(n,BrysonDenham_EXP)
-  configure!(n;(:slackVariables=>true),(:integrationScheme=>integrationConfig),(:finalTimeDV=>false),(:tf=>1.0));
+  configure!(n;(:x0slackVariables=>true),(:xFslackVariables=>true),(:integrationScheme=>integrationConfig),(:finalTimeDV=>false),(:tf=>1.0));
   obj=integrate!(n,:(0.5*u1[j]^2));
   @NLobjective(n.ocp.mdl,Min,obj + 100*(n.ocp.x0s[1] + n.ocp.x0s[2] + n.ocp.xFs[1] + n.ocp.xFs[2]));
   optimize!(n);

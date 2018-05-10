@@ -373,7 +373,8 @@ type OCPSettings
   cacheOnly::Bool               # bool for only caching the results when using optimize!()
   linearInterpolation::Bool     # bool for using linear interpolation even if integrationMethod ==:ps
   interpolationOn::Bool         # bool to indicate if user wants solution interpolated for them
-  slackVariables::Bool
+  x0slackVariables::Bool
+  xFslackVariables::Bool
 end
 
 # Default Constructor NOTE currently not using these, they get overwritten
@@ -393,6 +394,7 @@ function OCPSettings()
          false,              # bool for only caching the results when using optimize!()
          false,              # bool for using linear interpolation even if integrationMethod ==:ps
          false,              # bool to indicate if user wants solution interpolated for them
+         false,
          false
                 )
 end
