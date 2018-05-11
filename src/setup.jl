@@ -212,29 +212,27 @@ function OCPdef!(n::NLOpt)
   end
 
   # boundary constraints
-  if any(.!isnan.(n.ocp.X0_tol)) || n.s.ocp.slackVariables  # create handles for constraining the entire initial state
+  if any(.!isnan.(n.ocp.X0_tol))   # create handles for constraining the entire initial state
     n.r.ocp.x0Con = Array{Any}(n.ocp.state.num,2) # this is so they can be easily reference when doing MPC
-    n.r.ocp.x0sCon = Array{Any}(n.ocp.state.num)
   else
     n.r.ocp.x0Con = []
-    n.r.ocp.x0scon = []
   end
 
-  if any(.!isnan.(n.ocp.XF_tol)) || n.s.ocp.slackVariables  # create handles for constraining the entire final state
+  if any(.!isnan.(n.ocp.XF_tol))   # create handles for constraining the entire final state
     n.r.ocp.xfCon = Array{Any}(n.ocp.state.num,2) # this is so they can be easily reference when doing MPC
-    n.r.ocp.xfsCon = Array{Any}(n.ocp.state.num)
   else
     n.r.ocp.xfCon = []
-    n.r.ocp.xfscon = []
   end
 
   if n.s.ocp.x0slackVariables # currently adding slack variables for all initial states even if there are no constraints on them
     @variable(n.ocp.mdl,x0s[1:n.ocp.state.num])
     n.ocp.x0s = x0s
+    n.r.ocp.x0sCon = Array{Any}(n.ocp.state.num)
   end
   if n.s.ocp.xFslackVariables # currently adding slack variables for all final states even if there are no constraints on them
     @variable(n.ocp.mdl,xFs[1:n.ocp.state.num])
     n.ocp.xFs = xFs
+    n.r.ocp.xfsCon = Array{Any}(n.ocp.state.num)
   end
 
   for st in 1:n.ocp.state.num

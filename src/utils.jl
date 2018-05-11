@@ -47,7 +47,10 @@ Date Create: 2/8/2017, Last Modified: 4/13/2018 \n
 function defineTolerances!(n::NLOpt;
                           X0_tol::Array{Float64,1}=0.05*ones(Float64,n.ocp.state.num,),
                           XF_tol::Array{Float64,1}=0.05*ones(Float64,n.ocp.state.num,))
-  n.ocp.X0_tol=X0_tol; n.ocp.XF_tol=XF_tol;
+  # TODO error checking, if the user does not pass tolerances etc. 
+  n.ocp.X0_tol = X0_tol
+  n.ocp.XF_tol = XF_tol
+
   return nothing
 end
 
