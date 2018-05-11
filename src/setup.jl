@@ -214,14 +214,18 @@ function OCPdef!(n::NLOpt)
   # boundary constraints
   if any(.!isnan.(n.ocp.X0_tol)) || n.s.ocp.slackVariables  # create handles for constraining the entire initial state
     n.r.ocp.x0Con = Array{Any}(n.ocp.state.num,2) # this is so they can be easily reference when doing MPC
+    n.r.ocp.x0sCon = Array{Any}(n.ocp.state.num)
   else
     n.r.ocp.x0Con = []
+    n.r.ocp.x0scon = []
   end
 
   if any(.!isnan.(n.ocp.XF_tol)) || n.s.ocp.slackVariables  # create handles for constraining the entire final state
     n.r.ocp.xfCon = Array{Any}(n.ocp.state.num,2) # this is so they can be easily reference when doing MPC
+    n.r.ocp.xfsCon = Array{Any}(n.ocp.state.num)
   else
     n.r.ocp.xfCon = []
+    n.r.ocp.xfscon = []
   end
 
   if n.s.ocp.x0slackVariables # currently adding slack variables for all initial states even if there are no constraints on them
@@ -233,26 +237,25 @@ function OCPdef!(n::NLOpt)
     n.ocp.xFs = xFs
   end
 
-
   for st in 1:n.ocp.state.num
     if !isnan(n.ocp.X0[st]) # could have a bool for this
       if n.s.ocp.x0slackVariables
-        n.r.ocp.x0Con[st,1] = @constraint(n.ocp.mdl, n.r.ocp.x[1,st] <=  (n.ocp.X0[st]+n.ocp.x0s[st]))
-        n.r.ocp.x0Con[st,2] = @constraint(n.ocp.mdl,-n.r.ocp.x[1,st] <= -(n.ocp.X0[st]-n.ocp.x0s[st]))
-      elseif !isnan(n.ocp.X0_tol[st]) #NOTE in JuMP: Modifying range constraints is currently unsupported.
-        n.r.ocp.x0Con[st,1] = @constraint(n.ocp.mdl, n.r.ocp.x[1,st] <=  (n.ocp.X0[st]+n.ocp.X0_tol[st]))
-        n.r.ocp.x0Con[st,2] = @constraint(n.ocp.mdl,-n.r.ocp.x[1,st] <= -(n.ocp.X0[st]-n.ocp.X0_tol[st]))
+        n.r.ocp.x0Con[st,1] = @constraint(n.ocp.mdl, n.r.ocp.x[1,st] -n.ocp.x0s[st] <=  n.ocp.X0[st])
+        n.r.ocp.x0Con[st,2] = @constraint(n.ocp.mdl,-n.r.ocp.x[1,st] -n.ocp.x0s[st] <= -n.ocp.X0[st])
+        if !isnan(n.ocp.X0_tol[st])
+          n.r.ocp.x0sCon[st] = @constraint(n.ocp.mdl, n.ocp.x0s[st] <= n.ocp.X0_tol[st])
+        end
       else
         n.r.ocp.x0Con = [n.r.ocp.x0Con; @constraint(n.ocp.mdl, n.r.ocp.x[1,st]==n.ocp.X0[st])]
       end
     end
     if !isnan(n.ocp.XF[st])
       if n.s.ocp.xFslackVariables
-        n.r.ocp.xfCon[st,1] = @constraint(n.ocp.mdl, n.r.ocp.x[end,st] <=  (n.ocp.XF[st]+n.ocp.xFs[st]))
-        n.r.ocp.xfCon[st,2] = @constraint(n.ocp.mdl,-n.r.ocp.x[end,st] <= -(n.ocp.XF[st]-n.ocp.xFs[st]))
-      elseif any(.!isnan.(n.ocp.XF_tol))
-        n.r.ocp.xfCon[st,1] = @constraint(n.ocp.mdl, n.r.ocp.x[end,st] <=  (n.ocp.XF[st]+n.ocp.XF_tol[st]))
-        n.r.ocp.xfCon[st,2] = @constraint(n.ocp.mdl,-n.r.ocp.x[end,st] <= -(n.ocp.XF[st]-n.ocp.XF_tol[st]))
+        n.r.ocp.xfCon[st,1] = @constraint(n.ocp.mdl, n.r.ocp.x[end,st] -n.ocp.xFs[st] <=  n.ocp.XF[st] )
+        n.r.ocp.xfCon[st,2] = @constraint(n.ocp.mdl,-n.r.ocp.x[end,st] -n.ocp.xFs[st] <= -n.ocp.XF[st] )
+        if !isnan(n.ocp.XF_tol[st])
+          n.r.ocp.xfsCon[st] = @constraint(n.ocp.mdl, n.ocp.xFs[st] <= n.ocp.XF_tol[st])
+        end
       else
         n.r.ocp.xfCon = [n.r.ocp.xfCon; @constraint(n.ocp.mdl, n.r.ocp.x[end,st]==n.ocp.XF[st])]
       end

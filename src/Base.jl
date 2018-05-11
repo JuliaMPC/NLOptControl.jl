@@ -256,7 +256,9 @@ type OCPResults
   Upts                       # vector control sample points
   CSpts                      # vector costate sample points
   x0Con                      # handle for initial state constraints
+  x0sCon
   xfCon                      # handle for final state constraints
+  xfsCon
   dynCon                     # dynamics constraints
   constraint::Constraint     # constraint handles and data
   evalNum                    # number of times optimization has been run
@@ -292,7 +294,9 @@ OCPResults( Vector{Any}[],# time vector for control
         Vector{Any}[],    # vector control sample points
         Vector{Any}[],    # vector costate sample points
         nothing,          # handle for initial state constraints
+        nothing,
         nothing,          # handle for final state constraints
+        nothing,
         nothing,          # dynamics constraint
         Constraint(),     # constraint data
         1,                # current evaluation number

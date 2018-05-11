@@ -465,7 +465,10 @@ function updateX0!(n,args...)
   end
   # update states with n.ocp.X0
   for st in 1:n.ocp.state.num
-    if any(!isnan(n.ocp.X0_tol[st]))
+    if n.s.ocp.x0slackVariables
+     JuMP.setRHS(n.r.ocp.x0Con[st,1], n.ocp.X0[st])
+     JuMP.setRHS(n.r.ocp.x0Con[st,2],-n.ocp.X0[st])
+    elseif any(!isnan(n.ocp.X0_tol[st]))
       JuMP.setRHS(n.r.ocp.x0Con[st,1], (n.ocp.X0[st]+n.ocp.X0_tol[st]))
       JuMP.setRHS(n.r.ocp.x0Con[st,2],-(n.ocp.X0[st]-n.ocp.X0_tol[st]))
     else
