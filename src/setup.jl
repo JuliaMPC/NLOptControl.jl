@@ -212,13 +212,13 @@ function OCPdef!(n::NLOpt)
   end
 
   # boundary constraints
-  if any(.!isnan.(n.ocp.X0_tol))   # create handles for constraining the entire initial state
+  if n.s.ocp.x0slackVariables   # create handles for constraining the entire initial state
     n.r.ocp.x0Con = Array{Any}(n.ocp.state.num,2) # this is so they can be easily reference when doing MPC
   else
     n.r.ocp.x0Con = []
   end
 
-  if any(.!isnan.(n.ocp.XF_tol))   # create handles for constraining the entire final state
+  if n.s.ocp.xFslackVariables # create handles for constraining the entire final state
     n.r.ocp.xfCon = Array{Any}(n.ocp.state.num,2) # this is so they can be easily reference when doing MPC
   else
     n.r.ocp.xfCon = []
@@ -367,12 +367,22 @@ function configure!(n::NLOpt; kwargs... )
   end
 
   # x0 slack variables
-  if !haskey(kw,:x0slackVariables); n.s.ocp.x0slackVariables=false; # default
-  else; n.s.ocp.x0slackVariables=get(kw,:x0slackVariables,0);
+  if !haskey(kw,:x0slackVariables)
+    if !any(isnan.(n.ocp.X0_tol))
+      n.s.ocp.x0slackVariables = true
+    else
+      n.s.ocp.x0slackVariables = false # default
+    end
+  else; n.s.ocp.x0slackVariables=get(kw,:x0slackVariables,0);  # TODO check to see if user is using tolerances and passed false to configure
   end
 
   # xF slack variables
-  if !haskey(kw,:xFslackVariables); n.s.ocp.xFslackVariables=false; # default
+  if !haskey(kw,:xFslackVariables)
+    if !any(isnan.(n.ocp.XF_tol))
+      n.s.ocp.xFslackVariables = true
+    else
+      n.s.ocp.xFslackVariables = false # default
+    end
   else; n.s.ocp.xFslackVariables=get(kw,:xFslackVariables,0);
   end
 

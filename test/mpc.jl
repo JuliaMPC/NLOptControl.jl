@@ -13,6 +13,17 @@ function MLplant(n,x0::Vector,t::Vector,U::Matrix,t0::Float64,tf::Float64)
   return sol, U
 end
 
+```
+integrationConfig=:lgrExplicit
+interpolationOn=true
+linearInterpolation=false
+numInterpPts=250
+AlltpolyPts=false
+predictX0=false
+maxSim=100
+lastOptimal=false
+tolOn=true
+```
 function MoonLander(integrationConfig;interpolationOn::Bool=true,linearInterpolation::Bool=false,numInterpPts::Int64=250,AlltpolyPts::Bool=false,predictX0::Bool=false,maxSim::Int64=100,lastOptimal::Bool=true,tolOn::Bool=false)
   n=define(numStates=2,numControls=1,X0=[10.,-2],XF=[0.,0.],CL=[0.],CU=[3.])
   n.s.ocp.numInterpPts = numInterpPts
