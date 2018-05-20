@@ -117,7 +117,8 @@ function defineMPC!(n;
                    goal=n.ocp.XF,
                    goalTol=0.1*abs.(n.ocp.X0 - n.ocp.XF),
                    lastOptimal::Bool=true,
-                   printLevel::Int64=2)
+                   printLevel::Int64=2,
+                   onlyOptimal::Bool=false)
  n.s.mpc.on = true
  n.mpc::MPC = MPC()
  n.s.mpc.mode = mode
@@ -132,6 +133,7 @@ function defineMPC!(n;
  n.mpc.v.goalTol = goalTol
  n.s.mpc.lastOptimal = lastOptimal
  n.s.mpc.printLevel = printLevel
+ n.s.mpc.onlyOptimal = onlyOptimal
 
  n.f.mpc.simFailed[1] = false # for some reason it is getting defined as 0.0, not false during initialization
  n.f.mpc.defined = true

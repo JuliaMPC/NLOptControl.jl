@@ -342,6 +342,7 @@ type MPCSettings
  printLevel::Int64
  expandGoal::Bool             # bool to indicate if the goal needs to be expanded
  enlargeGoalTolFactor::Int64  # scaling factor to enlare the goal
+ onlyOptimal::Bool
 end
 
 function MPCSettings()
@@ -357,7 +358,8 @@ function MPCSettings()
       true,
       2,
       true,
-      2
+      2,
+      false
       )
 end
 
@@ -855,7 +857,7 @@ function postProcess!(n;kwargs...)
       n.r.ocp.tst = n.r.ocp.tctr
     end
 
-    if n.r.ocp.status==:Optimal || (n.s.mpc.on && isequal(n.mpc.v.evalNum,1))
+    if n.r.ocp.status==:Optimal || (!n.s.mpc.onlyOptimal && n.s.mpc.on && isequal(n.mpc.v.evalNum,1))
       if (!isequal(n.r.ocp.status,:Optimal) && n.s.mpc.on && isequal(n.mpc.v.evalNum,1))
         warn("There is no previous :Optimal solution to use since isequal(n.mpc.v.evalNum,1). \n
             Attemting to extract: ",n.r.ocp.status," solution. \n
@@ -871,7 +873,7 @@ function postProcess!(n;kwargs...)
         n.r.ocp.U[:,ctr] = getvalue(n.r.ocp.u[:,ctr])
       end
 
-    elseif n.s.mpc.on && n.s.mpc.lastOptimal
+    elseif n.s.mpc.on && n.s.mpc.lastOptimal && !n.s.mpc.onlyOptimal
       if !n.s.ocp.save
         error("This functionality currently needs to have n.s.save==true")
       end
@@ -910,6 +912,10 @@ function postProcess!(n;kwargs...)
           n.r.ocp.U[:,ctr] = n.r.ocp.dfs[optIdx][n.ocp.control.name[ctr]][timeIdx:end-1]
         end
       end
+    else
+      warn("The solution is not Optimal \n
+          Setting: n.f.mpc.simFailed = [true, n.r.ocp.status] ")
+       n.f.mpc.simFailed = [true, n.r.ocp.status]
     end
     if n.s.ocp.evalConstraints && n.r.ocp.status!=:Error  # note may want to remove the && arg
       evalConstraints!(n)
