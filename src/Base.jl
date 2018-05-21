@@ -838,7 +838,7 @@ function postProcess!(n;kwargs...)
   # even if n.r.ocp.status==:Infeasible try to get solution. For the case that user may want to look at results to see where constraints where violated
   # in this case set =>  n.s.ocp.evalConstraints = true
   # http://jump.readthedocs.io/en/latest/refmodel.html#solve-status
-  if !Init && (n.s.ocp.evalConstraints || ((n.r.ocp.status==:Optimal) || (n.r.ocp.status==:UserLimit)))
+  if !Init #&& (n.s.ocp.evalConstraints || ((n.r.ocp.status==:Optimal) || (n.r.ocp.status==:UserLimit)))
     if n.s.ocp.integrationMethod==:ps
       if n.s.ocp.finalTimeDV
         t = [scale_tau(n.ocp.ts[int],0.0,getvalue(n.ocp.tf)) for int in 1:n.ocp.Ni]     # scale time from [-1,1] to [t0,tf]
@@ -875,7 +875,7 @@ function postProcess!(n;kwargs...)
 
     elseif n.s.mpc.on && n.s.mpc.lastOptimal && !n.s.mpc.onlyOptimal
       if !n.s.ocp.save
-        error("This functionality currently needs to have n.s.save==true")
+        error("This functionality currently needs to have n.s.ocp.save==true")
       end
       optIdx = find(n.r.ocp.dfsOpt[:status].==:Optimal)[end]  # use the last :Optimal solution
       @show n.r.ocp.dfsOpt
