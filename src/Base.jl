@@ -10,6 +10,7 @@ import MathProgBase.getconstrduals
 # These functions are required for MPC_Module.jl
 export
   evalConstraints!,
+  opt2dfs!,
   dvs2dfs,
   plant2dfs!,
   postProcess!,
@@ -779,7 +780,7 @@ function opt2dfs!(n;kwargs...)
 
   # make sure that the feildnames are initialized
   if isempty(n.r.ocp.dfsOpt)
-      n.r.ocp.dfsOpt = DataFrame(tSolve = [], objVal = [], status = [], iterNum = [])
+      n.r.ocp.dfsOpt = DataFrame(tSolve = [], objVal = [], status = [], iterNum = [], evalNum = [])
   end
 
   if !statusUpdate
@@ -797,9 +798,9 @@ function opt2dfs!(n;kwargs...)
   end
   if n.s.mpc.on
     push!(n.r.ocp.dfsOpt[:iterNum], n.r.ocp.iterNum) # can set iter_nums for a higher/lower level algoritm
-  else
-    push!(n.r.ocp.dfsOpt[:iterNum], n.r.ocp.evalNum)
   end
+  push!(n.r.ocp.dfsOpt[:evalNum], n.r.ocp.evalNum-1)
+
   return nothing
 end
 

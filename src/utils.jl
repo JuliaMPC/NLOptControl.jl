@@ -309,11 +309,35 @@ Date Create: 3/26/2017, Last Modified: 2/6/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function savePlantData!(n)
+  if isempty(n.r.ip.plant)
+    warn("No plant data to save.\n
+          Make sure that n.s.save = true ")
+    return nothing
+  end
   cd(n.r.resultsDir)
-    CSV.write("plant_data.csv", n.r.ip.dfsplantPts; quotechar = ' ');
+    CSV.write("plant.csv", n.r.ip.plant; quotechar = ' ');
   cd(n.r.mainDir)
   return nothing
 end
+
+"""
+------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 6/7/2018, Last Modified: 6/7/2018 \n
+--------------------------------------------------------------------------------------\n
+"""
+function saveOptData(n)
+  if isempty(n.r.ocp.dfsOpt)
+    warn("No optimization data to save.\n
+          Make sure that n.s.save = true ")
+    return nothing
+  end
+  cd(n.r.resultsDir)
+    CSV.write("opt.csv", n.r.ocp.dfsOpt; quotechar = ' ');
+  cd(n.r.mainDir)
+  return nothing
+end
+
 
 """
 ------------------------------------------------------------------\n

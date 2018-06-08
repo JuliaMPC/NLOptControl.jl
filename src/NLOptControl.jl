@@ -188,6 +188,7 @@ export
        interpolateLagrange!,
        interpolateLinear!,
        interpolate_lagrange,
+       opt2dfs!,
 
        # setup functions
        define,
@@ -216,6 +217,7 @@ export
        savePlantData!,
        saveData,
        linearSpline,
+       saveOptData,
 
        # MPC_Module.jl
        MPC,
