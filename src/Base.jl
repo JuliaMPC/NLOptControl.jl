@@ -751,7 +751,7 @@ function dvs2dfs(n)
   if n.s.ocp.evalCostates && n.s.ocp.integrationMethod == :ps && n.s.ocp.evalConstraints
     CS_vector = Matrix{Float64}(n.ocp.state.pts, n.ocp.state.num)
     for st in 1:n.ocp.state.num # states
-      temp = [n.r.CS[st][int][1:end,:] for int in 1:n.ocp.Ni]
+      temp = [n.r.ocp.CS[st][int][1:end,:] for int in 1:n.ocp.Ni]
       CS_vector[1:end-1,st] = [idx for tempM in temp for idx=tempM]
       CS_vector[end,st] = NaN
     end
@@ -930,15 +930,15 @@ function postProcess!(n;kwargs...)
         end
         mpb = JuMP.internalmodel(n.ocp.mdl)
         c = MathProgBase.getconstrduals(mpb)
-        # NOTE for now since costates are not defined for :tm methods, n.r.CS is in a different format than n.r.ocp.X
+        # NOTE for now since costates are not defined for :tm methods, n.r.ocp.CS is in a different format than n.r.ocp.X
         # in the future if costates are defined for :tm methods this can be changed
-        n.r.CS = [[zeros(Float64,n.ocp.Nck[int]) for int in 1:n.ocp.Ni] for st in 1:n.ocp.state.num]
+        n.r.ocp.CS = [[zeros(Float64,n.ocp.Nck[int]) for int in 1:n.ocp.Ni] for st in 1:n.ocp.state.num]
         for int in 1:n.ocp.Ni
           b = 0
           for st in 1:n.ocp.state.num
             a = L1 + n.ocp.Nck[int]*(st-1)  # n.ocp.Nck[int]*(st-1) adds on indices for each additional state within the interval
             b = a + n.ocp.Nck[int] - 1      # length of the state within this interval
-            n.r.CS[st][int] = -c[a:b]./n.ocp.ws[int]
+            n.r.ocp.CS[st][int] = -c[a:b]./n.ocp.ws[int]
           end
           L1 = b + 1 # adds indicies due to a change in the interval
         end
