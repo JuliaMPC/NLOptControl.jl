@@ -17,11 +17,7 @@ It can add to [juliaOpt](http://www.juliaopt.org/) community by:
 [![Latest](https://img.shields.io/badge/docs-latest-blue.svg)](https://juliampc.github.io/MPCDocs.jl/latest/)
 
 ## Installation
-
-There are several packages that need to be installed, to do this run:
 ```julia
-Pkg.clone("https://github.com/JuliaMPC/PrettyPlots.jl")
-Pkg.add("VehicleModels")
 Pkg.add("NLOptControl")
 ```
 
@@ -34,6 +30,14 @@ If you are using **Linux** make sure that you have **gfortran** to run **Ipopt**
 ```julia
 sudo apt-get update
 sudo apt-get install gfortran
+```
+
+## Add Ons
+For additional functionality, there a couple other packages that can be installed:
+```julia
+Pkg.add("VehicleModels")
+Pkg.add("PrettyPlots")
+Pkg.clone("https://github.com/JuliaMPC/MichiganAutonomousVehicles.jl")
 ```
 
 Also, a plotting backend will be required and there are several options:
