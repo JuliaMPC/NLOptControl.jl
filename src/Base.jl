@@ -858,7 +858,9 @@ function postProcess!(n;kwargs...)
       n.r.ocp.tst = n.r.ocp.tctr
     end
 
+    stateDataExists = false
     if n.r.ocp.status==:Optimal || (!n.s.mpc.onlyOptimal && n.s.mpc.on && isequal(n.mpc.v.evalNum,1))
+      stateDataExists = true
       if (!isequal(n.r.ocp.status,:Optimal) && n.s.mpc.on && isequal(n.mpc.v.evalNum,1))
         warn("There is no previous :Optimal solution to use since isequal(n.mpc.v.evalNum,1). \n
             Attemting to extract: ",n.r.ocp.status," solution. \n
@@ -944,7 +946,7 @@ function postProcess!(n;kwargs...)
         end
       end
     end
-    if n.s.ocp.save
+    if n.s.ocp.save && stateDataExists
       push!(n.r.ocp.dfs,dvs2dfs(n))
       push!(n.r.ocp.dfsCon,con2dfs(n))
       if n.s.ocp.interpolationOn
