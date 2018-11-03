@@ -30,9 +30,11 @@ Pkg.add("Ipopt");Pkg.build("Ipopt");
 ```
 
 If you are using **Linux** make sure that you have **gfortran** to run **Ipopt**:
-```julia
-sudo apt-get update
-sudo apt-get install gfortran
+```
+$sudo apt-get update
+$sudo apt-get install gfortran
+$sudo apt-get liblapack-dev
+$sudo apt-get libblas-dev
 ```
 
 ## Add Ons
