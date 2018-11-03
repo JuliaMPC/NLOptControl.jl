@@ -16,6 +16,8 @@ notifications:
 addons:
       apt_packages:
         - gfortran
+        - liblapack-dev
+        - libblas-dev
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia -e 'Pkg.clone(pwd())'
