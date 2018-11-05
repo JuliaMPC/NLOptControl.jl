@@ -1,4 +1,4 @@
-julia 0.6
+julia 0.6-
 FastGaussQuadrature
 JuMP
 DataFrames 0.11

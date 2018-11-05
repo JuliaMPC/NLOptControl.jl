@@ -1,7 +1,7 @@
 # NLOptControl.jl
 
 [![Build Status](https://ci.appveyor.com/api/projects/status/f480ahs29c85m6ne?svg=true)](https://ci.appveyor.com/project/huckl3b3rry87/nloptcontrol-jl)
-[![travis](https://travis-ci.org/JuliaMPC/NLOptControl.jl#)
+[![travis](https://travis-ci.org/JuliaMPC/NLOptControl.jl.svg?branch=master)](https://travis-ci.org/JuliaMPC/NLOptControl.jl)
 
 ## PackageEvaluator.jl
 [![NLOptControl](http://pkg.julialang.org/badges/NLOptControl_0.6.svg)](http://pkg.julialang.org/detail/NLOptControl)
