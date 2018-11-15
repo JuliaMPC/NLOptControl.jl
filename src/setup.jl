@@ -311,7 +311,7 @@ function OCPdef!(n::NLOpt)
 
     L=size(n.r.ocp.x)[1];
     dx=Array{Any}(L,n.ocp.state.num)
-    for st in 1:n.ocp.state.num
+    for st in 1:n.ocp.state.num  # for RK4 need center points..
       dx[:,st]=DiffEq(n,n.r.ocp.x,n.r.ocp.u,L,st)
     end
 
@@ -322,6 +322,16 @@ function OCPdef!(n::NLOpt)
     elseif n.s.ocp.integrationScheme==:trapezoidal
       for st in 1:n.ocp.state.num
         n.r.ocp.dynCon[:,st] = @NLconstraint(n.ocp.mdl, [j in 1:n.ocp.N], n.r.ocp.x[j+1,st] - n.r.ocp.x[j,st] == 0.5*(dx[j,st] + dx[j+1,st])*n.ocp.tf/(n.ocp.N) )
+      end
+    elseif n.s.ocp.integrationScheme==:rk4
+      for st in 1:n.ocp.state.num
+        k1 = :(F(xn,yn))
+        k2 = :(F(xn+h/2,yn+k1/2))
+        k3 = :(F(xn+h/2,yn+k2/2))
+        k4 = :(F(xn+h,yn+k3))
+       yn+1 - yn = 1/6*h(k1+2k2+2k3+k4)
+
+        n.r.ocp.dynCon[:,st] = @NLconstraint(n.ocp.mdl, [j in 1:n.ocp.N], n.r.ocp.x[j+1,st] - n.r.ocp.x[j,st] == 1/6*(dx[j,st] + dx[j+1,st])*n.ocp.tf/(n.ocp.N) )
       end
     end
 

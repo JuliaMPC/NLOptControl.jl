@@ -455,7 +455,7 @@ function updateX0!(n,args...)
   error("not set up for this mode")
  end
 
-  if n.s.mpc.shiftX0 # TODO consider saving linear shifting occurances
+  if ros # TODO consider saving linear shifting occurances
     for st in 1:n.ocp.state.num
       if n.ocp.X0[st] < n.ocp.XL[st]
         n.ocp.X0[st] = n.ocp.XL[st]
