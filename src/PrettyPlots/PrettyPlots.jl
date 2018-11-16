@@ -9,7 +9,7 @@ import Plots.xlims!, Plots.ylims!, Plots.plot
 gr(); # default backend
 #pyplot()
 
-include("Base.jl")
+include("../Base.jl")
 using .Base
 
 include("PrettyUtils.jl")
