@@ -175,10 +175,13 @@ NLOpt(
 end
 
 # scripts
-include("utils.jl");
+include("utils.jl")
 include("setup.jl");
 include("ps.jl");
 include("diffeq.jl")
+
+include("PrettyPlots/PrettyPlots.jl")
+using .PrettyPlots
 
 export
        # Base functions  TODO make a hamiltonian function
@@ -246,5 +249,30 @@ export
        @NLconstraint,
        setvalue,
        getvalue,
-       setRHS
+       setRHS,
+
+       # PrettyPlots
+        minDF,
+        maxDF,
+        plotSettings,
+        _pretty_defaults,
+        currentSettings,
+
+        # NLOptControl plots
+        statePlot,
+        controlPlot,
+        costatesPlot,
+        costatesPlots,
+        allPlots,
+        adjust_axis,
+
+        # MPC plots
+        mpcPlot,
+        tPlot,
+        optPlot,
+
+        # Plots.jl exported functions
+        xlims!,
+        ylims!,
+        plot
 end # module

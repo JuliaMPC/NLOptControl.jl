@@ -3,9 +3,12 @@ FastGaussQuadrature
 JuMP
 DataFrames 0.11
 Ipopt
-KNITRO
+KNITRO 0.4
 Interpolations
 MathProgBase
 CSV 0.2.4
 OrdinaryDiffEq
 DiffEqBase
+Colors
+Plots
+GR
