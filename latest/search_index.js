@@ -41,14 +41,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "index.html#juliaCon-Workshop-Notebook-(OUT-OF-DATE!)-1",
-    "page": "Home",
-    "title": "2017 juliaCon Workshop Notebook (OUT OF DATE!)",
-    "category": "section",
-    "text": "After installation, the notebook can be viewed:using IJulia\nnotebook(dir=Pkg.dir(\"NLOptControl/examples\"))Also, on the left side of this site, there are many tutorials that provide complete examples for using this software. Please look at these for information on how to use this tool."
-},
-
-{
     "location": "index.html#Acknowledgements-1",
     "page": "Home",
     "title": "Acknowledgements",
