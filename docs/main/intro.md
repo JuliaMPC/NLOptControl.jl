@@ -1,26 +1,33 @@
-# Introduction
+# NLOptControl.jl
+
+This software solves **nonlinear control problems** at a **high-level** very **quickly**.
+
+Adds to [juliaOpt](http://www.juliaopt.org/) community by:
+ * Providing an implementation of direct-collocation methods for solving optimal control problems in julia
+ * Solving nonlinear optimal control problems at a high-level
+ * Visualizing the solution
 
 ## Installation
-
-Just do:
 ```julia
-Pkg.clone("https://github.com/JuliaMPC/NLOptControl.jl")
+Pkg.add("NLOptControl")
 ```
 
-While `NLOptControl.jl` can be run by itself, there are several add-ons that that may be useful:
-```julia
-Pkg.clone("https://github.com/JuliaMPC/PrettyPlots.jl")
-Pkg.clone("https://github.com/JuliaMPC/VehicleModels.jl")
+If you are using **Linux** make sure that you have **gfortran** to run **Ipopt**:
+```
+$sudo apt-get update
+$sudo apt-get install gfortran
+$sudo apt-get liblapack-dev
+$sudo apt-get libblas-dev
 ```
 
 ## Citation
-
-If you find this package useful, please cite this paper:
+If you find [NLOptControl.jl](https://github.com/JuliaMPC/NLOptControl.jl) useful, please cite it:
 ```
-@Conference{Febbo2017,
-  author    = {Huckleberry Febbo, Jiechao Liu, Paramsothy Jayakumar, Jeffrey L. Stein, Tulga Ersal},
-  title     = {Moving Obstacle Avoidance for Large, High-Speed Autonomous Ground Vehicles},
-  year      = {2017},
-  publisher = {IEEE}
+@software{nlopt,
+  author = {{Huckleberry Febbo}},
+  title = {NLOptControl.jl},
+  url = {https://github.com/JuliaMPC/NLOptControl.jl},
+  version = {0.0.1},
+  date = {2017-06-17},
 }
 ```
