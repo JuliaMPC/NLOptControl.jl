@@ -7,7 +7,7 @@ using Interpolations
 using MathProgBase
 import MathProgBase.getconstrduals
 
-# These functions are required for MPC_Module.jl
+# These functions are required for MPC_Module.jl and PrettyPlots.jl (resultsDir!)
 export
   evalConstraints!,
   opt2dfs!,
@@ -30,7 +30,8 @@ export
   _Ipopt_MPC,
   _KNITRO_defaults,
   _KNITRO_MPC,
-  simulationModes
+  simulationModes,
+  resultsDir!
 
 ################################################################################
 # Constants
@@ -1061,6 +1062,34 @@ function evalConstraints!(n)
     s = f + 1
   end
   return nothing
+end
+
+"""
+description = string(
+" *  \n ")
+
+resultsDir!(r;resultsName=resultsName,description=description)
+# removes results folder and creates a new one
+# TODO consider putting in a warning or some sort of an interaction with user
+--------------------------------------------------------------------------------------\n
+Author: Huckleberry Febbo, Graduate Student, University of Michigan
+Date Create: 3/26/2017, Last Modified: 5/29/2017 \n
+--------------------------------------------------------------------------------------\n
+"""
+function resultsDir!(n;resultsName::String = "",description::DataFrame = DataFrame())
+ results_dir=string(n.r.mainDir,"/results/",resultsName)  # define directories
+ n.r.resultsDir=results_dir;
+
+ if isdir(n.r.resultsDir)
+   rm(n.r.resultsDir; recursive=true)
+   print("\n The old results have all been deleted! \n \n")
+ end
+ mkdir(n.r.resultsDir)# create directory
+
+ cd(n.r.resultsDir)
+   CSV.write("description.csv", description; quotechar = ' ')
+ cd(n.r.mainDir)
+ return nothing
 end
 
 end # module

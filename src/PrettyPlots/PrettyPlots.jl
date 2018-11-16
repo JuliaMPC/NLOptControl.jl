@@ -8,8 +8,9 @@ using Plots
 import Plots.xlims!, Plots.ylims!, Plots.plot
 gr(); # default backend
 #pyplot()
-#using VehicleModels # need for parameters
-#using NLOptControl  # need for resultsDir!()
+
+include("Base.jl")
+using .Base
 
 include("PrettyUtils.jl")
 include("NLOptControl_plots.jl")
