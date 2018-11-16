@@ -3,6 +3,7 @@ module PrettyPlots
 using Colors
 using DataFrames
 using Plots
+using CSV
 #import Plots.gr
 #import Plots.pyplot
 import Plots.xlims!, Plots.ylims!, Plots.plot

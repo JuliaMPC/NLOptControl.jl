@@ -34,17 +34,6 @@ If you find [NLOptControl.jl](https://github.com/JuliaMPC/NLOptControl.jl) usefu
 }
 ```
 
-## 2017 juliaCon Workshop Notebook (OUT OF DATE!)
-
-After installation, the notebook can be viewed:
-```julia
-using IJulia
-notebook(dir=Pkg.dir("NLOptControl/examples"))
-```
-
-Also, on the left side of this site, there are many tutorials that provide complete examples for using this software. Please look at these for information on how to use this tool.
-
-
 ## Acknowledgements
 * [JuMP.jl](https://jump.readthedocs.io/en/latest/) is an important part of this NLOptControl.jl and discussions with Miles Lubin where helpful
 * Chris Rackauckas is a very helpful member of the julia community and has provided me support and advice multiple times his software [DifferentialEquations.jl](https://github.com/JuliaDiffEq/DifferentialEquations.jl) is also part of NLOptControl.jl
