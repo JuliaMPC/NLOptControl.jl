@@ -26,6 +26,6 @@ script:
   - julia -e 'Pkg.clone(pwd())'
   - julia -e 'Pkg.test("NLOptControl")'
 #  - julia -e 'run(`lualatex -v`)'
-  - julia -e 'Pkg.checkout("https://github.com/JuliaMPC/NLOptControl.jl")'
+  - julia -e 'Pkg.checkout("NLOptControl.jl")'
   - julia -e 'Pkg.add("Documenter");'
   - julia -e 'cd(Pkg.dir("NLOptControl"));ENV["DOCUMENTER_DEBUG"]=true; include(joinpath("docs", "make.jl"))'
