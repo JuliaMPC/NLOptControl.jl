@@ -13,15 +13,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Home",
     "title": "NLOptControl.jl Documentation",
     "category": "section",
-    "text": ""
-},
-
-{
-    "location": "index.html#Introduction-1",
-    "page": "Home",
-    "title": "Introduction",
-    "category": "section",
-    "text": "This software solves nonlinear control problems at a high-level very quickly.It added to juliaOpt community by:Providing an implementation of of the hp-pseudospectral method written in julia\nIncorporating model predictive control functionality\nAutomatically visualizing the solution"
+    "text": "This software solves nonlinear control problems at a high-level very quickly.Adds to juliaOpt community by:Providing an implementation of direct-collocation methods for solving optimal control problems in julia\nSolving nonlinear optimal control problems at a high-level\nVisualizing the solution"
 },
 
 {
