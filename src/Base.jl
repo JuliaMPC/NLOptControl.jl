@@ -6,6 +6,7 @@ using DataFrames
 using Interpolations
 using MathProgBase
 import MathProgBase.getconstrduals
+using CSV
 
 # These functions are required for MPC_Module.jl and PrettyPlots.jl (resultsDir!)
 export
