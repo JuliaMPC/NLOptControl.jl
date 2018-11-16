@@ -8,7 +8,7 @@
 This software solves **nonlinear control problems** at a **high-level** very **quickly**.
 
 Adds to [juliaOpt](http://www.juliaopt.org/) community by:
- * Providing an implementation of the direct-collocation methods for solving optimal control problems in julia
+ * Providing an implementation of direct-collocation methods for solving optimal control problems in julia
  * Solving nonlinear optimal control problems at a high-level
  * Visualizing the solution
 
@@ -21,11 +21,6 @@ Adds to [juliaOpt](http://www.juliaopt.org/) community by:
 Pkg.add("NLOptControl")
 ```
 
-Either [Ipopt.jl](https://github.com/JuliaOpt/Ipopt.jl) or [KNITRO.jl](https://github.com/JuliaOpt/KNITRO.jl) can be used for the nonlinear solver. Since **Ipopt** is free, all of the examples will use it and it can be added with:
-```julia
-Pkg.add("Ipopt");Pkg.build("Ipopt");
-```
-
 If you are using **Linux** make sure that you have **gfortran** to run **Ipopt**:
 ```
 $sudo apt-get update
@@ -34,23 +29,7 @@ $sudo apt-get liblapack-dev
 $sudo apt-get libblas-dev
 ```
 
-## Add Ons
-For additional functionality, there a couple other packages that can be installed:
-```julia
-Pkg.add("VehicleModels")
-Pkg.add("PrettyPlots")
-Pkg.clone("https://github.com/JuliaMPC/MichiganAutonomousVehicles.jl")
-```
-
-Also, a plotting backend will be required and there are several options:
-```julia
-Pkg.add("PGFPlots");Pkg.build("PGFPlots")   # best looking
-Pkg.add("GR");Pkg.build("GR");              # most reliable
-Pkg.add("PyPlot");Pkg.build("PyPlot")       # also a good option  
-```
-
 ## Citation
-
 If you find [NLOptControl.jl](https://github.com/JuliaMPC/NLOptControl.jl) useful, please cite it:
 ```
 @software{nlopt,
@@ -59,16 +38,6 @@ If you find [NLOptControl.jl](https://github.com/JuliaMPC/NLOptControl.jl) usefu
   url = {https://github.com/JuliaMPC/NLOptControl.jl},
   version = {0.0.1},
   date = {2017-06-17},
-}
-```
-
-If you find [VehicleModels.jl](https://github.com/JuliaMPC/VehicleModels.jl) useful, please cite this paper:
-```
-@Conference{Febbo2017,
-  author    = {Huckleberry Febbo, Jiechao Liu, Paramsothy Jayakumar, Jeffrey L. Stein, Tulga Ersal},
-  title     = {Moving Obstacle Avoidance for Large, High-Speed Autonomous Ground Vehicles},
-  year      = {2017},
-  publisher = {IEEE}
 }
 ```
 
