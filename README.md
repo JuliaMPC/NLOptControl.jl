@@ -7,15 +7,14 @@
 
 This software solves **nonlinear control problems** at a **high-level** very **quickly**.
 
-It can add to [juliaOpt](http://www.juliaopt.org/) community by:
- * Providing an implementation of of the [hp-pseudospectral method](http://vdol.mae.ufl.edu/JournalPublications/TOMS-GPOPS-II-August-2013.pdf) written in julia
+Adds to [juliaOpt](http://www.juliaopt.org/) community by:
+ * Providing an implementation of the direct-collocation methods for solving optimal control problems in julia
  * Solving nonlinear optimal control problems at a high-level
- * Automatically visualizing the solution
+ * Visualizing the solution
 
 ## Documentation
-
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliampc.github.io/MPCDocs.jl/stable/)
-[![Latest](https://img.shields.io/badge/docs-latest-blue.svg)](https://juliampc.github.io/MPCDocs.jl/latest/)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliampc.github.io/NLOptControl.jl/stable/)
+[![Latest](https://img.shields.io/badge/docs-latest-blue.svg)](https://juliampc.github.io/NLOptControl.jl/latest/)
 
 ## Installation
 ```julia
