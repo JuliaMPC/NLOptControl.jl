@@ -10,6 +10,6 @@ CSV 0.2.4
 OrdinaryDiffEq 3.21.0
 DiffEqBase 3.13.3
 Colors 0.8.2
-Plots 17.4
+Plots 0.17.4
 GR 0.35
 Hiccup 0.1.1
