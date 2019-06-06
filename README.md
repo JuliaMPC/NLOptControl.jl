@@ -28,11 +28,7 @@ sudo apt-get install libblas-dev
 
 ```julia
 Pkg.add("NLOptControl")
-```
-
-Then it is recommended that you use the master version; so,
-```julia
-Pkg.checkout("NLOptControl")
+Pkg.pin("KNITRO",v"0.4")
 ```
 
 ## Citation
