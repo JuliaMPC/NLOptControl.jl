@@ -23,10 +23,10 @@ Pkg.add("NLOptControl")
 
 If you are using **Linux** make sure that you have **gfortran** to run **Ipopt**:
 ```
-$sudo apt-get update
-$sudo apt-get install gfortran
-$sudo apt-get liblapack-dev
-$sudo apt-get libblas-dev
+sudo apt-get update
+sudo apt-get install gfortran
+sudo apt-get install liblapack-dev
+sudo apt-get install libblas-dev
 ```
 
 ## Citation
