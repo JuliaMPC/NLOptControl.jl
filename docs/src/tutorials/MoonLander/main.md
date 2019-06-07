@@ -69,6 +69,12 @@ obj = integrate!(n,:(T[j]))
 nothing # hide
 ```
 
+## Change Solver Options
+Solver options can be easily changed, for example, consider changing the print level in Ipopt as
+```
+defineSolver!(n,((:name=>:Ipopt),(:print_level=>8)))
+```
+
 ## Optimize
 ```@example MoonLander
 optimize!(n)
