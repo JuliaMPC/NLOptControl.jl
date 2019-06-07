@@ -7,6 +7,8 @@ BrysonDenham_EXP=[:(x2[j]),:(u1[j])]; L=1/6;
   @NLobjective(n.ocp.mdl,Min,obj);
   optimize!(n);
   @show n.r.ocp.dfsOpt[:tSolve]
+  @show 4/(9*L)
+  @show n.r.ocp.objVal[1]
   @test isapprox(4/(9*L),n.r.ocp.objVal[1],atol=tol)
 end
 
@@ -21,8 +23,6 @@ BrysonDenham_EXP=[:(x2[j]),:(u1[j])]; L=1/6;
   @show n.r.ocp.dfsOpt[:tSolve]
   @test isapprox(4/(9*L),n.r.ocp.objVal[1],atol=tol)
 end
-
-
 
 dx=[:(sin(x2[j])),:(u1[j])]
 @testset "BeamProblem with (:integrationScheme=>$(integrationConfig)) using expressions and solver settings)" for integrationConfig in integrationConfigs
@@ -50,6 +50,9 @@ dx=Array{Expr}(2);dx[1]=:(x[j]);dx[2]=:(u[j]-1.625);
   @show n.r.ocp.dfsOpt[:tSolve]
   @test isapprox(8.9253,n.r.ocp.objVal[1],atol=tol)
 end
+
+# TODO add tests for scaling
+
 
 ############################
 # Benchmarking Test
