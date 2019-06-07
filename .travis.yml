@@ -24,6 +24,7 @@ install:
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia -e 'Pkg.clone(pwd())'
+  - julia - 'Pkg.pin("KNITRO",v"0.4")'
   - julia -e 'Pkg.test("NLOptControl")'
 #  - julia -e 'run(`lualatex -v`)'
   - julia -e 'Pkg.checkout("NLOptControl.jl")'
