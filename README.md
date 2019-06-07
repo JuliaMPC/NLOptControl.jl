@@ -17,9 +17,6 @@ Adds to [juliaOpt](http://www.juliaopt.org/) community by:
 [![Latest](https://img.shields.io/badge/docs-latest-blue.svg)](https://juliampc.github.io/NLOptControl.jl/latest/)
 
 ## Installation
-```julia
-Pkg.add("NLOptControl")
-```
 
 If you are using **Linux** make sure that you have **gfortran** to run **Ipopt**:
 ```
@@ -27,6 +24,11 @@ sudo apt-get update
 sudo apt-get install gfortran
 sudo apt-get install liblapack-dev
 sudo apt-get install libblas-dev
+```
+
+```julia
+Pkg.add("NLOptControl")
+Pkg.pin("KNITRO",v"0.4")
 ```
 
 ## Citation
