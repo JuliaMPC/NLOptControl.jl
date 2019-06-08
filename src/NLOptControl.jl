@@ -1,6 +1,7 @@
 isdefined(Base, :__precompile__) && __precompile__()
 
 module NLOptControl
+#TODO  enable setvalue() functionality
 
 using JuMP
 import JuMP.setRHS, JuMP.getvalue, JuMP.setvalue, JuMP.@NLexpression, JuMP.@NLobjective, JuMP.@NLparameter, JuMP.@NLconstraint, JuMP.internalmodel

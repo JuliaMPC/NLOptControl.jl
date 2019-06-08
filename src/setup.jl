@@ -43,11 +43,17 @@ function define(;
   if length(XU) != numStates
     error(string("\n Length of XU must match number of states \n"))
   end
+  if length(XS) != numStates
+    error(string("\n Length of XS must match number of states \n"))
+  end
   if length(CL) != numControls
     error(string("\n Length of CL must match number of controls \n"))
   end
   if length(CU) != numControls
     error(string("\n Length of CU must match number of controls \n"))
+  end
+  if length(CS) != numControls
+    error(string("\n Length of CS must match number of controls \n"))
   end
 
   n.ocp.state = initState(numStates)
@@ -176,6 +182,7 @@ function OCPdef!(n::NLOpt)
   for st in 1:n.ocp.state.num
       n.r.ocp.x[:,st] = @NLexpression(n.ocp.mdl, [j=1:n.ocp.state.pts], n.ocp.XS[st]*x[j,st])
   end
+#  n.r.ocp.x=x;
 
   for st in 1:n.ocp.state.num
     # lower state constraint
@@ -207,11 +214,11 @@ function OCPdef!(n::NLOpt)
 
   # control variables
   @variable(n.ocp.mdl,u[1:n.ocp.control.pts,1:n.ocp.control.num])
-  #n.r.ocp.u = n.ocp.CS'.*u
   n.r.ocp.u = Matrix{Any}(n.ocp.control.pts,n.ocp.control.num)
   for ctr in 1:n.ocp.control.num
       n.r.ocp.u[:,ctr] = @NLexpression(n.ocp.mdl, [j=1:n.ocp.control.pts], n.ocp.CS[ctr]*u[j,ctr])
   end
+#n.r.ocp.u=u;
 
   for ctr in 1:n.ocp.control.num
     if !isnan.(n.ocp.CL[ctr])
@@ -324,10 +331,10 @@ function OCPdef!(n::NLOpt)
     end
     n.ocp.dt = n.ocp.tf/n.ocp.N*ones(n.ocp.N,)
 
-    L=size(n.r.ocp.x)[1];
-    dx=Array{Any}(L,n.ocp.state.num)
+    L = size(n.r.ocp.x)[1]
+    dx = Array{Any}(L,n.ocp.state.num)
     for st in 1:n.ocp.state.num
-      dx[:,st]=DiffEq(n,n.r.ocp.x,n.r.ocp.u,L,st)
+      dx[:,st] = DiffEq(n,n.r.ocp.x,n.r.ocp.u,L,st)
     end
 
     if n.s.ocp.integrationScheme==:bkwEuler

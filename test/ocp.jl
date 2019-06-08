@@ -1,4 +1,9 @@
 BrysonDenham_EXP=[:(x2[j]),:(u1[j])]; L=1/6;
+```
+using NLOptControl
+BrysonDenham_EXP=[:(x2[j]),:(u1[j])]; L=1/6;
+integrationConfig = :trapezoidal
+```
 @testset "BrysonDenham with (:integrationScheme=>$(integrationConfig)) using expressions)" for integrationConfig in integrationConfigs
   n=define(numStates=2,numControls=1,X0=[0.,1],XF=[0.,-1.],XL=[0.,NaN],XU=[L,NaN]);
   dynamics!(n,BrysonDenham_EXP)
@@ -117,7 +122,7 @@ opt_num = length(Nck_vec)
     obj=integrate!(n,:(T[j]));
     @NLobjective(n.ocp.mdl, Min, obj);
     setvalue(n.ocp.tf, 1.5)
-    for i in 1:length(x1); setvalue(x1[i], 0.0); setvalue(x2[i], 0.0);  end
+#    for i in 1:length(x1); setvalue(x1[i], 0.0); setvalue(x2[i], 0.0);  end
     # cache functions; inital optimization
     optimize!(n);
 
