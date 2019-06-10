@@ -56,7 +56,19 @@ dx=Array{Expr}(2);dx[1]=:(x[j]);dx[2]=:(u[j]-1.625);
   @test isapprox(8.9253,n.r.ocp.objVal[1],atol=tol)
 end
 
-# TODO add tests for scaling
+dx=Array{Expr}(2);dx[1]=:(x[j]);dx[2]=:(u[j]-1.625);
+@testset "MoonLander with (:integrationScheme=>$(integrationConfig)) testing functionality to scale the states and controls)" for integrationConfig in integrationConfigs
+  n=define(numStates=2,numControls=1,X0=[10.,-2],XF=[0.,0.],CL=[0.],CU=[3.],XS=[2.,.8],CS=[1.5]);
+  states!(n,[:h,:x];descriptions=["h(t)","x(t)"]);
+  controls!(n,[:u];descriptions=["u(t)"]);
+  dynamics!(n,dx)
+  configure!(n;(:integrationScheme=>integrationConfig),(:finalTimeDV=>true));
+  obj=integrate!(n,:(u[j]));
+  @NLobjective(n.ocp.mdl, Min, obj);
+  optimize!(n);
+  @show n.r.ocp.dfsOpt[:tSolve]
+  @test isapprox(8.9253,n.r.ocp.objVal[1],atol=tol)
+end
 
 
 ############################
