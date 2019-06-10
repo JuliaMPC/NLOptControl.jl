@@ -1,4 +1,9 @@
 BrysonDenham_EXP=[:(x2[j]),:(u1[j])]; L=1/6;
+```
+using NLOptControl
+BrysonDenham_EXP=[:(x2[j]),:(u1[j])]; L=1/6;
+integrationConfig = :trapezoidal
+```
 @testset "BrysonDenham with (:integrationScheme=>$(integrationConfig)) using expressions)" for integrationConfig in integrationConfigs
   n=define(numStates=2,numControls=1,X0=[0.,1],XF=[0.,-1.],XL=[0.,NaN],XU=[L,NaN]);
   dynamics!(n,BrysonDenham_EXP)
@@ -7,6 +12,8 @@ BrysonDenham_EXP=[:(x2[j]),:(u1[j])]; L=1/6;
   @NLobjective(n.ocp.mdl,Min,obj);
   optimize!(n);
   @show n.r.ocp.dfsOpt[:tSolve]
+  @show 4/(9*L)
+  @show n.r.ocp.objVal[1]
   @test isapprox(4/(9*L),n.r.ocp.objVal[1],atol=tol)
 end
 
@@ -21,8 +28,6 @@ BrysonDenham_EXP=[:(x2[j]),:(u1[j])]; L=1/6;
   @show n.r.ocp.dfsOpt[:tSolve]
   @test isapprox(4/(9*L),n.r.ocp.objVal[1],atol=tol)
 end
-
-
 
 dx=[:(sin(x2[j])),:(u1[j])]
 @testset "BeamProblem with (:integrationScheme=>$(integrationConfig)) using expressions and solver settings)" for integrationConfig in integrationConfigs
@@ -50,6 +55,21 @@ dx=Array{Expr}(2);dx[1]=:(x[j]);dx[2]=:(u[j]-1.625);
   @show n.r.ocp.dfsOpt[:tSolve]
   @test isapprox(8.9253,n.r.ocp.objVal[1],atol=tol)
 end
+
+dx=Array{Expr}(2);dx[1]=:(x[j]);dx[2]=:(u[j]-1.625);
+@testset "MoonLander with (:integrationScheme=>$(integrationConfig)) testing functionality to scale the states and controls)" for integrationConfig in integrationConfigs
+  n=define(numStates=2,numControls=1,X0=[10.,-2],XF=[0.,0.],CL=[0.],CU=[3.],XS=[2.,.8],CS=[1.5]);
+  states!(n,[:h,:x];descriptions=["h(t)","x(t)"]);
+  controls!(n,[:u];descriptions=["u(t)"]);
+  dynamics!(n,dx)
+  configure!(n;(:integrationScheme=>integrationConfig),(:finalTimeDV=>true));
+  obj=integrate!(n,:(u[j]));
+  @NLobjective(n.ocp.mdl, Min, obj);
+  optimize!(n);
+  @show n.r.ocp.dfsOpt[:tSolve]
+  @test isapprox(8.9253,n.r.ocp.objVal[1],atol=tol)
+end
+
 
 ############################
 # Benchmarking Test
@@ -114,7 +134,7 @@ opt_num = length(Nck_vec)
     obj=integrate!(n,:(T[j]));
     @NLobjective(n.ocp.mdl, Min, obj);
     setvalue(n.ocp.tf, 1.5)
-    for i in 1:length(x1); setvalue(x1[i], 0.0); setvalue(x2[i], 0.0);  end
+#    for i in 1:length(x1); setvalue(x1[i], 0.0); setvalue(x2[i], 0.0);  end
     # cache functions; inital optimization
     optimize!(n);
 

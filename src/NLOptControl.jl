@@ -1,6 +1,7 @@
 isdefined(Base, :__precompile__) && __precompile__()
 
 module NLOptControl
+#TODO  enable setvalue() functionality
 
 using JuMP
 import JuMP.setRHS, JuMP.getvalue, JuMP.setvalue, JuMP.@NLexpression, JuMP.@NLobjective, JuMP.@NLparameter, JuMP.@NLconstraint, JuMP.internalmodel
@@ -70,6 +71,10 @@ type OCP
   params                        # parameters for the models
   DXexpr
   NLcon# NOTE Not used currently
+
+  # scaling factors
+  XS::Array{Float64,1}           # scaling factors on states
+  CS::Array{Float64,1}           # scaling factors on controls
 end
 
 # Default Constructor
@@ -109,7 +114,9 @@ OCP(
       JuMP.Model(),       # JuMP model
       Any[],
       Any[],
-      Any[]
+      Any[],
+      Float64[],
+      Float64[]
       )
 end
 
