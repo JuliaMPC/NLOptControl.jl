@@ -376,6 +376,7 @@ type OCPSettings
   reset::Bool                   # bool for reseting data
   evalConstraints::Bool         # bool for evaluating duals of the constraints
   evalCostates::Bool            # bool for evaluating costates
+  tfMin::Any                    # minimum final time
   tfMax::Any                    # maximum final time
   tfOptimal::Any                # known optimal final time
   numInterpPts::Int64           # number of points to sample polynomial running through collocation points
@@ -397,6 +398,7 @@ function OCPSettings()
          false,              # bool for reseting data
          false,              # bool for evaluating duals of the constraints
          false,              # bool for evaluating costates
+         0.001,              # minimum final time          
          400.0,              # maximum final time
          false,              # known optimal final time
          250,                # number of points to sample polynomial running through collocation points

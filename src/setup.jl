@@ -290,7 +290,7 @@ function OCPdef!(n::NLOpt)
     dynamics_expr = [Array{Any}(n.ocp.Nck[int],n.ocp.state.num) for int in 1:n.ocp.Ni]
 
     if n.s.ocp.finalTimeDV
-      @variable(n.ocp.mdl, 0.001 <= tf <=  n.s.ocp.tfMax)
+      @variable(n.ocp.mdl, n.s.ocp.tfMin <= tf <=  n.s.ocp.tfMax)
       n.ocp.tf = tf
       create_tV!(n)          # make a time vector
     end
@@ -325,7 +325,7 @@ function OCPdef!(n::NLOpt)
   elseif n.s.ocp.integrationMethod == :tm
     n.r.ocp.dynCon = Array{Any}(n.ocp.N,n.ocp.state.num)
     if n.s.ocp.finalTimeDV
-     @variable(n.ocp.mdl, 0.001 <= tf <= n.s.ocp.tfMax)
+     @variable(n.ocp.mdl, n.s.ocp.tfMin <= tf <= n.s.ocp.tfMax)
      n.ocp.tf = tf
      create_tV!(n)          # make a time vector
     end
