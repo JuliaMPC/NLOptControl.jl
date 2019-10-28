@@ -23,9 +23,14 @@ sudo apt-get install gfortran
 sudo apt-get install liblapack-dev
 sudo apt-get install libblas-dev
 ```
+Also, make sure that you are using julia 0.6.2
+```
+sudo wget https://julialang-s3.julialang.org/bin/linux/x64/0.6/julia-0.6.2-linux-x86_64.tar.gz 
+sudo tar -xvf julia-0.6.2-linux-x86_64.tar.gz -C /opt 
+ ```
 
 ```julia
-Pkg.add("NLOptControl")
+Pkg.clone("https://github.com/JuliaMPC/NLOptControl.jl")
 Pkg.pin("KNITRO",v"0.4")
 ```
 
