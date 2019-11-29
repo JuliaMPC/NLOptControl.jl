@@ -4,13 +4,11 @@ sudo: required
 os:
   - linux
 julia:
-  - 0.6
-  - 0.7
-  - 1.0
+  - nightly
+  - 1
 matrix:
     allow_failures:
-        - julia: 0.7
-        - julia: 1.0
+        - julia: nightly
 notifications:
   email: false
 addons:
@@ -25,8 +23,6 @@ script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia -e 'Pkg.add("ReverseDiffSparse")'
   - julia -e 'Pkg.checkout("ReverseDiffSparse")'
-  - julia -e 'Pkg.add("KNITRO")'
-  - julia -e 'Pkg.pin("KNITRO",v"0.4")'
   - julia -e 'Pkg.clone(pwd())'
   - julia -e 'Pkg.test("NLOptControl")'
 #  - julia -e 'run(`lualatex -v`)'
