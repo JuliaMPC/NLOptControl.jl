@@ -15,8 +15,8 @@ Adds to [juliaOpt](http://www.juliaopt.org/) community by:
  * Visualizing the solution
 
 ## Documentation
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliampc.github.io/NLOptControl.jl/stable/)
-[![Latest](https://img.shields.io/badge/docs-latest-blue.svg)](https://juliampc.github.io/NLOptControl.jl/latest/)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://alexjbuck.github.io/NLOptControl.jl/stable/)
+[![Latest](https://img.shields.io/badge/docs-latest-blue.svg)](https://alexjbuck.github.io/NLOptControl.jl/latest/)
 
 ## Installation
 
