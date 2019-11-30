@@ -1,6 +1,7 @@
 # NLOptControl.jl
 
-## FORK OF ORIGINAL NLOPTCONTROL.jl to update for Julia 1.0+
+## Fork of original NLOptControl.jl to update for Julia 1.0+
+Much of the following information is not accurate or updated to reflect versioning change.
 
 
 [![Build Status](https://ci.appveyor.com/api/projects/status/f480ahs29c85m6ne?svg=true)](https://ci.appveyor.com/project/huckl3b3rry87/nloptcontrol-jl)
@@ -32,12 +33,12 @@ Also, make sure that you are using julia 0.6.4
 sudo wget https://julialang-s3.julialang.org/bin/linux/x64/0.6/julia-0.6.4-linux-x86_64.tar.gz
 sudo tar -xvf julia-0.6.4-linux-x86_64.tar.gz -C /opt
 ```
-
-Then open up julia and install a few specific packages and NLOptControl
+sudo wget https://julialang-s3.julialang.org/bin/linux/x64/0.6/julia-0.6.2-linux-x86_64.tar.gz
+sudo tar -xvf julia-0.6.2-linux-x86_64.tar.gz -C /opt
+ ```
+Then open up julia and install NLOptControl
 ```julia
-Pkg.add("ReverseDiffSparse")
-Pkg.checkout("ReverseDiffSparse")
-Pkg.add("KNITRO")
+Pkg.clone("https://github.com/alexjbuck/NLOptControl.jl")
 Pkg.pin("KNITRO",v"0.4")
 Pkg.clone("https://github.com/JuliaMPC/NLOptControl.jl")
 ```
