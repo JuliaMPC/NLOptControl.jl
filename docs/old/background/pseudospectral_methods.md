@@ -9,7 +9,7 @@ Quadrature), we introduce $\tau \in [-1,+1]$ as a new independent
 variable and perform a change of variable for $t$ in terms of $\tau$, by
 defining:
 
-> $$\tau = \frac{2}{t_{{N}_{t}}-t_0}t - \frac{t_{N_t}+t_0}{t_{N_t}-t_0}$$
+> $$\tau = \frac{2}{t_{N_t}-t_0} - \frac{t_{N_t}+t_0}{t_{N_t}-t_0}$$
 
 Polynomial Interpolation
 ------------------------
@@ -90,4 +90,3 @@ $$:nowrap:$$$$\begin{equation}
 
 -   Differentiation Matrix
 -   Interpolating Polynomial Function
-

@@ -51,7 +51,7 @@ type OCP
   CL::Array{Float64,1}
   CU::Array{Float64,1}
 
-  # ps method data
+  # pseudospectral method data
   Nck::Array{Int64,1}             # number of collocation points per interval
   Nck_cum::Array{Int64,1}         # cumulative number of points per interval
   Nck_full::Array{Int64,1}        # [0;cumsum(n.ocp.Nck+1)]
