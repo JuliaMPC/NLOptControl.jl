@@ -18,7 +18,7 @@ sudo apt-get install gfortran liblapack-dev libblas-dev
 ```
 
 ## Citation
-If you find [NLOptControl.jl](https://github.com/JuliaMPC/NLOptControl.jl) useful, please cite it:
+If you find [NLOptControl.jl](https://github.com/alexjbuck/NLOptControl.jl) useful, please cite it:
 ```
 @software{nlopt,
   author = {{Huckleberry Febbo}},
@@ -38,7 +38,7 @@ The following link provides documentation all of the exported functions for `NLO
 
 ```@contents
 Pages=[
-    "functions/NLOptControl.md"
+    "src/functions/NLOptControl.md"
     ]
 Depth=1
 ```
