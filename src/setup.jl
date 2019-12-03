@@ -76,7 +76,8 @@ end
 """
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/9/2017, Last Modified: 4/13/2018 \n
+Date Create: 2/9/2017, Last Modified: 12/02/2019 \n
+Last Modified by: Alexander Buck
 -------------------------------------------------------------------------------------\n
 """
 function defineSolver!(n::NLOpt,kw)
@@ -137,8 +138,6 @@ function defineSolver!(n::NLOpt,kw)
                                diverging_iterates_tol=n.s.ocp.solver.settings[:diverging_iterates_tol]))
   elseif n.s.ocp.solver.name==:KNITRO
     setsolver(n.ocp.mdl,KnitroSolver(;outlev=n.s.ocp.solver.settings[:outlev],
-                                 maxit=n.s.ocp.solver.settings[:maxit],
-                                 maxtime_real=n.s.ocp.solver.settings[:maxtime_real],
                                  feastol=n.s.ocp.solver.settings[:feastol],
                                  feastol_abs=n.s.ocp.solver.settings[:feastol_abs],
                                  ftol=n.s.ocp.solver.settings[:ftol],

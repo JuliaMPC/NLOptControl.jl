@@ -15,8 +15,8 @@ using Interpolations
 include("Base.jl")
 using .Base
 
-# include("MPC_Module.jl")
-# using .MPC_Module
+include("MPC_Module.jl")
+using .MPC_Module
 
 ################################################################################
 # Model Classfield
@@ -32,10 +32,10 @@ struct OCP
   # boundary constraits
   X0::Array{Float64,1}      # initial state conditions
   X0_tol::Array{Float64,1}  # initial state tolerance
-  x0s::Array{JuMP.Variable,1}
+  x0s::Array{JuMP.VariableRef,1}
   XF::Array{Float64,1}      # final state conditions
   XF_tol::Array{Float64,1}  # final state tolerance
-  xFs::Array{JuMP.Variable,1}
+  xFs::Array{JuMP.VariableRef,1}
 
   # constant bounds on state variables
   XL::Array{Float64,1}

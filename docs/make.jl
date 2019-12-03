@@ -30,10 +30,10 @@ makedocs(modules=[NLOptControl],
 
 deploydocs(
     deps=nothing,
-    repo="github.com/JuliaMPC/NLOptControl.jl.git",
+    repo="github.com/alexjbuck/NLOptControl.jl.git",
     target="build",
     osname="linux",
-    julia="0.6",
+    julia="1.0",
     make=nothing)
 
 #=

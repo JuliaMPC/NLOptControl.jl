@@ -28,7 +28,8 @@ tp=tPlot(n,r,idx,tp;(:append=>true))
 # plot the optimization times
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 3/11/2017, Last Modified: 6/28/2017 \n
+Date Create: 3/11/2017, Last Modified: 12/02/2019 \n
+Last Modified By: Alexander Buck
 --------------------------------------------------------------------------------------\n
 """
 function tPlot(n,idx::Int64,args...;kwargs...);
@@ -65,7 +66,7 @@ function tPlot(n,idx::Int64,args...;kwargs...);
     scatter!((idx,r.dfsOpt[:tSolve][idx]),marker=_pretty_defaults[:opt_marker][2],label=string(legend_string,string(r.dfsOpt[:status][idx])) )
   end
 
-  plot!(1:length(r.dfsOpt[:tSolve]),n.mpc.v.tex*ones(length(r.dfsOpt[:tSolve])),line=_pretty_defaults[:limit_lines][2],leg=:true,label="real-time threshhold",leg=:topright)
+  plot!(1:length(r.dfsOpt[:tSolve]),n.mpc.v.tex*ones(length(r.dfsOpt[:tSolve])),line=_pretty_defaults[:limit_lines][2],label="real-time threshhold",leg=:topright)
 
 	ylims!(0,max(n.mpc.v.tex*1.2, maximum(r.dfsOpt[:tSolve])))
   xlims!(1,length(r.dfsOpt[:tSolve]))
