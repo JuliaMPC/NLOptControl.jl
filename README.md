@@ -1,7 +1,11 @@
 # NLOptControl.jl
 
+## Fork of original NLOptControl.jl to update for Julia 1.0+
+Much of the following information is not accurate or updated to reflect versioning change.
+
+
 [![Build Status](https://ci.appveyor.com/api/projects/status/f480ahs29c85m6ne?svg=true)](https://ci.appveyor.com/project/huckl3b3rry87/nloptcontrol-jl)
-[![travis](https://travis-ci.org/JuliaMPC/NLOptControl.jl.svg?branch=master)](https://travis-ci.org/JuliaMPC/NLOptControl.jl)
+[![travis](https://travis-ci.org/alexjbuck/NLOptControl.jl.svg?branch=master)](https://travis-ci.org/alexjbuck/NLOptControl.jl)
 
 This software solves **nonlinear control problems** at a **high-level** very **quickly**.
 
@@ -25,12 +29,12 @@ sudo apt-get install libblas-dev
 ```
 Also, make sure that you are using julia 0.6.2
 ```
-sudo wget https://julialang-s3.julialang.org/bin/linux/x64/0.6/julia-0.6.2-linux-x86_64.tar.gz 
-sudo tar -xvf julia-0.6.2-linux-x86_64.tar.gz -C /opt 
+sudo wget https://julialang-s3.julialang.org/bin/linux/x64/0.6/julia-0.6.2-linux-x86_64.tar.gz
+sudo tar -xvf julia-0.6.2-linux-x86_64.tar.gz -C /opt
  ```
 Then open up julia and install NLOptControl
 ```julia
-Pkg.clone("https://github.com/JuliaMPC/NLOptControl.jl")
+Pkg.clone("https://github.com/alexjbuck/NLOptControl.jl")
 Pkg.pin("KNITRO",v"0.4")
 ```
 

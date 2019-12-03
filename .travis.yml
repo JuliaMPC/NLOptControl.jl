@@ -5,11 +5,15 @@ os:
   - linux
   - windows
 julia:
+<<<<<<< HEAD
   - 1.2
+=======
+  - nightly
+  - 1
+>>>>>>> 963980a7e2af22639d7530a18eafe4b2dddaac28
 matrix:
     allow_failures:
-        - julia: 0.7
-        - julia: 1.0
+        - julia: nightly
 notifications:
   email: false
 addons:
@@ -24,8 +28,11 @@ script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia -e 'Pkg.add("ReverseDiffSparse")'
   - julia -e 'Pkg.checkout("ReverseDiffSparse")'
+<<<<<<< HEAD
   # - julia -e 'Pkg.add("KNITRO")'
   # - julia -e 'Pkg.pin("KNITRO",v"0.4")'
+=======
+>>>>>>> 963980a7e2af22639d7530a18eafe4b2dddaac28
   - julia -e 'Pkg.clone(pwd())'
   - julia -e 'Pkg.test("NLOptControl")'
 #  - julia -e 'run(`lualatex -v`)'
