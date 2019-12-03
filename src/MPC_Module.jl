@@ -21,10 +21,10 @@ export
      predictX0!
 
 ########################################################################################
-# MPC types
+# MPC structs
 ########################################################################################
 
-type IP
+struct IP
  control::Control
  state::State
 end
@@ -36,7 +36,7 @@ function IP()
   )
 end
 
-type EP
+struct EP
  control::Control
  state::State
 end
@@ -48,7 +48,7 @@ function EP()
  )
 end
 
-type MPCvariables
+struct MPCvariables
  # variables
  t::Float64           # current simulation time (s)
  tp::Any              # prediction time (if finalTimeDV == true -> this is not known before optimization)
@@ -81,7 +81,7 @@ function MPCvariables()
  )
 end
 
-type MPC
+struct MPC
  v::MPCvariables
  ip::IP
  ep::EP
@@ -246,7 +246,7 @@ function defineIP!(n,model;stateNames=[],controlNames=[],X0a=[])
        push!(n.mpc.ip.control.name,controlNames[i])
      end
      n.mpc.r.ip.X0a = X0a
-     n.mpc.ip.state.model = model # TODO validate type of model
+     n.mpc.ip.state.model = model # TODO validate typeof model
     end
    elseif isequal(n.s.mpc.mode,:EP)
     error("not setup for :EP")
