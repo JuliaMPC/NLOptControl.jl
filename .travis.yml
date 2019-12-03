@@ -3,6 +3,7 @@ language: julia
 sudo: required
 os:
   - linux
+  - windows
 julia:
   - nightly
   - 1
