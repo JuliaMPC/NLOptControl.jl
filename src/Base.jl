@@ -1,12 +1,10 @@
 module Base
 
 using JuMP
-import JuMP.internalmodel
 using DataFrames
 using Interpolations
-using MathProgBase
-import MathProgBase.getconstrduals
 using CSV
+using Printf
 
 # These functions are required for MPC_Module.jl and PrettyPlots.jl (resultsDir!)
 export
@@ -29,8 +27,8 @@ export
   Settings,
   _Ipopt_defaults,
   _Ipopt_MPC,
-  _KNITRO_defaults,
-  _KNITRO_MPC,
+  # _KNITRO_defaults,
+  # _KNITRO_MPC,
   simulationModes,
   resultsDir!
 
@@ -84,77 +82,77 @@ const _Ipopt_MPC=Dict(
   :diverging_iterates_tol     =>1e20
 )
 
-const _KNITRO_defaults=Dict(
- :outlev                       =>1,
- :feastol                      =>1.0e-6,
- :feastol_abs                  =>1e-3,
- :ftol                         =>1e-15,
- :ftol_iters                   =>5,
- :infeastol                    =>1.0e-8,
- :maxfevals                    =>-1,
- :maxit                        =>0,
- :maxtime_cpu                  =>1e8,
- :maxtime_real                 =>1e8,
- :opttol                       =>1e-6,
- :opttol_abs                   =>1e-3,
- :xtol                         =>1e-12,
- :xtol_iters                   =>0,
- :algorithm                    =>0,
- :bar_initpt                   =>0,
- :bar_murule                   =>0,
- :bar_penaltycons              =>0,
- :bar_penaltyrule              =>0,
- :bar_switchrule               =>0,
- :linesearch                   =>0,
- :linsolver                    =>0,
- :cg_pmem                      =>10,
- :bar_initpt                   =>0,
- :bar_penaltycons              =>0,
- :bar_penaltyrule              =>0,
- :bar_switchrule               =>0,
- :linesearch                   =>0,
- :tuner                        =>0
-)
-
-const _KNITRO_MPC=Dict(
- :outlev                       =>0,
- :feastol                      =>1.0e20,
- :feastol_abs                  =>7e-2,
- :ftol                         =>1e-15,
- :ftol_iters                   =>5,
- :infeastol                    =>1e-2,
- :maxfevals                    =>-1,
- :maxit                        =>0,
- :maxtime_cpu                  =>1e8,
- :maxtime_real                 =>0.47,
- :opttol                       =>1.0e20,
- :opttol_abs                   =>5e-1,
- :xtol                         =>1e-12,
- :xtol_iters                   =>0,
- :algorithm                    =>1,
- :bar_initpt                   =>0,
- :bar_murule                   =>1,
- :bar_penaltycons              =>0,
- :bar_penaltyrule              =>0,
- :bar_switchrule               =>0,
- :linesearch                   =>0,
- :linsolver                    =>4,
- :cg_pmem                      =>0,
- :bar_initpt                   => 3,
- :bar_penaltycons              => 1,
- :bar_penaltyrule              => 2,
- :bar_switchrule               => 2,
- :linesearch                   => 1,
- :tuner                        =>0
-)
+# const _KNITRO_defaults=Dict(
+#  :outlev                       =>1,
+#  :feastol                      =>1.0e-6,
+#  :feastol_abs                  =>1e-3,
+#  :ftol                         =>1e-15,
+#  :ftol_iters                   =>5,
+#  :infeastol                    =>1.0e-8,
+#  :maxfevals                    =>-1,
+#  :maxit                        =>0,
+#  :maxtime_cpu                  =>1e8,
+#  :maxtime_real                 =>1e8,
+#  :opttol                       =>1e-6,
+#  :opttol_abs                   =>1e-3,
+#  :xtol                         =>1e-12,
+#  :xtol_iters                   =>0,
+#  :algorithm                    =>0,
+#  :bar_initpt                   =>0,
+#  :bar_murule                   =>0,
+#  :bar_penaltycons              =>0,
+#  :bar_penaltyrule              =>0,
+#  :bar_switchrule               =>0,
+#  :linesearch                   =>0,
+#  :linsolver                    =>0,
+#  :cg_pmem                      =>10,
+#  :bar_initpt                   =>0,
+#  :bar_penaltycons              =>0,
+#  :bar_penaltyrule              =>0,
+#  :bar_switchrule               =>0,
+#  :linesearch                   =>0,
+#  :tuner                        =>0
+# )
+#
+# const _KNITRO_MPC=Dict(
+#  :outlev                       =>0,
+#  :feastol                      =>1.0e20,
+#  :feastol_abs                  =>7e-2,
+#  :ftol                         =>1e-15,
+#  :ftol_iters                   =>5,
+#  :infeastol                    =>1e-2,
+#  :maxfevals                    =>-1,
+#  :maxit                        =>0,
+#  :maxtime_cpu                  =>1e8,
+#  :maxtime_real                 =>0.47,
+#  :opttol                       =>1.0e20,
+#  :opttol_abs                   =>5e-1,
+#  :xtol                         =>1e-12,
+#  :xtol_iters                   =>0,
+#  :algorithm                    =>1,
+#  :bar_initpt                   =>0,
+#  :bar_murule                   =>1,
+#  :bar_penaltycons              =>0,
+#  :bar_penaltyrule              =>0,
+#  :bar_switchrule               =>0,
+#  :linesearch                   =>0,
+#  :linsolver                    =>4,
+#  :cg_pmem                      =>0,
+#  :bar_initpt                   => 3,
+#  :bar_penaltycons              => 1,
+#  :bar_penaltyrule              => 2,
+#  :bar_switchrule               => 2,
+#  :linesearch                   => 1,
+#  :tuner                        =>0
+# )
 
 const simulationModes = [:OCP,:IP,:IPEP,:EP]
 
 ################################################################################
-# Types
+# structs
 ################################################################################
 ############################### control ########################################
-type Control
+struct Control
   name::Vector{Any}
   description::Vector{Any}
   num::Int64
@@ -167,7 +165,7 @@ function Control()
           0)
 end
 # ############################# state  ##########################################
-type State
+struct State
   name::Vector{Any}
   description::Vector{Any}
   num::Int64
@@ -183,7 +181,7 @@ function State()
 end
 
 ############################## constraint ######################################
-type Constraint
+struct Constraint
   name::Vector{Any}
   handle::Vector{Any}
   value::Vector{Any}
@@ -197,7 +195,7 @@ function Constraint()
 end
 
 ############################### solver  ########################################
-type Solver
+struct Solver
     name
     settings
 end
@@ -207,7 +205,7 @@ function Solver()
               _Ipopt_defaults);
 end
 
-type PlantResults
+struct PlantResults
   plant
   X0p
   X0a  # closest one in time to X0e
@@ -237,7 +235,7 @@ function PlantResults()
       )
 end
 
-type OCPResults
+struct OCPResults
   tctr                       # time vector for control
   tst                        # time vector for state
   x                          # JuMP states
@@ -313,7 +311,7 @@ OCPResults( Vector{Any}[],# time vector for control
       )
 end
 
-type Results
+struct Results
   ocp::OCPResults
   ip::PlantResults
   ep::PlantResults
@@ -332,7 +330,7 @@ function Results()
 end
 
 # MPC Settings Class
-type MPCSettings
+struct MPCSettings
  on::Bool
  mode::Symbol
  predictX0::Bool
@@ -367,7 +365,7 @@ function MPCSettings()
 end
 
 # OCP Settings Class
-type OCPSettings
+struct OCPSettings
   solver::Solver                # solver information
   finalTimeDV::Bool
   integrationMethod::Symbol
@@ -398,7 +396,7 @@ function OCPSettings()
          false,              # bool for reseting data
          false,              # bool for evaluating duals of the constraints
          false,              # bool for evaluating costates
-         0.001,              # minimum final time          
+         0.001,              # minimum final time
          400.0,              # maximum final time
          false,              # known optimal final time
          250,                # number of points to sample polynomial running through collocation points
@@ -410,7 +408,7 @@ function OCPSettings()
                 )
 end
 
-type Settings
+struct Settings
  ocp::OCPSettings
  mpc::MPCSettings
 end
@@ -458,7 +456,7 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Created: 1/2/2017, Last Modified: 9/19/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function interpolate_lagrange{T<:Number}(x::AbstractArray{T},x_data,y_data)
+function interpolate_lagrange(x::AbstractArray{T},x_data,y_data) where {T<:Number}
   Nc = length(x_data) - 1
 
   if length(x_data)!=length(y_data)
@@ -934,7 +932,7 @@ function postProcess!(n;kwargs...)
             L1 = n.r.ocp.constraint.nums[i][end][1]
           end
         end
-        mpb = JuMP.internalmodel(n.ocp.mdl)
+        mpb = JuMP.backend(n.ocp.mdl)
         c = MathProgBase.getconstrduals(mpb)
         # NOTE for now since costates are not defined for :tm methods, n.r.ocp.CS is in a different format than n.r.ocp.X
         # in the future if costates are defined for :tm methods this can be changed

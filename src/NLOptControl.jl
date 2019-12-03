@@ -4,9 +4,9 @@ module NLOptControl
 #TODO  enable setvalue() functionality
 
 using JuMP
-import JuMP.setRHS, JuMP.getvalue, JuMP.setvalue, JuMP.@NLexpression, JuMP.@NLobjective, JuMP.@NLparameter, JuMP.@NLconstraint, JuMP.internalmodel
+import JuMP.set_normalized_rhs, JuMP.getvalue, JuMP.setvalue, JuMP.@NLexpression, JuMP.@NLobjective, JuMP.@NLparameter, JuMP.@NLconstraint, JuMP.backend
 using Ipopt
-using KNITRO
+# using KNITRO
 using FastGaussQuadrature
 using DataFrames # https://discourse.julialang.org/t/dataframes-0-11-released/7296
 using CSV
@@ -15,13 +15,13 @@ using Interpolations
 include("Base.jl")
 using .Base
 
-include("MPC_Module.jl")
-using .MPC_Module
+# include("MPC_Module.jl")
+# using .MPC_Module
 
 ################################################################################
 # Model Classfield
 ################################################################################
-type OCP
+struct OCP
   # general properties
   state::State              # state data
   control::Control          # control data
@@ -120,7 +120,7 @@ OCP(
       )
 end
 
-type OCPFlags
+struct OCPFlags
   defined::Bool  # a bool to tell if define() has been called
 end
 
@@ -130,7 +130,7 @@ function OCPFlags()
   )
 end
 
-type MPCFlags
+struct MPCFlags
  defined::Bool
  goalReached::Bool
  simFailed::Array{Any,1}   # a bool to indicate that the simulation failed and a symbol to indicate why
@@ -148,7 +148,7 @@ function MPCFlags()
   )
 end
 
-type Flags
+struct Flags
   ocp::OCPFlags
   mpc::MPCFlags
 end
@@ -161,8 +161,8 @@ function Flags()
 end
 
 abstract type AbstractNLOpt end
-type NLOpt <: AbstractNLOpt
-  # major data types
+struct NLOpt <: AbstractNLOpt
+  # major data structs
   ocp::OCP
   mpc::MPC
   s::Settings
@@ -256,7 +256,8 @@ export
        @NLconstraint,
        setvalue,
        getvalue,
-       setRHS,
+       set_normalized_rhs,
+
 
        # PrettyPlots
         minDF,
