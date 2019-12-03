@@ -105,7 +105,8 @@ end
 L = lagrange_basis_poly!(x,x_data,L)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 12/26/2016, Last Modified: 1/25/2016
+Date Create: 12/26/2016, Last Modified: 12/02/2019
+Last Modified By: Alexander Buck
 Citations: This function was influenced by the lagrange() function [located here](https://github.com/pjabardo/Jacobi.jl/blob/master/src/gauss_quad.jl)
 --------------------------------------------------------------------------------------\n
 # Input Arguments
@@ -120,7 +121,7 @@ A basic description of Lagrange interpolating polynomials is provided [here](htt
 
 # TODO get ride of Nc and replace it with Nck[int]
 """
-function lagrange_basis_poly!{T<:Number}(x::AbstractArray{T},x_data,L::AbstractArray{T})
+function lagrange_basis_poly!(x::AbstractArray{T},x_data,L::AbstractArray{T}) where {T<:Number}
     Nc = length(x_data) - 1
     ns = length(x);
     L = zeros(Float64,Nc+1,ns);
@@ -131,12 +132,12 @@ function lagrange_basis_poly!{T<:Number}(x::AbstractArray{T},x_data,L::AbstractA
     end
     return L
 end
-lagrange_basis_poly{T<:Number}(x::AbstractArray{T},x_data,Nc) = lagrange_basis_poly!(x::AbstractArray{T},x_data,Nc,zeros(x))
+lagrange_basis_poly(x::AbstractArray{T},x_data,Nc) where {T<:Number} = lagrange_basis_poly!(x::AbstractArray{T},x_data,Nc,zeros(x))
 
 """
 D = polyDiff(x);
 --------------------------------------------------------------------------\n
-Last modifed for julia on 1/25/2016 by Huckleberry Febbo\n
+Last modifed for julia on 12/02/2016 by Alexander Buck\n
 Original Author: JJ.A.C. Weideman, S.C. Reddy 1998\n
 Original Function Name: poldif.m  |  Source: [matlabcentral](https://www.mathworks.com/matlabcentral/fileexchange/29-dmsuite)\n
 https://pdfs.semanticscholar.org/bae2/1eb9458f194887bc8d7808383f56d7f4dca0.pdf
@@ -162,7 +163,7 @@ function polyDiff(x)  #TODO get ride of B stuff
   c = alpha.*prod(DX,2);       # Quantities c(j).
   C = repmat(c,1,N);
   C = C./C';                   # Matrix with entries c(k)/c(j).
-  Z = 1./DX;                   # Z contains entries 1/(x(k)-x(j))
+  Z = 1.0./ DX;                   # Z contains entries 1/(x(k)-x(j))
   Z[L] = zeros(N,1);           # with zeros on the diagonal.
   X = Z';                      # X is same as Z', but with
   # diagonal entries removed.

@@ -38,7 +38,7 @@ The following link provides documentation all of the exported functions for `NLO
 
 ```@contents
 Pages=[
-    "src/functions/NLOptControl.md"
+    "functions/NLOptControl.md"
     ]
 Depth=1
 ```
