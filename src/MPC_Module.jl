@@ -24,7 +24,7 @@ export
 # MPC structs
 ########################################################################################
 
-struct IP
+mutable struct IP
  control::Control
  state::State
 end
@@ -36,7 +36,7 @@ function IP()
   )
 end
 
-struct EP
+mutable struct EP
  control::Control
  state::State
 end
@@ -48,7 +48,7 @@ function EP()
  )
 end
 
-struct MPCvariables
+mutable struct MPCvariables
  # variables
  t::Float64           # current simulation time (s)
  tp::Any              # prediction time (if finalTimeDV == true -> this is not known before optimization)
@@ -81,7 +81,7 @@ function MPCvariables()
  )
 end
 
-struct MPC
+mutable struct MPC
  v::MPCvariables
  ip::IP
  ep::EP
@@ -144,7 +144,7 @@ end
 # TODO consider letting user pass options
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 4/08/2018, Last Modified: 4/08/2018 \n
+Date Create: 4/08/2018, Last Modified: 12/06/2019 \n
 --------------------------------------------------------------------------------------\n
 """
 function initOpt!(n;save::Bool=true, evalConstraints::Bool=false)
@@ -156,7 +156,7 @@ function initOpt!(n;save::Bool=true, evalConstraints::Bool=false)
   n.s.ocp.evalConstraints = false
   n.s.ocp.cacheOnly = true
   if n.s.ocp.save
-   warn("saving initial optimization results where functions where cached!")
+   @warn "saving initial optimization results where functions where cached!"
   end
   for k in 1:n.mpc.v.initOptNum # initial optimization (s)
    status = optimize!(n)
@@ -330,7 +330,7 @@ end
 # consider making user pass X0, t0, tf
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/14/2017, Last Modified: 4/09/2018 \n
+Date Create: 2/14/2017, Last Modified: 12/06/2019 \n
 --------------------------------------------------------------------------------------\n
 """
 function simIPlant!(n)
@@ -343,8 +343,8 @@ function simIPlant!(n)
 
   if isequal(n.s.mpc.mode,:OCP)
    if isequal(n.mpc.v.evalNum,1)
-    U = 0*Matrix{Float64}(n.ocp.control.pts,n.ocp.control.num)
-    t = Vector(linspace(t0,tf,n.ocp.control.pts))
+    U = 0*Matrix{Float64}(undef, n.ocp.control.pts,n.ocp.control.num)
+    t = Vector(range(t0,tf,length=n.ocp.control.pts))
    elseif n.s.ocp.interpolationOn
     U = n.r.ocp.Upts
     t = n.r.ocp.tpts

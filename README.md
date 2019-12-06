@@ -5,7 +5,7 @@ Much of the following information is not accurate or updated to reflect versioni
 
 
 [![Build Status](https://ci.appveyor.com/api/projects/status/f480ahs29c85m6ne?svg=true)](https://ci.appveyor.com/project/huckl3b3rry87/nloptcontrol-jl)
-[![travis](https://travis-ci.org/alexjbuck/NLOptControl.jl.svg?branch=master)](https://travis-ci.org/alexjbuck/NLOptControl.jl)
+[![travis](https://travis-ci.org/JuliaMPC/NLOptControl.jl.svg?branch=master)](https://travis-ci.org/JuliaMPC/NLOptControl.jl)
 
 This software solves **nonlinear control problems** at a **high-level** very **quickly**.
 
@@ -15,8 +15,8 @@ Adds to [juliaOpt](http://www.juliaopt.org/) community by:
  * Visualizing the solution
 
 ## Documentation
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://alexjbuck.github.io/NLOptControl.jl/stable/)
-[![Latest](https://img.shields.io/badge/docs-latest-blue.svg)](https://alexjbuck.github.io/NLOptControl.jl/latest/)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaMPC.github.io/NLOptControl.jl/stable/)
+[![Latest](https://img.shields.io/badge/docs-latest-blue.svg)](https://JuliaMPC.github.io/NLOptControl.jl/latest/)
 
 ## Installation
 
@@ -31,7 +31,7 @@ Also, make sure that you are using at least julia 1.0.0
 
 Then open up julia and install NLOptControl
 ```julia
-Pkg.add("https://github.com/alexjbuck/NLOptControl.jl")
+Pkg.add("https://github.com/JuliaMPC/NLOptControl.jl")
 Pkg.pin("KNITRO",v"0.4")
 Pkg.clone("https://github.com/JuliaMPC/NLOptControl.jl")
 ```

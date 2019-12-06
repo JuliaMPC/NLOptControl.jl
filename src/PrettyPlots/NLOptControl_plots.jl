@@ -83,9 +83,9 @@ function statePlot(n,idx::Int64,st::Int64,args...;kwargs...)
   end
 
 	if ocpPlot
-  	t_vec = linspace(0.0,n.r.ocp.dfs[end][:t][end],_pretty_defaults[:L])
+  	t_vec = range(0.0,n.r.ocp.dfs[end][:t][end],length=_pretty_defaults[:L])
 	else
-		t_vec = linspace(0.0,n.r.ip.dfsplant[end][:t][end],_pretty_defaults[:L])
+		t_vec = range(0.0,n.r.ip.dfsplant[end][:t][end],length=_pretty_defaults[:L])
 	end
 
   if lims
@@ -263,9 +263,9 @@ function controlPlot(n,idx::Int64,ctr::Int64,args...;kwargs...)
   end
 
   if ocpPlot
-  	t_vec = linspace(0.0,n.r.ocp.dfs[end][:t][end],_pretty_defaults[:L])
+  	t_vec = range(0.0,n.r.ocp.dfs[end][:t][end],length=_pretty_defaults[:L])
 	else
-		t_vec = linspace(0.0,n.r.ip.dfsplant[end][:t][end],_pretty_defaults[:L])
+		t_vec = range(0.0,n.r.ip.dfsplant[end][:t][end],length=_pretty_defaults[:L])
 	end
 
   # plot the limits
@@ -365,9 +365,9 @@ function costatePlot(n,idx::Int64,st::Int64;kwargs...)
   end
 
 	if ocpPlot
-  	t_vec=linspace(0.0,n.r.ocp.dfs[end][:t][end],_pretty_defaults[:L]);
+  	t_vec=range(0.0,n.r.ocp.dfs[end][:t][end],length=_pretty_defaults[:L]);
 	else
-		t_vec=linspace(0.0,n.r.ip.dfsplant[end][:t][end],_pretty_defaults[:L]);
+		t_vec=range(0.0,n.r.ip.dfsplant[end][:t][end],length=_pretty_defaults[:L]);
 	end
 
   if n.s.ocp.integrationMethod == :ps

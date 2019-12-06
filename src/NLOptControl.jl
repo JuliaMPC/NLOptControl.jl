@@ -4,13 +4,14 @@ module NLOptControl
 #TODO  enable setvalue() functionality
 
 using JuMP
-import JuMP.set_normalized_rhs, JuMP.getvalue, JuMP.setvalue, JuMP.@NLexpression, JuMP.@NLobjective, JuMP.@NLparameter, JuMP.@NLconstraint, JuMP.backend
+import JuMP.setRHS, JuMP.getvalue, JuMP.setvalue, JuMP.@NLexpression, JuMP.@NLobjective, JuMP.@NLparameter, JuMP.@NLconstraint, JuMP.internalmodel
 using Ipopt
 # using KNITRO
 using FastGaussQuadrature
 using DataFrames # https://discourse.julialang.org/t/dataframes-0-11-released/7296
 using CSV
 using Interpolations
+import LinearAlgebra
 
 include("Base.jl")
 using .Base
@@ -21,7 +22,7 @@ using .MPC_Module
 ################################################################################
 # Model Classfield
 ################################################################################
-struct OCP
+mutable struct OCP
   # general properties
   state::State              # state data
   control::Control          # control data
@@ -32,10 +33,10 @@ struct OCP
   # boundary constraits
   X0::Array{Float64,1}      # initial state conditions
   X0_tol::Array{Float64,1}  # initial state tolerance
-  x0s::Array{JuMP.VariableRef,1}
+  x0s::Array{JuMP.Variable,1}
   XF::Array{Float64,1}      # final state conditions
   XF_tol::Array{Float64,1}  # final state tolerance
-  xFs::Array{JuMP.VariableRef,1}
+  xFs::Array{JuMP.Variable,1}
 
   # constant bounds on state variables
   XL::Array{Float64,1}
@@ -120,7 +121,7 @@ OCP(
       )
 end
 
-struct OCPFlags
+mutable struct OCPFlags
   defined::Bool  # a bool to tell if define() has been called
 end
 
@@ -130,7 +131,7 @@ function OCPFlags()
   )
 end
 
-struct MPCFlags
+mutable struct MPCFlags
  defined::Bool
  goalReached::Bool
  simFailed::Array{Any,1}   # a bool to indicate that the simulation failed and a symbol to indicate why
@@ -148,7 +149,7 @@ function MPCFlags()
   )
 end
 
-struct Flags
+mutable struct Flags
   ocp::OCPFlags
   mpc::MPCFlags
 end
@@ -256,7 +257,7 @@ export
        @NLconstraint,
        setvalue,
        getvalue,
-       set_normalized_rhs,
+       setRHS,
 
 
        # PrettyPlots

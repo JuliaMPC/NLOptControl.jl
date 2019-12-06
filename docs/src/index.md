@@ -9,7 +9,7 @@ Adds to [juliaOpt](http://www.juliaopt.org/) community by:
 ## Installation
 To install
 ```julia
-Pkg.add("https://github.com/alexjbuck/NLOptControl.jl")
+Pkg.add("https://github.com/JuliaMPC/NLOptControl.jl")
 ```
 
 If you are using **Linux** make sure that you have **gfortran** to run **Ipopt**:
@@ -18,7 +18,7 @@ sudo apt-get install gfortran liblapack-dev libblas-dev
 ```
 
 ## Citation
-If you find [NLOptControl.jl](https://github.com/alexjbuck/NLOptControl.jl) useful, please cite it:
+If you find [NLOptControl.jl](https://github.com/JuliaMPC/NLOptControl.jl) useful, please cite it:
 ```
 @software{nlopt,
   author = {{Huckleberry Febbo}},

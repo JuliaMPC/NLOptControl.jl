@@ -53,7 +53,7 @@ end
 # returns an array of @NLexpression()
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 6/29/2017, Last Modified: 4/13/2018 \n
+Date Create: 6/29/2017, Last Modified: 12/06/2019 \n
 -------------------------------------------------------------------------------------\n
 """
 function NLExpr(n::NLOpt,expr::Expr,args...)
@@ -71,14 +71,14 @@ function NLExpr(n::NLOpt,expr::Expr,args...)
 
   code = quote
     # rename state variables
-    state = Array{Expr}($n.ocp.state.num)
+    state = Array{Expr}(undef, $n.ocp.state.num)
     for st in 1:$n.ocp.state.num
       state[st] = Expr(:(=),$n.ocp.state.name[st],$xxx[:,st])
       eval(state[st])
     end
 
     # rename control variables
-    control = Array{Expr}($n.ocp.control.num)
+    control = Array{Expr}(undef, $n.ocp.control.num)
     for ctr in 1:$n.ocp.control.num
       control[ctr] = Expr(:(=),$n.ocp.control.name[ctr],$uuu[:,ctr])
       eval(control[ctr])
@@ -93,7 +93,7 @@ end
 # returns an array of @NLconstraint()
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 7/04/2017, Last Modified: 4/13/2018 \n
+Date Create: 7/04/2017, Last Modified: 12/06/2019 \n
 -------------------------------------------------------------------------------------\n
 """
 function NLCon(n::NLOpt,expr::Expr,args...)
@@ -111,14 +111,14 @@ function NLCon(n::NLOpt,expr::Expr,args...)
 
   code = quote
     # rename state variables
-    state = Array{Expr}($n.ocp.state.num);
+    state = Array{Expr}(undef, $n.ocp.state.num);
     for st in 1:$n.ocp.state.num
       state[st] = Expr(:(=),$n.ocp.state.name[st],$xxx[:,st])
       eval(state[st])
     end
 
     # rename control variables
-    control = Array{Expr}($n.ocp.control.num);
+    control = Array{Expr}(undef, $n.ocp.control.num);
     for ctr in 1:$n.ocp.control.num
       control[ctr] = Expr(:(=),$n.ocp.control.name[ctr],$uuu[:,ctr])
       eval(control[ctr])

@@ -43,8 +43,8 @@ function tPlot(n,idx::Int64,args...;kwargs...);
   if !append; tp=plot(0,leg=:false); else tp=args[1]; end
 
   if idx > length(r.dfsOpt[:tSolve])
-      warn("Cannot plot idx = ", idx, " because length(r.dfsOpt[:tSolve]) = ", length(r.dfsOpt[:tSolve]), ". \n
-            reducing idx in tPlot!().")
+      @warn "Cannot plot idx = ", idx, " because length(r.dfsOpt[:tSolve]) = ", length(r.dfsOpt[:tSolve]), ". \n
+            reducing idx in tPlot!()."
       idx = length(r.dfsOpt[:tSolve])
   end
 
