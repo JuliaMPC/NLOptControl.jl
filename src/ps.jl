@@ -156,7 +156,7 @@ function polyDiff(x)  #TODO get ride of B stuff
   M = 1;                        # assume
   alpha = ones(N,1);
   B = zeros(M,N);
-  L=Matrix{Bool}(LinearAlgebra.I, N, N);
+  L= Matrix{Bool}(LinearAlgebra.I, N, N);
   XX = repeat(x,1,N);
   DX = XX-XX';                 # DX contains entries x(k)-x(j).
   DX[L] = ones(N,1);           # Put 1's one the main diagonal.
@@ -174,7 +174,7 @@ function polyDiff(x)  #TODO get ride of B stuff
   Y = ones(N-1,N);             # Initialize Y and D matrices.
   D = Matrix{Float64}(LinearAlgebra.I,N,N);                  # Y is matrix of cumulative sums,
   temp = reshape(B[1,:],1,N)
-  Y   = cumsum([temp; Y[1:N-1,:].*X], dims=2);     # Diagonals
+  Y   = cumsum([temp; Y[1:N-1,:].*X], dims=1);     # Diagonals
   D   = Z.*(C.*repeat(LinearAlgebra.diag(D),1,N) - D);   # Off-diagonals
   D[L]   = Y[N,:];                         # Correct the diagonal
   return D
