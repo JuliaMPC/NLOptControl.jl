@@ -58,7 +58,7 @@ create_tV!(n)
 # define a time vector (n.ocp.tV) for use with time varying constraints when (finalTimeDV=>true)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 3/17/2017, Last Modified: 4/13/2018 \n
+Date Create: 3/17/2017, Last Modified: 12/06/2019 \n
 --------------------------------------------------------------------------------------\n
 """
 function create_tV!(n::NLOpt)
@@ -67,7 +67,7 @@ function create_tV!(n::NLOpt)
     # create mesh points, interval size = tf_var/Ni
     tm = @NLexpression(n.ocp.mdl, [idx=1:n.ocp.Ni+1], (idx-1)*n.ocp.tf/n.ocp.Ni)
     # go through each mesh interval creating time intervals; [t(i-1),t(i)] --> [-1,1]
-    ts = [Array{Any}(n.ocp.Nck[int]+1,) for int in 1:n.ocp.Ni]
+    ts = [Array{Any}(undef, n.ocp.Nck[int]+1,) for int in 1:n.ocp.Ni]
     for int in 1:n.ocp.Ni
       ts[int][1:end-1] = @NLexpression(n.ocp.mdl,[j=1:n.ocp.Nck[int]], (tm[int+1]-tm[int])/2*n.ocp.tau[int][j] +  (tm[int+1]+tm[int])/2);
       ts[int][end] = @NLexpression(n.ocp.mdl, n.ocp.tf/n.ocp.Ni*int) # append +1 at end of each interval
@@ -77,7 +77,7 @@ function create_tV!(n::NLOpt)
     n.ocp.tV = @NLexpression(n.ocp.mdl,[j=1:n.ocp.state.pts], n.ocp.t0 + tmp[j])
   else
     # create vector with the design variable in it
-    t = Array{Any}(n.ocp.N+1,1)
+    t = Array{Any}(undef, n.ocp.N+1,1)
     tm = @NLexpression(n.ocp.mdl, [idx=1:n.ocp.N], n.ocp.tf/n.ocp.N*idx)
     tmp = [0;tm]
     n.ocp.tV = @NLexpression(n.ocp.mdl,[j=1:n.ocp.state.pts], n.ocp.t0 + tmp[j])
@@ -89,12 +89,12 @@ end
 obj=integrate!(n,:(u1))
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/2/2017, Last Modified: 4/13/2018 \n
+Date Create: 1/2/2017, Last Modified: 12/06/2019 \n
 --------------------------------------------------------------------------------------\n
 """
 function integrate!(n::NLOpt,V::Expr)
   if n.s.ocp.integrationMethod==:ps
-    integral_expr = [Array{Any}(n.ocp.Nck[int]) for int in 1:n.ocp.Ni]
+    integral_expr = [Array{Any}(undef, n.ocp.Nck[int]) for int in 1:n.ocp.Ni]
     for int in 1:n.ocp.Ni
       x_int,u_int = intervals(n,int,n.r.ocp.x,n.r.ocp.u)
       L = size(x_int)[1]-1
@@ -278,13 +278,13 @@ end
 """
 ------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 3/26/2017, Last Modified: 2/6/2018 \n
+Date Create: 3/26/2017, Last Modified: 12/06/2019 \n
 --------------------------------------------------------------------------------------\n
 """
 function savePlantData!(n)
   if isempty(n.r.ip.plant)
-    warn("No plant data to save.\n
-          Make sure that n.s.save = true ")
+    @warn "No plant data to save.\n
+          Make sure that n.s.save = true "
     return nothing
   end
   cd(n.r.resultsDir)
@@ -296,13 +296,13 @@ end
 """
 ------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 6/7/2018, Last Modified: 6/7/2018 \n
+Date Create: 6/7/2018, Last Modified: 12/06/2019 \n
 --------------------------------------------------------------------------------------\n
 """
 function saveOptData(n)
   if isempty(n.r.ocp.dfsOpt)
-    warn("No optimization data to save.\n
-          Make sure that n.s.save = true ")
+    @warn "No optimization data to save.\n
+          Make sure that n.s.save = true "
     return nothing
   end
   cd(n.r.resultsDir)
@@ -427,7 +427,7 @@ end
 # V is any vector that you are interpolating
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/06/2017, Last Modified: 2/06/2018 \n
+Date Create: 2/06/2017, Last Modified: 12/06/2019 \n
 --------------------------------------------------------------------------------------\n
 """
 function linearSpline(t::Vector,V::Vector)
@@ -450,8 +450,8 @@ function linearSpline(t::Vector,V::Vector)
   end
 
   # initialize vetors
-  t_new = Array{Float64}(length(t)-length(rm_idx))
-  V_new = Array{Float64}(length(t)-length(rm_idx))
+  t_new = Array{Float64}(undef, length(t)-length(rm_idx))
+  V_new = Array{Float64}(undef, length(t)-length(rm_idx))
   q = 1
   for i in 1:length(V) #TODO put an error message here if V and t are different sizes
       if !M[i]

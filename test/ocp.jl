@@ -42,7 +42,7 @@ dx=[:(sin(x2[j])),:(u1[j])]
   @test isapprox(350,n.r.ocp.objVal[1],atol=tol)
 end
 
-dx=Array{Expr}(2);dx[1]=:(x[j]);dx[2]=:(u[j]-1.625);
+dx=Array{Expr}(undef, 2);dx[1]=:(x[j]);dx[2]=:(u[j]-1.625);
 @testset "MoonLander with (:integrationScheme=>$(integrationConfig)) using new names for states and controls; also naming them x and u to check for bugs)" for integrationConfig in integrationConfigs
   n=define(numStates=2,numControls=1,X0=[10.,-2],XF=[0.,0.],CL=[0.],CU=[3.]);
   states!(n,[:h,:x];descriptions=["h(t)","x(t)"]);
@@ -56,7 +56,7 @@ dx=Array{Expr}(2);dx[1]=:(x[j]);dx[2]=:(u[j]-1.625);
   @test isapprox(8.9253,n.r.ocp.objVal[1],atol=tol)
 end
 
-dx=Array{Expr}(2);dx[1]=:(x[j]);dx[2]=:(u[j]-1.625);
+dx=Array{Expr}(undef, 2);dx[1]=:(x[j]);dx[2]=:(u[j]-1.625);
 @testset "MoonLander with (:integrationScheme=>$(integrationConfig)) testing functionality to scale the states and controls)" for integrationConfig in integrationConfigs
   n=define(numStates=2,numControls=1,X0=[10.,-2],XF=[0.,0.],CL=[0.],CU=[3.],XS=[2.,.8],CS=[1.5]);
   states!(n,[:h,:x];descriptions=["h(t)","x(t)"]);

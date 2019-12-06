@@ -152,7 +152,7 @@ const simulationModes = [:OCP,:IP,:IPEP,:EP]
 # structs
 ################################################################################
 ############################### control ########################################
-struct Control
+mutable struct Control
   name::Vector{Any}
   description::Vector{Any}
   num::Int64
@@ -165,7 +165,7 @@ function Control()
           0)
 end
 # ############################# state  ##########################################
-struct State
+mutable struct State
   name::Vector{Any}
   description::Vector{Any}
   num::Int64
@@ -181,7 +181,7 @@ function State()
 end
 
 ############################## constraint ######################################
-struct Constraint
+mutable struct Constraint
   name::Vector{Any}
   handle::Vector{Any}
   value::Vector{Any}
@@ -195,7 +195,7 @@ function Constraint()
 end
 
 ############################### solver  ########################################
-struct Solver
+mutable struct Solver
     name
     settings
 end
@@ -205,7 +205,7 @@ function Solver()
               _Ipopt_defaults);
 end
 
-struct PlantResults
+mutable struct PlantResults
   plant
   X0p
   X0a  # closest one in time to X0e
@@ -235,7 +235,7 @@ function PlantResults()
       )
 end
 
-struct OCPResults
+mutable struct OCPResults
   tctr                       # time vector for control
   tst                        # time vector for state
   x                          # JuMP states
@@ -311,7 +311,7 @@ OCPResults( Vector{Any}[],# time vector for control
       )
 end
 
-struct Results
+mutable struct Results
   ocp::OCPResults
   ip::PlantResults
   ep::PlantResults
@@ -330,7 +330,7 @@ function Results()
 end
 
 # MPC Settings Class
-struct MPCSettings
+mutable struct MPCSettings
  on::Bool
  mode::Symbol
  predictX0::Bool
@@ -365,7 +365,7 @@ function MPCSettings()
 end
 
 # OCP Settings Class
-struct OCPSettings
+mutable struct OCPSettings
   solver::Solver                # solver information
   finalTimeDV::Bool
   integrationMethod::Symbol
@@ -408,7 +408,7 @@ function OCPSettings()
                 )
 end
 
-struct Settings
+mutable struct Settings
  ocp::OCPSettings
  mpc::MPCSettings
 end
@@ -484,7 +484,7 @@ end
 """
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 6/29/2017, Last Modified: 4/13/2018 \n
+Date Create: 6/29/2017, Last Modified: 12/06/2019 \n
 --------------------------------------------------------------------------------------\n
 """
 function intervals(n,int,x,u)
@@ -498,9 +498,9 @@ function intervals(n,int,x,u)
 
     # controls
     if int!=n.ocp.Ni
-      u_int = Array{JuMP.Variable}(length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]),n.ocp.control.num)
+      u_int = Matrix{JuMP.Variable}(undef, length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]),n.ocp.control.num)
     else                    # -1 -> removing control in last mesh interval
-      u_int = Array{JuMP.Variable}(length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]-1),n.ocp.control.num)
+      u_int = Matrix{JuMP.Variable}(undef, length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]-1),n.ocp.control.num)
     end
     for ctr in 1:n.ocp.control.num
       if int!=n.ocp.Ni          # +1 adds the DV in the next interval
@@ -511,16 +511,16 @@ function intervals(n,int,x,u)
     end
   else
     # states
-    x_int=Array{Any}(length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]),n.ocp.state.num);
+    x_int=Matrix{Any}(undef, length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]),n.ocp.state.num);
     for st in 1:n.ocp.state.num # +1 adds the DV in the next interval
       x_int[:,st] = x[n.ocp.Nck_cum[int]+1:n.ocp.Nck_cum[int+1]+1,st];
     end
 
     # controls
     if int!=n.ocp.Ni
-      u_int = Array{Any}(length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]),n.ocp.control.num)
+      u_int = Matrix{Any}(undef, length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]),n.ocp.control.num)
     else                    # -1 -> removing control in last mesh interval
-      u_int = Array{Any}(length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]-1),n.ocp.control.num)
+      u_int = Matrix{Any}(undef, length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]-1),n.ocp.control.num)
     end
     for ctr in 1:n.ocp.control.num
       if int!=n.ocp.Ni          # +1 adds the DV in the next interval
@@ -537,7 +537,7 @@ end
 """
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Created: 9/19/2017, Last Modified: 4/13/2018 \n
+Date Created: 9/19/2017, Last Modified: 12/06/2019 \n
 --------------------------------------------------------------------------------------\n
 """
 function interpolateLagrange!(n; numPts::Int64=250, tfOptimal::Any=false)
@@ -553,19 +553,19 @@ function interpolateLagrange!(n; numPts::Int64=250, tfOptimal::Any=false)
   end
 
   if isnan(tf)
-      warn("tf is a NaN cannot use it in interpolateLagrange!().\n
-            Exiting interpolateLagrange!() without an interpolated solution.")
+      @warn "tf is a NaN cannot use it in interpolateLagrange!().\n
+            Exiting interpolateLagrange!() without an interpolated solution."
     return nothing
   end
 
   if tf < 0.01
-    warn("tf needs to be greater than 0.01 to interpolate over solution.\n
-          Exiting interpolateLagrange!() without an interpolated solution.")
+    @warn "tf needs to be greater than 0.01 to interpolate over solution.\n
+          Exiting interpolateLagrange!() without an interpolated solution."
      return nothing
   end
 
   # sample points
-  n.r.ocp.tpolyPts = [linspace(tf/n.ocp.Ni*(int-1),tf/n.ocp.Ni*int,numPts) + n.r.ocp.tst[1] for int in 1:n.ocp.Ni]
+  n.r.ocp.tpolyPts = [range(tf/n.ocp.Ni*(int-1),tf/n.ocp.Ni*int;length=numPts) + n.r.ocp.tst[1] for int in 1:n.ocp.Ni]
   n.r.ocp.XpolyPts = [[zeros(numPts) for int in 1:n.ocp.Ni] for st in 1:n.ocp.state.num]
   n.r.ocp.UpolyPts = [[zeros(numPts) for int in 1:n.ocp.Ni] for ctr in 1:n.ocp.control.num]
   if n.s.ocp.evalCostates; n.r.ocp.CSpolyPts = [[zeros(numPts) for int in 1:n.ocp.Ni] for st in 1:n.ocp.state.num] end
@@ -601,20 +601,20 @@ function interpolateLagrange!(n; numPts::Int64=250, tfOptimal::Any=false)
   n.r.ocp.tpts = [idx for tempM in temp for idx=tempM]
   totalPts = length(n.r.ocp.tpts)
 
-  n.r.ocp.Xpts = Matrix{Float64}(totalPts, n.ocp.state.num)
+  n.r.ocp.Xpts = Matrix{Float64}(undef, totalPts, n.ocp.state.num)
   for st in 1:n.ocp.state.num # states
     temp = [n.r.ocp.XpolyPts[st][int][1:end,:] for int in 1:n.ocp.Ni]
     n.r.ocp.Xpts[:,st] = [idx for tempM in temp for idx=tempM]
   end
 
-  n.r.ocp.Upts = Matrix{Float64}(totalPts, n.ocp.control.num)
+  n.r.ocp.Upts = Matrix{Float64}(undef, totalPts, n.ocp.control.num)
   for ctr in 1:n.ocp.control.num # controls
     temp = [n.r.ocp.UpolyPts[ctr][int][1:end,:] for int in 1:n.ocp.Ni]
     n.r.ocp.Upts[:,ctr] = [idx for tempM in temp for idx=tempM]
   end
 
   if n.s.ocp.evalCostates && n.s.ocp.evalConstraints
-    n.r.ocp.CSpts = Matrix{Float64}(totalPts, n.ocp.state.num)
+    n.r.ocp.CSpts = Matrix{Float64}(undef, totalPts, n.ocp.state.num)
     for st in 1:n.ocp.state.num # states
       temp = [n.r.ocp.CSpolyPts[st][int][1:end,:] for int in 1:n.ocp.Ni]
       n.r.ocp.CSpts[:,st] = [idx for tempM in temp for idx=tempM]
@@ -627,7 +627,7 @@ end
 """
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Created: 10/4/2017, Last Modified: 4/13/2018 \n
+Date Created: 10/4/2017, Last Modified: 12/06/2019 \n
 --------------------------------------------------------------------------------------\n
 """
 function interpolateLinear!(n; numPts::Int64=250, tfOptimal::Any=false)
@@ -643,22 +643,22 @@ function interpolateLinear!(n; numPts::Int64=250, tfOptimal::Any=false)
   end
 
   if isnan(tf)
-      warn("tf is a NaN cannot use it in interpolateLinear!().\n
-            Exiting interpolateLinear!() without an interpolated solution.")
+      @warn "tf is a NaN cannot use it in interpolateLinear!().\n
+            Exiting interpolateLinear!() without an interpolated solution."
       return nothing
   end
 
   if tf < 0.01
-    warn("tf needs to be greater than 0.01 to interpolate over solution.\n
-          Exiting interpolateLinear!() without an interpolated solution.")
+    @warn "tf needs to be greater than 0.01 to interpolate over solution.\n
+          Exiting interpolateLinear!() without an interpolated solution."
     return nothing
   end
 
   # sample points
-  t = linspace(0,tf,numPts) + n.r.ocp.tst[1] # NOTE not tested
+  t = range(0,tf,length=numPts) + n.r.ocp.tst[1] # NOTE not tested
   n.r.ocp.tpts = convert(Array{Float64,1},t)
-  n.r.ocp.Xpts = Matrix{Float64}(numPts, n.ocp.state.num)
-  n.r.ocp.Upts = Matrix{Float64}(numPts, n.ocp.control.num)
+  n.r.ocp.Xpts = Matrix{Float64}(undef, numPts, n.ocp.state.num)
+  n.r.ocp.Upts = Matrix{Float64}(undef, numPts, n.ocp.control.num)
   knots = (n.r.ocp.tst,)
   for st in 1:n.ocp.state.num
     sp_st = interpolate(knots,n.r.ocp.X[:,st],Gridded(Linear()))
@@ -679,22 +679,22 @@ end
 scale_tau(tau,ta,tb)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 12/23/2017, Last Modified: 9/18/2017 \n
+Date Create: 12/23/2017, Last Modified: 12/06/2019 \n
 --------------------------------------------------------------------------------------\n
 """
 function scale_tau(tau,ta,tb)
-  (tb - ta)/2*tau + (ta + tb)/2
+  (tb - ta)/2*tau .+ (ta + tb)/2
 end
 
 """
 plant2dfs!(n,sol)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/14/2017, Last Modified: 4/13/2018 \n
+Date Create: 2/14/2017, Last Modified: 12/06/2019 \n
 --------------------------------------------------------------------------------------\n
 """
 function plant2dfs!(n,sol,U)
-  tSample = linspace(sol.t[1],sol.t[end],n.mpc.ip.state.pts)
+  tSample = range(sol.t[1],sol.t[end],length=n.mpc.ip.state.pts)
   dfs = DataFrame()
   if isempty(n.r.ip.plant)
     dfs[:t] = tSample
@@ -733,7 +733,7 @@ dvs2dfs(n)
 # funtionality to save state, costate, and control data from optimization
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 2/10/2017, Last Modified: 4/13/2018 \n
+Date Create: 2/10/2017, Last Modified: 12/06/2019 \n
 --------------------------------------------------------------------------------------\n
 """
 function dvs2dfs(n)
@@ -751,7 +751,7 @@ function dvs2dfs(n)
   end
 
   if n.s.ocp.evalCostates && n.s.ocp.integrationMethod == :ps && n.s.ocp.evalConstraints
-    CS_vector = Matrix{Float64}(n.ocp.state.pts, n.ocp.state.num)
+    CS_vector = Matrix{Float64}(undef, n.ocp.state.pts, n.ocp.state.num)
     for st in 1:n.ocp.state.num # states
       temp = [n.r.ocp.CS[st][int][1:end,:] for int in 1:n.ocp.Ni]
       CS_vector[1:end-1,st] = [idx for tempM in temp for idx=tempM]
@@ -824,7 +824,7 @@ end
 postProcess!(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/27/2017, Last Modified: 4/13/2018 \n
+Date Create: 1/27/2017, Last Modified: 12/06/2019 \n
 --------------------------------------------------------------------------------------\n
 """
 function postProcess!(n;kwargs...)
@@ -848,14 +848,14 @@ function postProcess!(n;kwargs...)
       else
         t = [scale_tau(n.ocp.ts[int],0.0,n.ocp.tf) for int in 1:n.ocp.Ni]
       end
-      n.r.ocp.tctr = [idx for tempM in t for idx = tempM[1:end-1]] + getvalue(n.ocp.t0)
-      n.r.ocp.tst = [n.r.ocp.tctr; t[end][end] + getvalue(n.ocp.t0)]
+      n.r.ocp.tctr = [idx for tempM in t for idx = tempM[1:end-1]] .+ getvalue(n.ocp.t0)
+      n.r.ocp.tst = [n.r.ocp.tctr; t[end][end] .+ getvalue(n.ocp.t0)]
       # TODO check the above line... is t0 getting added on twice?
     elseif n.s.ocp.integrationMethod==:tm
       if n.s.ocp.finalTimeDV
-        n.r.ocp.tctr = append!([0.0],cumsum(getvalue(n.ocp.dt))) + getvalue(n.ocp.t0)
+        n.r.ocp.tctr = append!([0.0],cumsum(getvalue(n.ocp.dt))) .+ getvalue(n.ocp.t0)
       else
-        n.r.ocp.tctr = append!([0.0],cumsum(n.ocp.dt)) + getvalue(n.ocp.t0)
+        n.r.ocp.tctr = append!([0.0],cumsum(n.ocp.dt)) .+ getvalue(n.ocp.t0)
       end
       n.r.ocp.tst = n.r.ocp.tctr
     end
@@ -864,9 +864,9 @@ function postProcess!(n;kwargs...)
     if n.r.ocp.status==:Optimal || (!n.s.mpc.onlyOptimal && n.s.mpc.on && isequal(n.mpc.v.evalNum,1))
       stateDataExists = true
       if (!isequal(n.r.ocp.status,:Optimal) && n.s.mpc.on && isequal(n.mpc.v.evalNum,1))
-        warn("There is no previous :Optimal solution to use since isequal(n.mpc.v.evalNum,1). \n
+        @warn "There is no previous :Optimal solution to use since isequal(n.mpc.v.evalNum,1). \n
             Attemting to extract: ",n.r.ocp.status," solution. \n
-            Setting: n.f.mpc.simFailed = [true, n.r.ocp.status] ")
+            Setting: n.f.mpc.simFailed = [true, n.r.ocp.status] "
          n.f.mpc.simFailed = [true, n.r.ocp.status]
       end
       n.r.ocp.X = zeros(Float64,n.ocp.state.pts,n.ocp.state.num)
@@ -890,8 +890,8 @@ function postProcess!(n;kwargs...)
       if n.r.ocp.dfs[optIdx][:t][1] > n.mpc.v.t
         timeIdx = 1
       elseif n.r.ocp.dfs[optIdx][:t][end] < n.mpc.v.t
-        warn("the current time is past the final time in the last :Optimal soultion.\n
-              Setting: n.f.mpc.simFailed = [true, n.r.ocp.status]")
+        @warn "the current time is past the final time in the last :Optimal soultion.\n
+              Setting: n.f.mpc.simFailed = [true, n.r.ocp.status]"
         n.f.mpc.simFailed = [true, n.r.ocp.status]
         return nothing
       else
@@ -918,8 +918,8 @@ function postProcess!(n;kwargs...)
         end
       end
     else
-      warn("The solution is not Optimal \n
-          Setting: n.f.mpc.simFailed = [true, n.r.ocp.status] ")
+      @warn "The solution is not Optimal \n
+          Setting: n.f.mpc.simFailed = [true, n.r.ocp.status] "
        n.f.mpc.simFailed = [true, n.r.ocp.status]
     end
     if n.s.ocp.evalConstraints && n.r.ocp.status!=:Error  # note may want to remove the && arg
@@ -932,7 +932,7 @@ function postProcess!(n;kwargs...)
             L1 = n.r.ocp.constraint.nums[i][end][1]
           end
         end
-        mpb = JuMP.backend(n.ocp.mdl)
+        mpb = JuMP.internalmodel(n.ocp.mdl)
         c = MathProgBase.getconstrduals(mpb)
         # NOTE for now since costates are not defined for :tm methods, n.r.ocp.CS is in a different format than n.r.ocp.X
         # in the future if costates are defined for :tm methods this can be changed

@@ -171,13 +171,13 @@ end  # function
 OCPdef!(n)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/14/2017, Last Modified: 4/13/2018 \n
+Date Create: 1/14/2017, Last Modified: 12/06/2019 \n
 --------------------------------------------------------------------------------------\n
 """
 function OCPdef!(n::NLOpt)
   # state variables
   @variable(n.ocp.mdl,x[1:n.ocp.state.pts,1:n.ocp.state.num])
-  n.r.ocp.x = Matrix{Any}(n.ocp.state.pts,n.ocp.state.num)
+  n.r.ocp.x = Matrix{Any}(undef, n.ocp.state.pts,n.ocp.state.num)
   for st in 1:n.ocp.state.num
       n.r.ocp.x[:,st] = @NLexpression(n.ocp.mdl, [j=1:n.ocp.state.pts], n.ocp.XS[st]*x[j,st])
   end
@@ -213,7 +213,7 @@ function OCPdef!(n::NLOpt)
 
   # control variables
   @variable(n.ocp.mdl,u[1:n.ocp.control.pts,1:n.ocp.control.num])
-  n.r.ocp.u = Matrix{Any}(n.ocp.control.pts,n.ocp.control.num)
+  n.r.ocp.u = Matrix{Any}(undef, n.ocp.control.pts,n.ocp.control.num)
   for ctr in 1:n.ocp.control.num
       n.r.ocp.u[:,ctr] = @NLexpression(n.ocp.mdl, [j=1:n.ocp.control.pts], n.ocp.CS[ctr]*u[j,ctr])
   end
@@ -234,13 +234,13 @@ function OCPdef!(n::NLOpt)
 
   # boundary constraints
   if n.s.ocp.x0slackVariables   # create handles for constraining the entire initial state
-    n.r.ocp.x0Con = Array{Any}(n.ocp.state.num,2) # this is so they can be easily reference when doing MPC
+    n.r.ocp.x0Con = Array{Any}(undef, n.ocp.state.num,2) # this is so they can be easily reference when doing MPC
   else
     n.r.ocp.x0Con = []
   end
 
   if n.s.ocp.xFslackVariables # create handles for constraining the entire final state
-    n.r.ocp.xfCon = Array{Any}(n.ocp.state.num,2) # this is so they can be easily reference when doing MPC
+    n.r.ocp.xfCon = Array{Any}(undef, n.ocp.state.num,2) # this is so they can be easily reference when doing MPC
   else
     n.r.ocp.xfCon = []
   end
@@ -248,12 +248,12 @@ function OCPdef!(n::NLOpt)
   if n.s.ocp.x0slackVariables # currently adding slack variables for all initial states even if there are no constraints on them
     @variable(n.ocp.mdl,x0s[1:n.ocp.state.num])
     n.ocp.x0s = x0s
-    n.r.ocp.x0sCon = Array{Any}(n.ocp.state.num)
+    n.r.ocp.x0sCon = Array{Any}(undef, n.ocp.state.num)
   end
   if n.s.ocp.xFslackVariables # currently adding slack variables for all final states even if there are no constraints on them
     @variable(n.ocp.mdl,xFs[1:n.ocp.state.num])
     n.ocp.xFs = xFs
-    n.r.ocp.xfsCon = Array{Any}(n.ocp.state.num)
+    n.r.ocp.xfsCon = Array{Any}(undef, n.ocp.state.num)
   end
 
   for st in 1:n.ocp.state.num
@@ -285,8 +285,8 @@ function OCPdef!(n::NLOpt)
   n.ocp.t0 = t0_param  # NOTE consider making a constraint that t0 < tf
 
   if n.s.ocp.integrationMethod == :ps
-    n.r.ocp.dynCon = [Array{Any}(n.ocp.Nck[int],n.ocp.state.num) for int in 1:n.ocp.Ni]
-    dynamics_expr = [Array{Any}(n.ocp.Nck[int],n.ocp.state.num) for int in 1:n.ocp.Ni]
+    n.r.ocp.dynCon = [Array{Any}(undef, n.ocp.Nck[int],n.ocp.state.num) for int in 1:n.ocp.Ni]
+    dynamics_expr = [Array{Any}(undef, n.ocp.Nck[int],n.ocp.state.num) for int in 1:n.ocp.Ni]
 
     if n.s.ocp.finalTimeDV
       @variable(n.ocp.mdl, n.s.ocp.tfMin <= tf <=  n.s.ocp.tfMax)
@@ -299,7 +299,7 @@ function OCPdef!(n::NLOpt)
 
       # dynamics
       L = size(x_int)[1]-1;
-      dx = Array{Any}(L,n.ocp.state.num)
+      dx = Matrix{Any}(undef, L,n.ocp.state.num)
       for st in 1:n.ocp.state.num
         dx[:,st] = DiffEq(n,x_int,u_int,L,st)
       end
@@ -322,7 +322,7 @@ function OCPdef!(n::NLOpt)
       end
     end
   elseif n.s.ocp.integrationMethod == :tm
-    n.r.ocp.dynCon = Array{Any}(n.ocp.N,n.ocp.state.num)
+    n.r.ocp.dynCon = Array{Any}(undef, n.ocp.N,n.ocp.state.num)
     if n.s.ocp.finalTimeDV
      @variable(n.ocp.mdl, n.s.ocp.tfMin <= tf <= n.s.ocp.tfMax)
      n.ocp.tf = tf
@@ -331,7 +331,7 @@ function OCPdef!(n::NLOpt)
     n.ocp.dt = n.ocp.tf/n.ocp.N*ones(n.ocp.N,)
 
     L = size(n.r.ocp.x)[1]
-    dx = Array{Any}(L,n.ocp.state.num)
+    dx = Array{Any}(undef, L,n.ocp.state.num)
     for st in 1:n.ocp.state.num
       dx[:,st] = DiffEq(n,n.r.ocp.x,n.r.ocp.u,L,st)
     end
@@ -367,7 +367,7 @@ end
 
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 1/1/2017, Last Modified: 11/10/2017 \n
+Date Create: 1/1/2017, Last Modified: 12/06/2019 \n
 -------------------------------------------------------------------------------------\n
 """
 function configure!(n::NLOpt; kwargs... )
@@ -436,7 +436,7 @@ function configure!(n::NLOpt; kwargs... )
     end
     n.ocp.state.pts = sum(n.ocp.Nck) + 1
     n.ocp.control.pts = sum(n.ocp.Nck)
-    n.ocp.Nck_full = [0;cumsum(n.ocp.Nck+1)]
+    n.ocp.Nck_full = [0;cumsum(n.ocp.Nck.+1)]
     n.ocp.Nck_cum = [0;cumsum(n.ocp.Nck)]
 
     # initialize node data
@@ -460,8 +460,8 @@ function configure!(n::NLOpt; kwargs... )
   end
   n.ocp.mXL = falses(n.ocp.state.num)
   n.ocp.mXU = falses(n.ocp.state.num)
-  n.ocp.XL_var = Matrix{Float64}(n.ocp.state.num,n.ocp.state.pts)
-  n.ocp.XU_var = Matrix{Float64}(n.ocp.state.num,n.ocp.state.pts)
+  n.ocp.XL_var = Matrix{Float64}(undef, n.ocp.state.num, n.ocp.state.pts)
+  n.ocp.XU_var = Matrix{Float64}(undef, n.ocp.state.num, n.ocp.state.pts)
 
   # solver settings
   if !haskey(kw,:solverSettings);SS = Dict((:name=>:Ipopt)); # default
