@@ -1,6 +1,6 @@
 name = "NLOptControl"
 uuid = "290757bd-39a7-5095-97bb-ca0f46959724"
-version = "0.0.1"
+version = "0.2.4"
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
@@ -36,3 +36,10 @@ OrdinaryDiffEq = "≥ 3.21.0"
 Plots = "≥ 0.17.4"
 ReverseDiffSparse = "≥ 0.8.6"
 julia = "≥ 1.0.0"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+
+[targets]
+test = ["DiffEqBase", "OrdinaryDiffEq", "Statistics", "Test"]

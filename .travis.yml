@@ -20,13 +20,6 @@ addons:
 install:
   - sudo pip install matplotlib
 
-script:
-  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-  - julia -e 'Pkg.add("ReverseDiffSparse")'
-  - julia -e 'Pkg.checkout("ReverseDiffSparse")'
-  - julia -e 'Pkg.clone(pwd())'
-  - julia -e 'Pkg.test("NLOptControl")'
-#  - julia -e 'run(`lualatex -v`)'
-  - julia -e 'Pkg.checkout("NLOptControl")'
-  - julia -e 'Pkg.add("Documenter");'
-  - julia -e 'cd(Pkg.dir("NLOptControl"));ENV["DOCUMENTER_DEBUG"]=true; include(joinpath("docs", "make.jl"))'
+after_success:
+  - julia -e 'using Pkg; Pkg.add("Documenter");'
+  - julia -e 'using Pkg; ENV["DOCUMENTER_DEBUG"]=true; import NLOptControl; cd(joinpath(dirname(pathof(NLOptControl)), "..")); ; include(joinpath("docs", "make.jl"))'

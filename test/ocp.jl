@@ -92,7 +92,7 @@ function optimal_solution(t)
   return h, v, u
 end
 
-t_opt = linspace(0,tf_star,pts)
+t_opt = range(0,tf_star,length=pts)
 h_opt = zeros(pts); v_opt = zeros(pts); u_opt = zeros(pts);
 for i in 1:pts
   h, v, u = optimal_solution(t_opt[i])
@@ -156,11 +156,11 @@ opt_num = length(Nck_vec)
       end
     end
 
-    t_opt_ave[num] = mean(t_solve[.!isnan.(t_solve)],1)[1]
-    h_error_ave[num] = mean(h_error[.!isnan.(h_error)],1)[1]
-    v_error_ave[num] = mean(v_error[.!isnan.(v_error)],1)[1]
-    u_error_ave[num] = mean(u_error[.!isnan.(u_error)],1)[1]
-    max_error_ave[num] = mean(max_error[.!isnan.(max_error)],1)[1]
+    t_opt_ave[num] = mean(t_solve[.!isnan.(t_solve)],dims=1)[1]
+    h_error_ave[num] = mean(h_error[.!isnan.(h_error)],dims=1)[1]
+    v_error_ave[num] = mean(v_error[.!isnan.(v_error)],dims=1)[1]
+    u_error_ave[num] = mean(u_error[.!isnan.(u_error)],dims=1)[1]
+    max_error_ave[num] = mean(max_error[.!isnan.(max_error)],dims=1)[1]
   end
   @show maximum(max_error_ave)
   @test isapprox(0, maximum(max_error_ave),atol=big_tol)
