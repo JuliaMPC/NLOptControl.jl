@@ -565,7 +565,7 @@ function interpolateLagrange!(n; numPts::Int64=250, tfOptimal::Any=false)
   end
 
   # sample points
-  n.r.ocp.tpolyPts = [range(tf/n.ocp.Ni*(int-1),tf/n.ocp.Ni*int;length=numPts) + n.r.ocp.tst[1] for int in 1:n.ocp.Ni]
+  n.r.ocp.tpolyPts = [range(tf/n.ocp.Ni*(int-1),tf/n.ocp.Ni*int;length=numPts) .+ n.r.ocp.tst[1] for int in 1:n.ocp.Ni]
   n.r.ocp.XpolyPts = [[zeros(numPts) for int in 1:n.ocp.Ni] for st in 1:n.ocp.state.num]
   n.r.ocp.UpolyPts = [[zeros(numPts) for int in 1:n.ocp.Ni] for ctr in 1:n.ocp.control.num]
   if n.s.ocp.evalCostates; n.r.ocp.CSpolyPts = [[zeros(numPts) for int in 1:n.ocp.Ni] for st in 1:n.ocp.state.num] end
@@ -655,7 +655,7 @@ function interpolateLinear!(n; numPts::Int64=250, tfOptimal::Any=false)
   end
 
   # sample points
-  t = range(0,tf,length=numPts) + n.r.ocp.tst[1] # NOTE not tested
+  t = range(0,tf,length=numPts) .+ n.r.ocp.tst[1] # NOTE not tested
   n.r.ocp.tpts = convert(Array{Float64,1},t)
   n.r.ocp.Xpts = Matrix{Float64}(undef, numPts, n.ocp.state.num)
   n.r.ocp.Upts = Matrix{Float64}(undef, numPts, n.ocp.control.num)
