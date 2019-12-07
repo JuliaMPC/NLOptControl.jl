@@ -11,5 +11,9 @@ const big_tol = 0.5 # can reduce if the number of points are increased
 const integrationConfigs = [:lgrExplicit,:lgrImplicit,:trapezoidal,:bkwEuler]
 #const integrationConfigs = [:lgrExplicit]
 
-include("ocp.jl")
-include("mpc.jl")
+@testset "OCP" begin
+    include("ocp.jl")
+end
+@testset "MPC" begin
+    include("mpc.jl")
+end

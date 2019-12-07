@@ -16,8 +16,6 @@ addons:
         - gfortran
         - liblapack-dev
         - libblas-dev
-install:
-  - sudo pip install matplotlib
 
 after_success:
   - julia -e 'using Pkg; Pkg.add("Documenter");'
