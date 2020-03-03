@@ -37,12 +37,13 @@ Pkg.pin("KNITRO",v"0.4")
 ## Citation
 If you find [NLOptControl.jl](https://github.com/JuliaMPC/NLOptControl.jl) useful, please cite it:
 ```
-@software{nlopt,
-  author = {{Huckleberry Febbo}},
-  title = {NLOptControl.jl},
-  url = {https://github.com/JuliaMPC/NLOptControl.jl},
-  version = {0.0.1},
-  date = {2017-06-17},
+@misc{febbo2020nloptcontrol,
+    title={NLOptControl: A modeling language for solving optimal control problems},
+    author={Huckleberry Febbo and Paramsothy Jayakumar and Jeffrey L. Stein and Tulga Ersal},
+    year={2020},
+    eprint={2003.00142},
+    archivePrefix={arXiv},
+    primaryClass={cs.MS}
 }
 ```
 
