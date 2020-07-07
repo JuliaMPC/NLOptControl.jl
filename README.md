@@ -23,15 +23,20 @@ sudo apt-get install gfortran
 sudo apt-get install liblapack-dev
 sudo apt-get install libblas-dev
 ```
-Also, make sure that you are using julia 0.6.2
+
+Also, make sure that you are using julia 0.6.4
 ```
-sudo wget https://julialang-s3.julialang.org/bin/linux/x64/0.6/julia-0.6.2-linux-x86_64.tar.gz 
-sudo tar -xvf julia-0.6.2-linux-x86_64.tar.gz -C /opt 
- ```
-Then open up julia and install NLOptControl
+sudo wget https://julialang-s3.julialang.org/bin/linux/x64/0.6/julia-0.6.4-linux-x86_64.tar.gz
+sudo tar -xvf julia-0.6.4-linux-x86_64.tar.gz -C /opt
+```
+
+Then open up julia and install a few specific packages and NLOptControl
 ```julia
-Pkg.clone("https://github.com/JuliaMPC/NLOptControl.jl")
+Pkg.add("ReverseDiffSparse")
+Pkg.checkout("ReverseDiffSparse")
+Pkg.add("KNITRO")
 Pkg.pin("KNITRO",v"0.4")
+Pkg.clone("https://github.com/JuliaMPC/NLOptControl.jl")
 ```
 
 ## Citation
