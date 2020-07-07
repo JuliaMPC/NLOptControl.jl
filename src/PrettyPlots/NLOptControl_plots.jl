@@ -132,7 +132,7 @@ function statePlot(n,idx::Int64,st::Int64,args...;kwargs...)
 
     plot!(time,vals,line=_pretty_defaults[:plant_lines][1],label=string(legend_string,"plant"));
   end
-  if _pretty_defaults[:X0p]
+  if _pretty_defaults[:X0p] && length(n.r.ip.X0p) > idx
     X0 = n.r.ip.X0p[idx][1]
     t = n.r.ip.X0p[idx][2]
     scatter!((t,X0[st]),marker=_pretty_defaults[:X0p_marker],label="X0p")
