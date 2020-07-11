@@ -15,7 +15,7 @@ export
   postProcess!,
   optimize!,
   scale_tau,
-  try_import,
+    try_import, # ! actually lives in utils.jl, is this important to export?
   intervals,
   interpolateLagrange!,
   interpolateLinear!,
@@ -52,7 +52,8 @@ const _Ipopt_defaults=Dict{Symbol,Any}(
   :diverging_iterates_tol     =>1e20
 )
 
-const _Ipopt_MPC=Dict(
+# IPOPT Settings for Model Predictive Control
+const _Ipopt_MPC = Dict{Symbol,Any}(
   :print_level                =>0,
   :warm_start_init_point      =>"yes",
   :tol                        =>5e-1,
@@ -73,91 +74,87 @@ const simulationModes = [ :OCP , :IP , :IPEP , :EP]
 
 # Control
 mutable struct Control
-  name::Vector{Any}
-  description::Vector{Any}
-  num::Int64
-  pts::Int64
+    name::Vector{Symbol}
+    description::Vector{AbstractString}
+    num::Int
+    pts::Int
 end
-function Control()
-  Control([],
-          [],
-          0,
-          0)
-end
-# ############################# state  ##########################################
+Control() = Control(
+    Vector{Symbol}[],
+    Vector{AbstractString}[],
+    Int(0),
+    Int(0)
+)
+
+# State
 mutable struct State
-  name::Vector{Any}
-  description::Vector{Any}
-  num::Int64
-  pts::Int64
-  model
+    name::Vector{Symbol}
+    description::Vector{AbstractString}
+    num::Int
+    pts::Int
+    model::JuMP.Model
 end
-function State()
-  State([],
-        [],
+State() = State(
+    Vector{Symbol}(),
+    Vector{AbstractString}(),
         0,
         0,
-        Any)
-end
+    JuMP.Model()
+)
 
-############################## constraint ######################################
-mutable struct Constraint
-  name::Vector{Any}
-  handle::Vector{Any}
-  value::Vector{Any}
-  nums  # range of indecies in g(x)
+# Constraint
+mutable struct Constraint{ T <: Number }
+    name::Vector{Symbol}
+    handle::Vector{JuMP.ConstraintRef}
+    value::Vector{T}
+    nums::Vector{Any} # range of indices in g(x)
 end
-function Constraint()
-  Constraint([],
-             [],
-             [],
-             []);
-end
+Constraint(T::DataType=Float64) = Constraint{T}(
+    Vector{Symbol}(),
+    Vector{JuMP.ConstraintRef}(),
+    Vector{T}(),
+    Vector{Any}()
+)
 
-############################### solver  ########################################
+# Solver
 mutable struct Solver
-    name
-    settings
+    name::Symbol
+    settings::Dict{Symbol,Any}
 end
+Solver() = Solver(:Ipopt, _Ipopt_defaults)
 
-function Solver()
-       Solver(:Ipopt,
-              _Ipopt_defaults);
+# Plant Results
+mutable struct PlantResults{ T <: Number }
+  plant::DataFrame
+  X0p::Vector{Any}
+  X0a::Vector{Any} # closest one in time to X0e
+  X0e::Vector{Any}
+  e::Matrix{Any}
+  dfsplant::Vector{DataFrame}
+  dfsplantPts::DataFrame # plant data extracted into a single DataFrame
+  dfsX0p::DataFrame
+  dfsX0a::DataFrame
+  dfsX0e::DataFrame
+  dfse::DataFrame
 end
-
-mutable struct PlantResults
-  plant
-  X0p
-  X0a  # closest one in time to X0e
-  X0e
-  e
-  dfsplant
-  dfsplantPts::DataFrames.DataFrame # plant data extracted into a single DataFrame
-  dfsX0p
-  dfsX0a
-  dfsX0e
-  dfse
-end
-
-function PlantResults()
- PlantResults(
-    DataFrame(), # plantdata
-  Vector{Any}[],
-  Vector{Any}[],
-  Vector{Any}[],
-  Matrix{Any}[], # e
-           [],   # vector of plantdata dfs
-  DataFrame(),
-  DataFrame(),
-  DataFrame(),
-  DataFrame(),
-  DataFrame()
+PlantResults(T::DataType=Float64) = PlantResults{T}(
+    DataFrame(),             # plant
+    Vector{Any}(),           # X0p
+    Vector{Any}(),           # X0a
+    Vector{Any}(),           # X0e
+    Matrix{Any}(undef,0,0),  # e
+    Vector{DataFrame}(),     # dfsplant
+    DataFrame(),             # dfsplantPts
+    DataFrame(),             # dfsX0p
+    DataFrame(),             # dfsX0a
+    DataFrame(),             # dfsX0e
+    DataFrame()              # dfse
       )
-end
 
-mutable struct OCPResults
-  tctr                       # time vector for control
-  tst                        # time vector for state
+# Optimal Control Problem (OCP) Results
+mutable struct OCPResults{ T <: Number }
+    tctr::Vector{Any}          # time vector for control
+    tst::Vector{Any}           # time vector for state
   x                          # JuMP states
   u                          # JuMP controls
   X                          # states
@@ -168,10 +165,10 @@ mutable struct OCPResults
   XpolyPts                   # state evaluated using Lagrange/Linear polynomial
   CSpolyPts                  # costate evaluated using Lagrange/Linear polynomial
   UpolyPts                   # control evaluated using Lagrane/Linear polynomial
-  AlltpolyPts                   # time sample points for polynomials
-  AllXpolyPts                   # state evaluated using Lagrange/Linear polynomial
-  AllCSpolyPts                  # costate evaluated using Lagrange/Linear polynomial
-  AllUpolyPts                   # control evaluated using Lagrane/Linear polynomial
+    AlltpolyPts                # time sample points for polynomials
+    AllXpolyPts                # state evaluated using Lagrange/Linear polynomial
+    AllCSpolyPts               # costate evaluated using Lagrange/Linear polynomial
+    AllUpolyPts                # control evaluated using Lagrane/Linear polynomial
   tpts                       # vector time sample points
   Xpts                       # vector state sample points
   Upts                       # vector control sample points
@@ -181,75 +178,71 @@ mutable struct OCPResults
   xfCon                      # handle for final state constraints
   xfsCon
   dynCon                     # dynamics constraints
-  constraint::Constraint     # constraint handles and data
+    constraint::Constraint{T}  # constraint handles and data
   evalNum                    # number of times optimization has been run
   iterNum                    # mics. data, perhaps an iteration number for a higher level algorithm
   status                     # optimization status
   tSolve                     # solve time for optimization
   objVal                     # objective function value
-  dfs                        # results in DataFrame for plotting
-  dfsOpt                     # optimization information in DataFrame for plotting
+    dfs::Vector{DataFrame}     # results in DataFrame for plotting
+    dfsOpt::DataFrame          # optimization information in DataFrame for plotting
   dfsCon                     # constraint data
 end
-
-# Default Constructor
-function OCPResults()
-OCPResults( Vector{Any}[],# time vector for control
-        Vector{Any}[],    # time vector for state
-        Matrix{Any}[],    # JuMP states
-        Matrix{Any}[],    # JuMP controls
-        Matrix{Any}[],    # states
-        Matrix{Any}[],    # controls
-        Vector{Any}[],    # initial states for OCP
-        [],               # costates
-        [],               # time sample points for polynomials
-        [],               # state evaluated using Lagrange polynomial
-        [],               # costate evaluated using Lagrange polynomial
-        [],               # control evaluated using Lagrange polynomial
+OCPResults(T::DataType=Float64) = OCPResults{T}(
+    Vector{Any}(),          # time vector for control
+    Vector{Any}(),          # time vector for state
+    Matrix{Any}(undef,0,0), # JuMP states
+    Matrix{Any}(undef,0,0), # JuMP controls
+    Matrix{Any}(undef,0,0), # states
+    Matrix{Any}(undef,0,0), # controls
+    Vector{Any}(),          # initial states for OCP
+    [],                     # costates
+    [],                     # time sample points for polynomials
+    [],                     # state evaluated using Lagrange polynomial
+    [],                     # costate evaluated using Lagrange polynomial
+    [],                     # control evaluated using Lagrange polynomial
         [],
         [],
         [],
         [],
-        Vector{Any}[],    # vector time sample points
-        Vector{Any}[],    # vector state sample points
-        Vector{Any}[],    # vector control sample points
-        Vector{Any}[],    # vector costate sample points
-        nothing,          # handle for initial state constraints
+    Vector{Any}(),      # vector time sample points
+    Vector{Any}(),      # vector state sample points
+    Vector{Any}(),      # vector control sample points
+    Vector{Any}(),      # vector costate sample points
+    nothing,            # handle for initial state constraints
         nothing,
-        nothing,          # handle for final state constraints
+    nothing,            # handle for final state constraints
         nothing,
-        nothing,          # dynamics constraint
-        Constraint(),     # constraint data
-        1,                # current evaluation number
-        [],               # mics. data, perhaps an iteration number for a higher level algorithm
-        Symbol,           # optimization status
-        Float64,          # solve time for optimization
-        Float64,          # objective function value
-        [],               # results in DataFrame for plotting
-        DataFrame(),      # optimization information in DataFrame for plotting
-        []                # constraint data
+    nothing,            # dynamics constraint
+    Constraint(Float64), # constraint data
+    1,                  # current evaluation number
+    [],                 # mics. data, perhaps an iteration number for a higher level algorithm
+    Symbol,             # optimization status
+    Float64,            # solve time for optimization
+    Float64,            # objective function value
+    Vector{DataFrame}(),                 # results in DataFrame for plotting
+    DataFrame(),        # optimization information in DataFrame for plotting
+    []                  # constraint data
       )
-end
 
-mutable struct Results
-  ocp::OCPResults
-  ip::PlantResults
-  ep::PlantResults
-  resultsDir                 # string that defines results folder
-  mainDir                    # string that defines main folder
+# Results
+mutable struct Results{T <: Number}
+    ocp::OCPResults{T}
+    ip::PlantResults{T}
+    ep::PlantResults{T}
+    resultsDir::AbstractString  # string that defines results folder
+    mainDir::AbstractString     # string that defines main folder
 end
-
-function Results()
-  Results(
-  OCPResults(),
-  PlantResults(),
-  PlantResults(),
-  string(pwd(),"/results/"),  # string that defines results folder
+Results(T::DataType=Float64) = Results{T}(
+    OCPResults(T),
+    PlantResults(T),
+    PlantResults(T),
+    joinpath(pwd(),"results"),  # string that defines results folder
   pwd()                       # string that defines main folder
   )
-end
 
-# MPC Settings Class
+
+# Model-Predictive Contrl (MPC) Settings Class
 mutable struct MPCSettings
  on::Bool
  mode::Symbol
@@ -257,17 +250,15 @@ mutable struct MPCSettings
  fixedTp::Bool
  IPKnown::Bool
  saveMode::Symbol
- maxSim::Int64                # maximum number of total MPC updates
- shiftX0::Bool                # a bool to indicate that a check on the feasibility of the linear constraints for the initial conditions should be performed
- lastOptimal::Bool            # a bool to indicate that the previous solution should be used if the current solution in not optimal
- printLevel::Int64
- expandGoal::Bool             # bool to indicate if the goal needs to be expanded
- enlargeGoalTolFactor::Int64  # scaling factor to enlare the goal
+    maxSim::Int                 # maximum number of total MPC updates
+    shiftX0::Bool               # a bool to indicate that a check on the feasibility of the linear constraints for the initial conditions should be performed
+    lastOptimal::Bool           # a bool to indicate that the previous solution should be used if the current solution in not optimal
+    printLevel::Int
+    expandGoal::Bool            # bool to indicate if the goal needs to be expanded
+    enlargeGoalTolFactor::Int   # scaling factor to enlare the goal
  onlyOptimal::Bool
 end
-
-function MPCSettings()
-      MPCSettings(
+MPCSettings() = MPCSettings(
       false,
       :OCP,
       false,
@@ -282,32 +273,30 @@ function MPCSettings()
       2,
       false
       )
-end
 
 # OCP Settings Class
 mutable struct OCPSettings
-  solver::Solver                # solver information
+    solver::Solver              # solver information
   finalTimeDV::Bool
   integrationMethod::Symbol
   integrationScheme::Symbol
-  save::Bool                    # bool for saving data
-  reset::Bool                   # bool for reseting data
-  evalConstraints::Bool         # bool for evaluating duals of the constraints
-  evalCostates::Bool            # bool for evaluating costates
-  tfMin::Any                    # minimum final time
-  tfMax::Any                    # maximum final time
-  tfOptimal::Any                # known optimal final time
-  numInterpPts::Int64           # number of points to sample polynomial running through collocation points
-  cacheOnly::Bool               # bool for only caching the results when using optimize!()
-  linearInterpolation::Bool     # bool for using linear interpolation even if integrationMethod ==:ps
-  interpolationOn::Bool         # bool to indicate if user wants solution interpolated for them
+    save::Bool                  # bool for saving data
+    reset::Bool                 # bool for reseting data
+    evalConstraints::Bool       # bool for evaluating duals of the constraints
+    evalCostates::Bool          # bool for evaluating costates
+    tfMin::Any                  # minimum final time
+    tfMax::Any                  # maximum final time
+    tfOptimal::Any              # known optimal final time
+    numInterpPts::Int           # number of points to sample polynomial running through collocation points
+    cacheOnly::Bool             # bool for only caching the results when using optimize!()
+    linearInterpolation::Bool   # bool for using linear interpolation even if integrationMethod ==:ps
+    interpolationOn::Bool       # bool to indicate if user wants solution interpolated for them
   x0slackVariables::Bool
   xFslackVariables::Bool
 end
 
 # Default Constructor NOTE currently not using these, they get overwritten
-function OCPSettings()
-      OCPSettings(
+OCPSettings() = OCPSettings(
          Solver(),           # default solver
          false,              # finalTimeDV
          :ts,                # integrationMethod
@@ -326,19 +315,16 @@ function OCPSettings()
          false,
          false
                 )
-end
 
 mutable struct Settings
  ocp::OCPSettings
  mpc::MPCSettings
 end
 
-function Settings()
- Settings(
+Settings() = Settings(
   OCPSettings(),
   MPCSettings()
        )
-end
 
 """
 L = lagrange_basis_poly(x0,x,N,j)
