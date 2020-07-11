@@ -95,20 +95,16 @@ function defineSolver!(n::NLOpt,kw)
   # see if the user would like to use a standard set of solver settings for mpc
   if haskey(kw,:mpc_defaults); mpc_defaults=get(kw,:mpc_defaults,0); else mpc_defaults=false; end
   if mpc_defaults
-    if n.s.ocp.solver.name==:Ipopt
-      n.s.ocp.solver.settings=_Ipopt_MPC;
-    elseif n.s.ocp.solver.name==:KNITRO
-      n.s.ocp.solver.settings=_KNITRO_MPC;
+        if n.s.ocp.solver.name == :Ipopt
+            n.s.ocp.solver.settings = NLOptControl.Base._Ipopt_MPC
     else
-      error(string("solver ",n.s.sover.name, " not defined"))
+            @error "Solver $(n.s.ocp.solver.name) not defined"
     end
   else # default solver settings
-    if n.s.ocp.solver.name==:Ipopt  # NOTE this should already have been done by default, but could get messed up is user is playing with options
-      n.s.ocp.solver.settings=_Ipopt_defaults;
-    elseif n.s.ocp.solver.name==:KNITRO
-      n.s.ocp.solver.settings=_KNITRO_defaults;
+        if n.s.ocp.solver.name == :Ipopt  # NOTE this should already have been done by default, but could get messed up is user is playing with options
+            n.s.ocp.solver.settings = NLOptControl.Base._Ipopt_defaults;
     else
-      error(string("solver ", n.s.sover.name, " not defined"))
+            @error "Solver $(n.s.ocp.solver.name) not defined"
     end
   end
 
@@ -121,48 +117,29 @@ function defineSolver!(n::NLOpt,kw)
     end
   end
 
-  if n.s.ocp.solver.name==:Ipopt
-    setsolver(n.ocp.mdl,Ipopt.IpoptSolver(;max_cpu_time=n.s.ocp.solver.settings[:max_cpu_time],
-                               print_level=n.s.ocp.solver.settings[:print_level],
-                               warm_start_init_point=n.s.ocp.solver.settings[:warm_start_init_point],
-                               max_iter=n.s.ocp.solver.settings[:max_iter],
-                               tol=n.s.ocp.solver.settings[:tol],
-                               dual_inf_tol=n.s.ocp.solver.settings[:dual_inf_tol],
-                               constr_viol_tol=n.s.ocp.solver.settings[:constr_viol_tol],
-                               compl_inf_tol=n.s.ocp.solver.settings[:compl_inf_tol],
-                               acceptable_tol=n.s.ocp.solver.settings[:acceptable_tol],
-                               acceptable_constr_viol_tol=n.s.ocp.solver.settings[:acceptable_constr_viol_tol],
-                               acceptable_dual_inf_tol=n.s.ocp.solver.settings[:acceptable_dual_inf_tol],
-                               acceptable_compl_inf_tol=n.s.ocp.solver.settings[:acceptable_compl_inf_tol],
-                               acceptable_obj_change_tol=n.s.ocp.solver.settings[:acceptable_obj_change_tol],
-                               diverging_iterates_tol=n.s.ocp.solver.settings[:diverging_iterates_tol]))
-  elseif n.s.ocp.solver.name==:KNITRO
-    setsolver(n.ocp.mdl,KnitroSolver(;outlev=n.s.ocp.solver.settings[:outlev],
-                                 feastol=n.s.ocp.solver.settings[:feastol],
-                                 feastol_abs=n.s.ocp.solver.settings[:feastol_abs],
-                                 ftol=n.s.ocp.solver.settings[:ftol],
-                                 ftol_iters=n.s.ocp.solver.settings[:ftol_iters],
-                                 infeastol=n.s.ocp.solver.settings[:infeastol],
-                                 maxfevals=n.s.ocp.solver.settings[:maxfevals],
-                                 maxit=n.s.ocp.solver.settings[:maxit],
-                                 maxtime_cpu=n.s.ocp.solver.settings[:maxtime_cpu],
-                                 maxtime_real=n.s.ocp.solver.settings[:maxtime_real],
-                                 opttol=n.s.ocp.solver.settings[:opttol],
-                                 opttol_abs=n.s.ocp.solver.settings[:opttol_abs],
-                                 xtol=n.s.ocp.solver.settings[:xtol],
-                                 xtol_iters=n.s.ocp.solver.settings[:xtol_iters],
-                                 algorithm=n.s.ocp.solver.settings[:algorithm],
-                                 bar_initpt=n.s.ocp.solver.settings[:bar_initpt],
-                                 bar_murule=n.s.ocp.solver.settings[:bar_murule],
-                                 bar_penaltycons=n.s.ocp.solver.settings[:bar_penaltycons],
-                                 bar_penaltyrule=n.s.ocp.solver.settings[:bar_penaltyrule],
-                                 bar_switchrule=n.s.ocp.solver.settings[:bar_switchrule],
-                                 linesearch=n.s.ocp.solver.settings[:linesearch],
-                                 linsolver=n.s.ocp.solver.settings[:linsolver],
-                                 tuner=n.s.ocp.solver.settings[:tuner],
-                                 cg_pmem=n.s.ocp.solver.settings[:cg_pmem]))
+    # Set solver
+    if n.s.ocp.solver.name == :Ipopt
+        setsolver(
+            n.ocp.mdl,
+            Ipopt.IpoptSolver(;
+                max_cpu_time               = n.s.ocp.solver.settings[:max_cpu_time],
+                print_level                = n.s.ocp.solver.settings[:print_level],
+                warm_start_init_point      = n.s.ocp.solver.settings[:warm_start_init_point],
+                max_iter                   = n.s.ocp.solver.settings[:max_iter],
+                tol                        = n.s.ocp.solver.settings[:tol],
+                dual_inf_tol               = n.s.ocp.solver.settings[:dual_inf_tol],
+                constr_viol_tol            = n.s.ocp.solver.settings[:constr_viol_tol],
+                compl_inf_tol              = n.s.ocp.solver.settings[:compl_inf_tol],
+                acceptable_tol             = n.s.ocp.solver.settings[:acceptable_tol],
+                acceptable_constr_viol_tol = n.s.ocp.solver.settings[:acceptable_constr_viol_tol],
+                acceptable_dual_inf_tol    = n.s.ocp.solver.settings[:acceptable_dual_inf_tol],
+                acceptable_compl_inf_tol   = n.s.ocp.solver.settings[:acceptable_compl_inf_tol],
+                acceptable_obj_change_tol  = n.s.ocp.solver.settings[:acceptable_obj_change_tol],
+                diverging_iterates_tol     = n.s.ocp.solver.settings[:diverging_iterates_tol]
+            )
+        )
   else
-    error(string("solver ",n.s.sover.name, " not defined"))
+        @error "Solver $(n.s.ocp.solver.name) not defined"
   end
   return nothing
 end  # function

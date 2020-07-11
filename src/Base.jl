@@ -27,28 +27,15 @@ export
   Settings,
   _Ipopt_defaults,
   _Ipopt_MPC,
-  # _KNITRO_defaults,
-  # _KNITRO_MPC,
   simulationModes,
   resultsDir!
 
-################################################################################
-# Constants
-################################################################################
-#####################################
-# settings for both KNITRO and IPOPT
-####################################
-#outlev # (c.m.solver==:Ipopt) ? :print_level : :outlev # print level
-# (KNITRO) absolute stopping tolerance for the feasibility error
-# (Ipopt) Absolute tolerance on the constraint violation.
-#feastol_abs # (c.m.solver==:Ipopt) ? :constr_viol_tol : :feastol_abs
-# (KNITRO) maximum number of iterations before termination
-# (Ipopt) Maximum number of iterations.
-#maxit # (c.m.solver==:Ipopt) ? :max_iter : :maxit
-# (KNITRO) in seconds, the maximum allowable CPU time before termination
-# (Ipopt) A limit on CPU seconds that Ipopt can use to solve one problem
-#maxtime_cpu # (c.m.solver==:Ipopt) ? :max_cpu_time : :maxtime_cpu
-const _Ipopt_defaults=Dict(
+# IPOPT Settings
+# :print_level      : Print level
+# :constr_viol_tol  : Absolute tolerance on the constraint violation.
+# :max_iter         : Maximum number of iterations.
+# :max_cpu_time     : A limit on CPU seconds that Ipopt can use to solve one problem
+const _Ipopt_defaults=Dict{Symbol,Any}(
   :print_level                =>0,
   :warm_start_init_point      =>"yes",
   :tol                        =>1e-8,
@@ -82,76 +69,9 @@ const _Ipopt_MPC=Dict(
   :diverging_iterates_tol     =>1e20
 )
 
-# const _KNITRO_defaults=Dict(
-#  :outlev                       =>1,
-#  :feastol                      =>1.0e-6,
-#  :feastol_abs                  =>1e-3,
-#  :ftol                         =>1e-15,
-#  :ftol_iters                   =>5,
-#  :infeastol                    =>1.0e-8,
-#  :maxfevals                    =>-1,
-#  :maxit                        =>0,
-#  :maxtime_cpu                  =>1e8,
-#  :maxtime_real                 =>1e8,
-#  :opttol                       =>1e-6,
-#  :opttol_abs                   =>1e-3,
-#  :xtol                         =>1e-12,
-#  :xtol_iters                   =>0,
-#  :algorithm                    =>0,
-#  :bar_initpt                   =>0,
-#  :bar_murule                   =>0,
-#  :bar_penaltycons              =>0,
-#  :bar_penaltyrule              =>0,
-#  :bar_switchrule               =>0,
-#  :linesearch                   =>0,
-#  :linsolver                    =>0,
-#  :cg_pmem                      =>10,
-#  :bar_initpt                   =>0,
-#  :bar_penaltycons              =>0,
-#  :bar_penaltyrule              =>0,
-#  :bar_switchrule               =>0,
-#  :linesearch                   =>0,
-#  :tuner                        =>0
-# )
-#
-# const _KNITRO_MPC=Dict(
-#  :outlev                       =>0,
-#  :feastol                      =>1.0e20,
-#  :feastol_abs                  =>7e-2,
-#  :ftol                         =>1e-15,
-#  :ftol_iters                   =>5,
-#  :infeastol                    =>1e-2,
-#  :maxfevals                    =>-1,
-#  :maxit                        =>0,
-#  :maxtime_cpu                  =>1e8,
-#  :maxtime_real                 =>0.47,
-#  :opttol                       =>1.0e20,
-#  :opttol_abs                   =>5e-1,
-#  :xtol                         =>1e-12,
-#  :xtol_iters                   =>0,
-#  :algorithm                    =>1,
-#  :bar_initpt                   =>0,
-#  :bar_murule                   =>1,
-#  :bar_penaltycons              =>0,
-#  :bar_penaltyrule              =>0,
-#  :bar_switchrule               =>0,
-#  :linesearch                   =>0,
-#  :linsolver                    =>4,
-#  :cg_pmem                      =>0,
-#  :bar_initpt                   => 3,
-#  :bar_penaltycons              => 1,
-#  :bar_penaltyrule              => 2,
-#  :bar_switchrule               => 2,
-#  :linesearch                   => 1,
-#  :tuner                        =>0
-# )
+const simulationModes = [ :OCP , :IP , :IPEP , :EP]
 
-const simulationModes = [:OCP,:IP,:IPEP,:EP]
-
-################################################################################
-# structs
-################################################################################
-############################### control ########################################
+# Control
 mutable struct Control
   name::Vector{Any}
   description::Vector{Any}
