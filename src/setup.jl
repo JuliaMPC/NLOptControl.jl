@@ -10,67 +10,68 @@ Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/26
 -------------------------------------------------------------------------------------\n
 """
 function define(;
-                numStates::Int64 = 0,
-                numControls::Int64 = 0,
-                X0 = fill(NaN,numStates,),
-                XF = fill(NaN,numStates,),
-                XL = fill(NaN,numStates,),
-                XU = fill(NaN,numStates,),
-                CL = fill(NaN,numControls,),
-                CU = fill(NaN,numControls,),
-                XS = fill(1.,numStates,),
-                CS = fill(1.,numControls,)
-                )
+    numStates::Int = 0,
+    numControls::Int = 0,
+    X0 = fill(NaN,numStates,),
+    XF = fill(NaN,numStates,),
+    XL = fill(NaN,numStates,),
+    XU = fill(NaN,numStates,),
+    CL = fill(NaN,numControls,),
+    CU = fill(NaN,numControls,),
+    XS = fill(1.,numStates,),
+    CS = fill(1.,numControls,)
+)::NLOpt
 
-  n = NLOpt()
+    n = NLOpt()
 
-  # validate input
-  if numControls <= 0
-      error("numControls must be > 0","\n")
-  end
-  if numStates <= 0
-      error("numStates must be > 0","\n")
-  end
-  if length(X0) != numStates
-    error(string("\n Length of X0 must match number of states \n"))
-  end
-  if length(XF) != numStates
-    error(string("\n Length of XF must match number of states \n"))
-  end
-  if length(XL) != numStates
-    error(string("\n Length of XL must match number of states \n"))
-  end
-  if length(XU) != numStates
-    error(string("\n Length of XU must match number of states \n"))
-  end
-  if length(XS) != numStates
-    error(string("\n Length of XS must match number of states \n"))
-  end
-  if length(CL) != numControls
-    error(string("\n Length of CL must match number of controls \n"))
-  end
-  if length(CU) != numControls
-    error(string("\n Length of CU must match number of controls \n"))
-  end
-  if length(CS) != numControls
-    error(string("\n Length of CS must match number of controls \n"))
-  end
+    # validate input
+    if numControls <= 0
+        @error "numControls ($numControls) must be > 0","\n"
+    end
+    if numStates <= 0
+        @error "numStates ($numStates) must be > 0","\n"
+    end
+    if length(X0) != numStates
+        @error "\n Length of X0 ($(length(X0))) must match number of states ($numStates)\n"
+    end
+    if length(XF) != numStates
+        @error "\n Length of XF ($(length(XF))) must match number of states ($numStates)\n"
+    end
+    if length(XL) != numStates
+        @error "\n Length of XL ($(length(XL))) must match number of states ($numStates)\n"
+    end
+    if length(XU) != numStates
+        @error "\n Length of XU ($(length(XU))) must match number of states ($numStates)\n"
+    end
+    if length(XS) != numStates
+        @error "\n Length of XS ($(length(XS))) must match number of states ($numStates)\n"
+    end
+    if length(CL) != numControls
+        @error "\n Length of CL ($(length(CL))) must match number of controls ($numControls)\n"
+    end
+    if length(CU) != numControls
+        @error "\n Length of CU ($(length(CU))) must match number of controls ($numControls)\n"
+    end
+    if length(CS) != numControls
+        @error "\n Length of CS ($(length(CS))) must match number of controls ($numControls)\n"
+    end
 
-  n.ocp.state = initState(numStates)
-  n.ocp.control = initControl(numControls)
-  n.ocp.X0 = X0
-  n.ocp.X0_tol = NaN*X0
-  n.ocp.XF = XF
-  n.ocp.XF_tol = NaN*XF
-  n.ocp.XL = XL
-  n.ocp.XU = XU
-  n.ocp.CL = CL
-  n.ocp.CU = CU
-  n.ocp.XS = XS
-  n.ocp.CS = CS
-  n.f.ocp.defined = true
+    n.ocp.state = initState(numStates)
+    n.ocp.control = initControl(numControls)
+    n.ocp.X0 = X0
+    n.ocp.X0_tol = fill(NaN, size(X0))
+    n.ocp.XF = XF
+    n.ocp.XF_tol = fill(NaN, size(XF))
+    n.ocp.XL = XL
+    n.ocp.XU = XU
+    n.ocp.CL = CL
+    n.ocp.CU = CU
+    n.ocp.XS = XS
+    n.ocp.CS = CS
+    n.f.ocp.defined = true
 
-  return n
+    return n
+
 end
 
 """
@@ -80,42 +81,46 @@ Date Create: 2/9/2017, Last Modified: 12/02/2019 \n
 Last Modified by: Alexander Buck
 -------------------------------------------------------------------------------------\n
 """
-function defineSolver!(n::NLOpt,kw)
+function defineSolver!(n::NLOpt, kw::Dict{Symbol,Symbol})
 
- if typeof(kw)!=Dict{Symbol,Symbol}
-   kw = Dict(kw)
- end
+    # Get the name of the solver
+    if haskey(kw,:name)
+        n.s.ocp.solver.name=get(kw,:name,0)
+    end
 
-  # get the name of the solver
-  if haskey(kw,:name); n.s.ocp.solver.name=get(kw,:name,0); end
-  if try_import(n.s.ocp.solver.name)
-  else error(string("could not import ",n.s.ocp.solver.name) )
-  end
+    # Import solver into Julia environment
+    try_import(n.s.ocp.solver.name) ? nothing : @error "Could not import $(n.s.ocp.solver.name) into Julia environment"
 
-  # see if the user would like to use a standard set of solver settings for mpc
-  if haskey(kw,:mpc_defaults); mpc_defaults=get(kw,:mpc_defaults,0); else mpc_defaults=false; end
-  if mpc_defaults
+    # Check if user provided MPC defaults
+    if haskey(kw, :mpc_defaults)
+        mpc_defaults = get(kw,:mpc_defaults,0)
+    else
+        mpc_defaults=false
+    end
+
+    # Set solver defaults
+    if mpc_defaults
         if n.s.ocp.solver.name == :Ipopt
-            n.s.ocp.solver.settings = NLOptControl.Base._Ipopt_MPC
-    else
+            n.s.ocp.solver.settings = NLOptControl.NLOptBase._Ipopt_MPC
+        else
             @error "Solver $(n.s.ocp.solver.name) not defined"
-    end
-  else # default solver settings
+        end
+    else # default solver settings
         if n.s.ocp.solver.name == :Ipopt  # NOTE this should already have been done by default, but could get messed up is user is playing with options
-            n.s.ocp.solver.settings = NLOptControl.Base._Ipopt_defaults;
-    else
+            n.s.ocp.solver.settings = NLOptControl.NLOptBase._Ipopt_defaults;
+        else
             @error "Solver $(n.s.ocp.solver.name) not defined"
+        end
     end
-  end
 
-  # modify additional defaults individually
-  for (key,value) in kw
-    if haskey(n.s.ocp.solver.settings,key)
-      n.s.ocp.solver.settings[key]=value
-    elseif key!=:name && key!=:mpc_defaults # ignore the name and default settings option TODO could remove them from the Dict
-      error(string(" \n Unknown key: ", kw, " for ", n.s.ocp.solver.name, " used in defineSolver!() \n "))
+    # Modify additional defaults individually
+    for (key,value) in kw
+        if haskey(n.s.ocp.solver.settings, key)
+            n.s.ocp.solver.settings[key] = value
+        elseif key != :name && key != :mpc_defaults # ignore the name and default settings option # TODO could remove them from the Dict
+            @error " \n Unknown key: $kw for $(n.s.ocp.solver.name) used in defineSolver!() \n "
+        end
     end
-  end
 
     # Set solver
     if n.s.ocp.solver.name == :Ipopt
@@ -138,10 +143,12 @@ function defineSolver!(n::NLOpt,kw)
                 diverging_iterates_tol     = n.s.ocp.solver.settings[:diverging_iterates_tol]
             )
         )
-  else
+    else
         @error "Solver $(n.s.ocp.solver.name) not defined"
-  end
-  return nothing
+    end
+
+    return nothing
+
 end  # function
 
 """
@@ -152,192 +159,193 @@ Date Create: 1/14/2017, Last Modified: 12/06/2019 \n
 --------------------------------------------------------------------------------------\n
 """
 function OCPdef!(n::NLOpt)
-  # state variables
-  @variable(n.ocp.mdl,x[1:n.ocp.state.pts,1:n.ocp.state.num])
-  n.r.ocp.x = Matrix{Any}(undef, n.ocp.state.pts,n.ocp.state.num)
-  for st in 1:n.ocp.state.num
-      n.r.ocp.x[:,st] = @NLexpression(n.ocp.mdl, [j=1:n.ocp.state.pts], n.ocp.XS[st]*x[j,st])
-  end
-#  n.r.ocp.x=x;
 
-  for st in 1:n.ocp.state.num
-    # lower state constraint
-    if !isnan.(n.ocp.XL[st])
-      if n.ocp.mXL[st] == false
-        for j in 1:n.ocp.state.pts
-          setlowerbound(x[j,st], n.ocp.XL[st]/n.ocp.XS[st])
-        end
-      else
-        for j in 1:n.ocp.state.pts
-          setlowerbound(x[j,st], n.ocp.XL_var[st,j]/n.ocp.XS[st])
-        end
-      end
-    end
-
-    # upper state constraint
-    if !isnan.(n.ocp.XU[st])
-      if n.ocp.XU[st] != false
-        for j in 1:n.ocp.state.pts
-          setupperbound(x[j,st], n.ocp.XU[st]/n.ocp.XS[st])
-        end
-      else
-        for j in 1:n.ocp.state.pts
-          setlowerbound(x[j,st], n.ocp.XU_var[st,j]/n.ocp.XS[st])
-        end
-      end
-    end
-  end
-
-  # control variables
-  @variable(n.ocp.mdl,u[1:n.ocp.control.pts,1:n.ocp.control.num])
-  n.r.ocp.u = Matrix{Any}(undef, n.ocp.control.pts,n.ocp.control.num)
-  for ctr in 1:n.ocp.control.num
-      n.r.ocp.u[:,ctr] = @NLexpression(n.ocp.mdl, [j=1:n.ocp.control.pts], n.ocp.CS[ctr]*u[j,ctr])
-  end
-#n.r.ocp.u=u;
-
-  for ctr in 1:n.ocp.control.num
-    if !isnan.(n.ocp.CL[ctr])
-      for j in 1:n.ocp.control.pts
-        setlowerbound(u[j,ctr], n.ocp.CL[ctr]/n.ocp.CS[ctr])
-      end
-    end
-    if !isnan.(n.ocp.CU[ctr])
-      for j in 1:n.ocp.control.pts
-        setupperbound(u[j,ctr], n.ocp.CU[ctr]/n.ocp.CS[ctr])
-      end
-    end
-  end
-
-  # boundary constraints
-  if n.s.ocp.x0slackVariables   # create handles for constraining the entire initial state
-    n.r.ocp.x0Con = Array{Any}(undef, n.ocp.state.num,2) # this is so they can be easily reference when doing MPC
-  else
-    n.r.ocp.x0Con = []
-  end
-
-  if n.s.ocp.xFslackVariables # create handles for constraining the entire final state
-    n.r.ocp.xfCon = Array{Any}(undef, n.ocp.state.num,2) # this is so they can be easily reference when doing MPC
-  else
-    n.r.ocp.xfCon = []
-  end
-
-  if n.s.ocp.x0slackVariables # currently adding slack variables for all initial states even if there are no constraints on them
-    @variable(n.ocp.mdl,x0s[1:n.ocp.state.num])
-    n.ocp.x0s = x0s
-    n.r.ocp.x0sCon = Array{Any}(undef, n.ocp.state.num)
-  end
-  if n.s.ocp.xFslackVariables # currently adding slack variables for all final states even if there are no constraints on them
-    @variable(n.ocp.mdl,xFs[1:n.ocp.state.num])
-    n.ocp.xFs = xFs
-    n.r.ocp.xfsCon = Array{Any}(undef, n.ocp.state.num)
-  end
-
-  for st in 1:n.ocp.state.num
-    if !isnan(n.ocp.X0[st]) # could have a bool for this
-      if n.s.ocp.x0slackVariables
-        n.r.ocp.x0Con[st,1] = @constraint(n.ocp.mdl, x[1,st]*n.ocp.XS[st] -n.ocp.x0s[st] <=  n.ocp.X0[st])
-        n.r.ocp.x0Con[st,2] = @constraint(n.ocp.mdl,-x[1,st]*n.ocp.XS[st] -n.ocp.x0s[st] <= -n.ocp.X0[st])
-        if !isnan(n.ocp.X0_tol[st])
-          n.r.ocp.x0sCon[st] = @constraint(n.ocp.mdl, n.ocp.x0s[st] <= n.ocp.X0_tol[st])
-        end
-      else
-        n.r.ocp.x0Con = [n.r.ocp.x0Con; @constraint(n.ocp.mdl, x[1,st]*n.ocp.XS[st] == n.ocp.X0[st])]
-      end
-    end
-    if !isnan(n.ocp.XF[st])
-      if n.s.ocp.xFslackVariables
-        n.r.ocp.xfCon[st,1] = @constraint(n.ocp.mdl, x[end,st]*n.ocp.XS[st] -n.ocp.xFs[st] <=  n.ocp.XF[st] )
-        n.r.ocp.xfCon[st,2] = @constraint(n.ocp.mdl,-x[end,st]*n.ocp.XS[st] -n.ocp.xFs[st] <= -n.ocp.XF[st] )
-        if !isnan(n.ocp.XF_tol[st])
-          n.r.ocp.xfsCon[st] = @constraint(n.ocp.mdl, n.ocp.xFs[st] <= n.ocp.XF_tol[st])
-        end
-      else
-        n.r.ocp.xfCon = [n.r.ocp.xfCon; @constraint(n.ocp.mdl, x[end,st]*n.ocp.XS[st] == n.ocp.XF[st])]
-      end
-    end
-  end
-
-  @NLparameter(n.ocp.mdl,t0_param == 0.0);   # for now we just start at zero
-  n.ocp.t0 = t0_param  # NOTE consider making a constraint that t0 < tf
-
-  if n.s.ocp.integrationMethod == :ps
-    n.r.ocp.dynCon = [Array{Any}(undef, n.ocp.Nck[int],n.ocp.state.num) for int in 1:n.ocp.Ni]
-    dynamics_expr = [Array{Any}(undef, n.ocp.Nck[int],n.ocp.state.num) for int in 1:n.ocp.Ni]
-
-    if n.s.ocp.finalTimeDV
-      @variable(n.ocp.mdl, n.s.ocp.tfMin <= tf <=  n.s.ocp.tfMax)
-      n.ocp.tf = tf
-      create_tV!(n)          # make a time vector
-    end
-
-    for int in 1:n.ocp.Ni
-      x_int,u_int = intervals(n,int,n.r.ocp.x,n.r.ocp.u)
-
-      # dynamics
-      L = size(x_int)[1]-1;
-      dx = Matrix{Any}(undef, L,n.ocp.state.num)
-      for st in 1:n.ocp.state.num
-        dx[:,st] = DiffEq(n,x_int,u_int,L,st)
-      end
-
-      for st in 1:n.ocp.state.num # TODO consider multiplying X*D to reduce computations (i.e. remove this for loop for the states)
-        if n.s.ocp.integrationScheme == :lgrExplicit
-          dynamics_expr[int][:,st] = @NLexpression(n.ocp.mdl, [j in 1:n.ocp.Nck[int]], sum(n.ocp.DMatrix[int][j,i]*x_int[i,st] for i in 1:n.ocp.Nck[int]+1) - ((n.ocp.tf)/2)*dx[j,st]  )
-        elseif n.s.ocp.integrationScheme==:lgrImplicit
-          dynamics_expr[int][:,st] = @NLexpression(n.ocp.mdl, [j in 1:n.ocp.Nck[int]], x_int[j+1,st] - x_int[1,st] - ((n.ocp.tf)/2)*sum(n.ocp.IMatrix[int][j,i]*dx[i,st] for i in 1:n.ocp.Nck[int]) )
-        end
-        for j in 1:n.ocp.Nck[int]
-          n.r.ocp.dynCon[int][j,st] = @NLconstraint(n.ocp.mdl, 0. == dynamics_expr[int][j,st])
-        end
-      end
-
-      # additional constraints
-      for num in 1:length(n.ocp.NLcon)
-         ch = addCon(n,x_int,u_int,L,num)
-         newConstraint!(n,ch,Symbol(string("ch",num))) # TODO could let the user name these
-      end
-    end
-  elseif n.s.ocp.integrationMethod == :tm
-    n.r.ocp.dynCon = Array{Any}(undef, n.ocp.N,n.ocp.state.num)
-    if n.s.ocp.finalTimeDV
-     @variable(n.ocp.mdl, n.s.ocp.tfMin <= tf <= n.s.ocp.tfMax)
-     n.ocp.tf = tf
-     create_tV!(n)          # make a time vector
-    end
-    n.ocp.dt = n.ocp.tf/n.ocp.N*ones(n.ocp.N,)
-
-    L = size(n.r.ocp.x)[1]
-    dx = Array{Any}(undef, L,n.ocp.state.num)
+    # State variables
+    @variable(n.ocp.mdl, x[1:n.ocp.state.pts, 1:n.ocp.state.num])
+    n.r.ocp.x = Matrix{Any}(undef, n.ocp.state.pts, n.ocp.state.num)
     for st in 1:n.ocp.state.num
-      dx[:,st] = DiffEq(n,n.r.ocp.x,n.r.ocp.u,L,st)
+        n.r.ocp.x[:,st] = @NLexpression(n.ocp.mdl, [j=1:n.ocp.state.pts], n.ocp.XS[st]*x[j,st])
+    end
+    #  n.r.ocp.x=x;
+
+    for st in 1:n.ocp.state.num
+        # lower state constraint
+        if !isnan.(n.ocp.XL[st])
+        if n.ocp.mXL[st] == false
+            for j in 1:n.ocp.state.pts
+            setlowerbound(x[j,st], n.ocp.XL[st]/n.ocp.XS[st])
+            end
+        else
+            for j in 1:n.ocp.state.pts
+            setlowerbound(x[j,st], n.ocp.XL_var[st,j]/n.ocp.XS[st])
+            end
+        end
+        end
+
+        # upper state constraint
+        if !isnan.(n.ocp.XU[st])
+        if n.ocp.XU[st] != false
+            for j in 1:n.ocp.state.pts
+            setupperbound(x[j,st], n.ocp.XU[st]/n.ocp.XS[st])
+            end
+        else
+            for j in 1:n.ocp.state.pts
+            setlowerbound(x[j,st], n.ocp.XU_var[st,j]/n.ocp.XS[st])
+            end
+        end
+        end
     end
 
-    if n.s.ocp.integrationScheme==:bkwEuler
-      for st in 1:n.ocp.state.num
-        n.r.ocp.dynCon[:,st] = @NLconstraint(n.ocp.mdl, [j in 1:n.ocp.N], n.r.ocp.x[j+1,st] - n.r.ocp.x[j,st] ==  dx[j+1,st]*n.ocp.tf/(n.ocp.N) );
-      end
-    elseif n.s.ocp.integrationScheme==:trapezoidal
-      for st in 1:n.ocp.state.num
-        n.r.ocp.dynCon[:,st] = @NLconstraint(n.ocp.mdl, [j in 1:n.ocp.N], n.r.ocp.x[j+1,st] - n.r.ocp.x[j,st] == 0.5*(dx[j,st] + dx[j+1,st])*n.ocp.tf/(n.ocp.N) )
-      end
+    # control variables
+    @variable(n.ocp.mdl,u[1:n.ocp.control.pts,1:n.ocp.control.num])
+    n.r.ocp.u = Matrix{Any}(undef, n.ocp.control.pts,n.ocp.control.num)
+    for ctr in 1:n.ocp.control.num
+        n.r.ocp.u[:,ctr] = @NLexpression(n.ocp.mdl, [j=1:n.ocp.control.pts], n.ocp.CS[ctr]*u[j,ctr])
+    end
+    #n.r.ocp.u=u;
+
+    for ctr in 1:n.ocp.control.num
+        if !isnan.(n.ocp.CL[ctr])
+        for j in 1:n.ocp.control.pts
+            setlowerbound(u[j,ctr], n.ocp.CL[ctr]/n.ocp.CS[ctr])
+        end
+        end
+        if !isnan.(n.ocp.CU[ctr])
+        for j in 1:n.ocp.control.pts
+            setupperbound(u[j,ctr], n.ocp.CU[ctr]/n.ocp.CS[ctr])
+        end
+        end
     end
 
-    # additional constraints
-    for num in 1:length(n.ocp.NLcon)
-       ch = addCon(n,n.r.ocp.x,n.r.ocp.u,L,num)
-       newConstraint!(n,ch,Symbol(string("ch",num))) # TODO could let the user name these
+    # boundary constraints
+    if n.s.ocp.x0slackVariables   # create handles for constraining the entire initial state
+        n.r.ocp.x0Con = Array{Any}(undef, n.ocp.state.num,2) # this is so they can be easily reference when doing MPC
+    else
+        n.r.ocp.x0Con = []
     end
-  end
 
-  # save constraint data
-  newConstraint!(n,n.r.ocp.x0Con,:x0_con)
-  newConstraint!(n,n.r.ocp.xfCon,:xf_con)
-  newConstraint!(n,n.r.ocp.dynCon,:dyn_con)
+    if n.s.ocp.xFslackVariables # create handles for constraining the entire final state
+        n.r.ocp.xfCon = Array{Any}(undef, n.ocp.state.num,2) # this is so they can be easily reference when doing MPC
+    else
+        n.r.ocp.xfCon = []
+    end
 
-  # save the current working directory for navigation purposes
-  n.r.mainDir = pwd()
-  return nothing
+    if n.s.ocp.x0slackVariables # currently adding slack variables for all initial states even if there are no constraints on them
+        @variable(n.ocp.mdl,x0s[1:n.ocp.state.num])
+        n.ocp.x0s = x0s
+        n.r.ocp.x0sCon = Array{Any}(undef, n.ocp.state.num)
+    end
+    if n.s.ocp.xFslackVariables # currently adding slack variables for all final states even if there are no constraints on them
+        @variable(n.ocp.mdl,xFs[1:n.ocp.state.num])
+        n.ocp.xFs = xFs
+        n.r.ocp.xfsCon = Array{Any}(undef, n.ocp.state.num)
+    end
+
+    for st in 1:n.ocp.state.num
+        if !isnan(n.ocp.X0[st]) # could have a bool for this
+        if n.s.ocp.x0slackVariables
+            n.r.ocp.x0Con[st,1] = @constraint(n.ocp.mdl, x[1,st]*n.ocp.XS[st] -n.ocp.x0s[st] <=  n.ocp.X0[st])
+            n.r.ocp.x0Con[st,2] = @constraint(n.ocp.mdl,-x[1,st]*n.ocp.XS[st] -n.ocp.x0s[st] <= -n.ocp.X0[st])
+            if !isnan(n.ocp.X0_tol[st])
+            n.r.ocp.x0sCon[st] = @constraint(n.ocp.mdl, n.ocp.x0s[st] <= n.ocp.X0_tol[st])
+            end
+        else
+            n.r.ocp.x0Con = [n.r.ocp.x0Con; @constraint(n.ocp.mdl, x[1,st]*n.ocp.XS[st] == n.ocp.X0[st])]
+        end
+        end
+        if !isnan(n.ocp.XF[st])
+        if n.s.ocp.xFslackVariables
+            n.r.ocp.xfCon[st,1] = @constraint(n.ocp.mdl, x[end,st]*n.ocp.XS[st] -n.ocp.xFs[st] <=  n.ocp.XF[st] )
+            n.r.ocp.xfCon[st,2] = @constraint(n.ocp.mdl,-x[end,st]*n.ocp.XS[st] -n.ocp.xFs[st] <= -n.ocp.XF[st] )
+            if !isnan(n.ocp.XF_tol[st])
+            n.r.ocp.xfsCon[st] = @constraint(n.ocp.mdl, n.ocp.xFs[st] <= n.ocp.XF_tol[st])
+            end
+        else
+            n.r.ocp.xfCon = [n.r.ocp.xfCon; @constraint(n.ocp.mdl, x[end,st]*n.ocp.XS[st] == n.ocp.XF[st])]
+        end
+        end
+    end
+
+    @NLparameter(n.ocp.mdl,t0_param == 0.0);   # for now we just start at zero
+    n.ocp.t0 = t0_param  # NOTE consider making a constraint that t0 < tf
+
+    if n.s.ocp.integrationMethod == :ps
+        n.r.ocp.dynCon = [Array{Any}(undef, n.ocp.Nck[int],n.ocp.state.num) for int in 1:n.ocp.Ni]
+        dynamics_expr = [Array{Any}(undef, n.ocp.Nck[int],n.ocp.state.num) for int in 1:n.ocp.Ni]
+
+        if n.s.ocp.finalTimeDV
+        @variable(n.ocp.mdl, n.s.ocp.tfMin <= tf <=  n.s.ocp.tfMax)
+        n.ocp.tf = tf
+        create_tV!(n)          # make a time vector
+        end
+
+        for int in 1:n.ocp.Ni
+        x_int,u_int = intervals(n,int,n.r.ocp.x,n.r.ocp.u)
+
+        # dynamics
+        L = size(x_int)[1]-1;
+        dx = Matrix{Any}(undef, L,n.ocp.state.num)
+        for st in 1:n.ocp.state.num
+            dx[:,st] = DiffEq(n,x_int,u_int,L,st)
+        end
+
+        for st in 1:n.ocp.state.num # TODO consider multiplying X*D to reduce computations (i.e. remove this for loop for the states)
+            if n.s.ocp.integrationScheme == :lgrExplicit
+            dynamics_expr[int][:,st] = @NLexpression(n.ocp.mdl, [j in 1:n.ocp.Nck[int]], sum(n.ocp.DMatrix[int][j,i]*x_int[i,st] for i in 1:n.ocp.Nck[int]+1) - ((n.ocp.tf)/2)*dx[j,st]  )
+            elseif n.s.ocp.integrationScheme==:lgrImplicit
+            dynamics_expr[int][:,st] = @NLexpression(n.ocp.mdl, [j in 1:n.ocp.Nck[int]], x_int[j+1,st] - x_int[1,st] - ((n.ocp.tf)/2)*sum(n.ocp.IMatrix[int][j,i]*dx[i,st] for i in 1:n.ocp.Nck[int]) )
+            end
+            for j in 1:n.ocp.Nck[int]
+            n.r.ocp.dynCon[int][j,st] = @NLconstraint(n.ocp.mdl, 0. == dynamics_expr[int][j,st])
+            end
+        end
+
+        # additional constraints
+        for num in 1:length(n.ocp.NLcon)
+            ch = addCon(n,x_int,u_int,L,num)
+            newConstraint!(n,ch,Symbol(string("ch",num))) # TODO could let the user name these
+        end
+        end
+    elseif n.s.ocp.integrationMethod == :tm
+        n.r.ocp.dynCon = Array{Any}(undef, n.ocp.N,n.ocp.state.num)
+        if n.s.ocp.finalTimeDV
+        @variable(n.ocp.mdl, n.s.ocp.tfMin <= tf <= n.s.ocp.tfMax)
+        n.ocp.tf = tf
+        create_tV!(n)          # make a time vector
+        end
+        n.ocp.dt = n.ocp.tf/n.ocp.N*ones(n.ocp.N,)
+
+        L = size(n.r.ocp.x)[1]
+        dx = Array{Any}(undef, L,n.ocp.state.num)
+        for st in 1:n.ocp.state.num
+        dx[:,st] = DiffEq(n,n.r.ocp.x,n.r.ocp.u,L,st)
+        end
+
+        if n.s.ocp.integrationScheme==:bkwEuler
+        for st in 1:n.ocp.state.num
+            n.r.ocp.dynCon[:,st] = @NLconstraint(n.ocp.mdl, [j in 1:n.ocp.N], n.r.ocp.x[j+1,st] - n.r.ocp.x[j,st] ==  dx[j+1,st]*n.ocp.tf/(n.ocp.N) );
+        end
+        elseif n.s.ocp.integrationScheme==:trapezoidal
+        for st in 1:n.ocp.state.num
+            n.r.ocp.dynCon[:,st] = @NLconstraint(n.ocp.mdl, [j in 1:n.ocp.N], n.r.ocp.x[j+1,st] - n.r.ocp.x[j,st] == 0.5*(dx[j,st] + dx[j+1,st])*n.ocp.tf/(n.ocp.N) )
+        end
+        end
+
+        # additional constraints
+        for num in 1:length(n.ocp.NLcon)
+        ch = addCon(n,n.r.ocp.x,n.r.ocp.u,L,num)
+        newConstraint!(n,ch,Symbol(string("ch",num))) # TODO could let the user name these
+        end
+    end
+
+    # save constraint data
+    newConstraint!(n,n.r.ocp.x0Con,:x0_con)
+    newConstraint!(n,n.r.ocp.xfCon,:xf_con)
+    newConstraint!(n,n.r.ocp.dynCon,:dyn_con)
+
+    # save the current working directory for navigation purposes
+    n.r.mainDir = pwd()
+    return nothing
 end
 
 """
@@ -418,10 +426,10 @@ function configure!(n::NLOpt; kwargs... )
 
     # initialize node data
     if n.s.ocp.integrationScheme==:lgrExplicit ||  n.s.ocp.integrationScheme==:lgrImplicit
-      taus_and_weights = [gaussradau(n.ocp.Nck[int]) for int in 1:n.ocp.Ni];
+      taus_and_weights = [ gaussradau(n.ocp.Nck[int]) for int in 1:n.ocp.Ni ];
     end
-    n.ocp.tau = [taus_and_weights[int][1] for int in 1:n.ocp.Ni]
-    n.ocp.w = [taus_and_weights[int][2] for int in 1:n.ocp.Ni]
+    n.ocp.tau = [ taus_and_weights[int][1] for int in 1:n.ocp.Ni ]
+    n.ocp.w = [ taus_and_weights[int][2] for int in 1:n.ocp.Ni ]
     createIntervals!(n)
     DMatrix!(n)
 

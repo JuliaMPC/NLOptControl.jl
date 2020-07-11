@@ -131,7 +131,7 @@ Date Create: 2/7/2017, Last Modified: 4/13/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function initConstraint!(n)
-  if n.r.ocp.constraint==nothing
+  if n.r.ocp.constraint === nothing
     n.r.ocp.constraint = Constraint()
   end
   return nothing
@@ -389,7 +389,7 @@ Date Create: 12/8/2016, Last Modified: 3/29/2017 \n
 function minDF(dfs,varb)
   k=length(dfs); tmp=1e10*ones(k,1);
   for i in 1:k
-    if dfs[i]!=nothing
+    if dfs[i] !== nothing
       tmp[i]=minimum(dfs[i][varb])
     end
   end
@@ -405,7 +405,7 @@ Date Create: 12/8/2016, Last Modified: 3/29/2017 \n
 function maxDF(dfs,varb)
   k=length(dfs); tmp=1e-10*ones(k,1);
   for i in 1:k
-    if dfs[i]!=nothing
+    if dfs[i] !== nothing
       tmp[i]=maximum(dfs[i][varb])
     end
   end
@@ -413,12 +413,12 @@ function maxDF(dfs,varb)
 end
 
 function try_import(name::Symbol)
- try
-      @eval using $name
-      return true
-  catch e
-      return false
-  end
+    try
+        @eval using $name
+        return true
+    catch e
+        return false
+    end
 end
 
 
