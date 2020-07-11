@@ -6,15 +6,14 @@ module NLOptControl
 using JuMP
 import JuMP.setRHS, JuMP.getvalue, JuMP.setvalue, JuMP.@NLexpression, JuMP.@NLobjective, JuMP.@NLparameter, JuMP.@NLconstraint, JuMP.internalmodel
 using Ipopt
-# using KNITRO
 using FastGaussQuadrature
-using DataFrames # https://discourse.julialang.org/t/dataframes-0-11-released/7296
+using DataFrames
 using CSV
 using Interpolations
 import LinearAlgebra
 
-include("Base.jl")
-using .Base
+include("NLOptBase.jl")
+using .NLOptBase
 
 include("MPC_Module.jl")
 using .MPC_Module
@@ -192,7 +191,7 @@ include("PrettyPlots/PrettyPlots.jl")
 using .PrettyPlots
 
 export
-       # Base functions  TODO make a hamiltonian function
+       # Base functions  # TODO: make a hamiltonian function
        evalConstraints!,
        postProcess!,
        optimize!,

@@ -1,4 +1,4 @@
-module Base
+module NLOptBase
 
 using JuMP
 using DataFrames

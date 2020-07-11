@@ -4,8 +4,8 @@ using JuMP
 using OrdinaryDiffEq
 using DiffEqBase
 
-include("Base.jl")
-using .Base
+include("NLOptBase.jl")
+using .NLOptBase
 
 export
      MPC,
