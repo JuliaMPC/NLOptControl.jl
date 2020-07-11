@@ -341,16 +341,16 @@ function Settings()
 end
 
 """
-L = lagrange_basis_poly(x,x_data,Nc,j)
+L = lagrange_basis_poly(x0,x,N,j)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 12/26/2016, Last Modified: 1/25/2016
 Citations: This function was influenced by the lagrange() function [located here](https://github.com/pjabardo/Jacobi.jl/blob/master/src/gauss_quad.jl)
 --------------------------------------------------------------------------------------\n
 # Input Arguments
-* `x`: point to approximate function value at
-* `x_data`: x data to used calculate basis polynomials
-* `Nc`: order of Lagrange interpolating polynomial
+* `x0`: point to approximate function value at
+* `x`: x data to used calculate basis polynomials
+* `N`: order of Lagrange interpolating polynomial
 * `j`: index of interest
 
 # Output Arguments
@@ -359,46 +359,35 @@ Citations: This function was influenced by the lagrange() function [located here
 A basic description of Lagrange interpolating polynomials is provided [here](http://127.0.0.1:8000/lagrange_poly.html#lagrange-poly)
 
 """
-function lagrange_basis_poly(x,x_data,Nc,j)
-    L = 1;
-    for idx in 1:Nc+1 # use all of the data
-      if idx!=j
-        L = L*(x - x_data[idx])/(x_data[j]-x_data[idx]);
-      end
-    end
-  return L
+function lagrange_basis_poly(x0::T, x::Vector{T}, N::Int, j::Int) where { T <: Number }
+
+    # L = prod { ( x0 - x_i ) / ( x_j - x_i ) } for i != j
+    return prod( i == j ? T(1) : (x0 - x[i] ) / (x[j] - x[i]) for i = 1:N+1 )
+
 end
 
 """
-y=interpolate_lagrange(ts[int],ts[int],stateMatrix[int][:,st])
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Created: 1/2/2017, Last Modified: 9/19/2017 \n
---------------------------------------------------------------------------------------\n
+y = interpolate_lagrange(x::Vector{T}, x_data::Vector{T}, y_data::Vector{T}) where {T <: Number}
 """
-function interpolate_lagrange(x::AbstractArray{T},x_data,y_data) where {T<:Number}
-  Nc = length(x_data) - 1
+function interpolate_lagrange(x::Vector{T}, x_data::Vector{T}, y_data::Vector{T}) where { T <: Number}
 
-  if length(x_data)!=length(y_data)
-      error(string("\n",
-                    "-------------------------------------------------------", "\n",
-                    "There is an error with the data vector lengths!!", "\n",
-                    "-------------------------------------------------------", "\n",
-                    "The following variables should be equal:", "\n",
-                    "length(x_data) = ",length(x_data),"\n",
-                    "length(y_data) = ",length(y_data),"\n"
-                    )
-            )
+
+    if length(x_data) != length(y_data)
+        @error  """
+                ------------------------------------------------------------------
+                There is an error with data vector lengths in `interpolate_lagrange`
+                ------------------------------------------------------------------
+                The following variables should be equal:
+                length(x_data) = $(length(x_data))
+                length(y_data) = $(length(y_data))
+                """
     end
-    ns = length(x)
-    L = zeros(Float64,Nc+1,ns)
-    x = x[:]; x_data = x_data[:]; y_data = y_data[:]; # make sure data is in a column
-    for idx in 1:Nc+1
-      for j in 1:ns
-          L[idx,j] = lagrange_basis_poly(x[j],x_data,Nc,idx);
-      end
-    end
-    return y_data'*L
+
+    Ni = length(x)
+    Nj = length(x_data)
+
+    return [ sum( (lagrange_basis_poly(x[i], x_data, Nj  - 1, j) * y_data[j]) for j = 1:Nj ) for i = 1:Ni ]
+
 end
 
 """
