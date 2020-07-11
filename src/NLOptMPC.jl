@@ -1,4 +1,4 @@
-module MPC_Module
+module NLOptMPC
 
 using JuMP
 using OrdinaryDiffEq
@@ -22,78 +22,66 @@ export
 
 ########################################################################################
 # MPC structs
+# MPC = Model-Predictive Control
 ########################################################################################
 
 mutable struct IP
- control::Control
- state::State
+    control::Control
+    state::State
 end
-
-function IP()
- IP(
-  Control(),
-  State()
-  )
-end
+IP() = IP(
+    Control(),
+    State()
+)
 
 mutable struct EP
- control::Control
- state::State
+    control::Control
+    state::State
 end
+EP() = EP(
+    Control(),
+    State()
+)
 
-function EP()
- EP(
-  Control(),
-  State()
- )
+mutable struct MPCvariables{ T <: Number }
+    t::T                        # current simulation time (s)
+    tp::Union{T,JuMP.Variable}  # prediction time (if finalTimeDV == true -> this is not known before optimization)
+    tex::T                      # execution horizon time
+    t0Actual::T                 # actual initial time # TODO: ?
+    t0::T                       # mpc initial time # TODO: ?
+    tf::T                       # mpc final time # TODO: ?
+    t0Param::Any                # parameter for mpc t0  # TODO: ? # ! was Any
+    evalNum::Int                # parameter for keeping track of number of MPC evaluations
+    goal::Vector{T}             # goal location w.r.t OCP
+    goalTol::Vector{T}          # tolerance on goal location
+    initOptNum::Int             # number of initial optimization
+    previousSolutionNum::Int    # number of times the previous solution should be used
 end
+MPCvariables(T::DataType=Float64) = MPCvariables{T}(
+    convert(T,0.0), # t
+    convert(T,0.0), # tp (might be a JuMP.Variable) # ! was Any
+    convert(T,0.5), # tex
+    convert(T,0.0), # t0Actual
+    convert(T,0.0), # t0
+    convert(T,0.0), # tf
+    Any,            # t0Param
+    1,              # evalNum
+    Vector{T}(),    # goal
+    Vector{T}(),    # goalTol
+    3,              # initOptNum
+    3               # previousSolutionNum
+)
 
-mutable struct MPCvariables
- # variables
- t::Float64           # current simulation time (s)
- tp::Any              # prediction time (if finalTimeDV == true -> this is not known before optimization)
- tex::Float64         # execution horizon time
- t0Actual                    # actual initial time TODO ?
- t0::Float64                  # mpc initial time TODO ?
- tf::Float64                  # mpc final time TODO ?
- t0Param::Any        # parameter for mpc t0  TODO ?
- evalNum::Int64       # parameter for keeping track of number of MPC evaluations
- goal                 # goal location w.r.t OCP
- goalTol             # tolerance on goal location
- initOptNum::Int64  # number of initial optimization
- previousSolutionNum::Int64  # number of times the previous solution should be used
+mutable struct MPC{ T <: Number }
+    v::MPCvariables{T}
+    ip::IP
+    ep::EP
 end
-
-function MPCvariables()
- MPCvariables(
-              0.0,    # t
-              Any,    # tp (might be a variable)
-              0.5,    # tex
-              0.0,
-              0.0,
-              0.0,
-              Any,
-              1,
-              [],
-              [],
-              3,
-              3
- )
-end
-
-mutable struct MPC
- v::MPCvariables
- ip::IP
- ep::EP
-end
-
-function MPC()
- MPC(
-     MPCvariables(),
-     IP(),
-     EP()
-     )
-end
+MPC(T::DataType=Float64) = MPC{T}(
+    MPCvariables(T),
+    IP(),
+    EP()
+)
 
 ########################################################################################
 # MPC functions
@@ -105,7 +93,7 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 4/7/2017, Last Modified: 4/8/2018 \n
 --------------------------------------------------------------------------------------\n
 """
-function defineMPC!(n;
+function defineMPC!(n::NLOpt;
                    mode::Symbol=:OCP,
                    predictX0::Bool=true,
                    fixedTp::Bool=true,
@@ -113,31 +101,34 @@ function defineMPC!(n;
                    tex::Float64=0.5,
                    IPKnown::Bool=true,
                    saveMode::Symbol=:all,
-                   maxSim::Int64=100,
+                   maxSim::Int=100,
                    goal=n.ocp.XF,
-                   goalTol=0.1*abs.(n.ocp.X0 - n.ocp.XF),
+                   goalTol= 0.1 * abs.(n.ocp.X0 - n.ocp.XF), # TODO: Set default goal tolerance elsewhere?
                    lastOptimal::Bool=true,
-                   printLevel::Int64=2,
+                   printLevel::Int=2,
                    onlyOptimal::Bool=false)
- n.s.mpc.on = true
- n.mpc::MPC = MPC()
- n.s.mpc.mode = mode
- n.s.mpc.predictX0 = predictX0
- n.s.mpc.fixedTp = fixedTp
- n.mpc.v.tp = tp
- n.mpc.v.tex = tex
- n.s.mpc.IPKnown = IPKnown
- n.s.mpc.saveMode = saveMode
- n.s.mpc.maxSim = maxSim
- n.mpc.v.goal = goal
- n.mpc.v.goalTol = goalTol
- n.s.mpc.lastOptimal = lastOptimal
- n.s.mpc.printLevel = printLevel
- n.s.mpc.onlyOptimal = onlyOptimal
 
- n.f.mpc.simFailed[1] = false # for some reason it is getting defined as 0.0, not false during initialization
- n.f.mpc.defined = true
- return nothing
+    n.s.mpc.on = true
+
+    n.mpc::MPC = MPC()
+    n.s.mpc.mode = mode
+    n.s.mpc.predictX0 = predictX0
+    n.s.mpc.fixedTp = fixedTp
+    n.mpc.v.tp = tp
+    n.mpc.v.tex = tex
+    n.s.mpc.IPKnown = IPKnown
+    n.s.mpc.saveMode = saveMode
+    n.s.mpc.maxSim = maxSim
+    n.mpc.v.goal = goal
+    n.mpc.v.goalTol = goalTol
+    n.s.mpc.lastOptimal = lastOptimal
+    n.s.mpc.printLevel = printLevel
+    n.s.mpc.onlyOptimal = onlyOptimal
+
+    n.f.mpc.simFailed[1] = false # TODO: figure out why this is getting defined as 0.0, not false during initialization
+    n.f.mpc.defined = true
+
+    return nothing
 end
 
 """
@@ -147,26 +138,35 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 4/08/2018, Last Modified: 12/06/2019 \n
 --------------------------------------------------------------------------------------\n
 """
-function initOpt!(n;save::Bool=true, evalConstraints::Bool=false)
-  if n.s.mpc.on
-   error("call initOpt!() before defineMPC!(). initOpt!() will destroy n")
-  end
-  n.s.ocp.save = false
-  n.s.mpc.on = false
-  n.s.ocp.evalConstraints = false
-  n.s.ocp.cacheOnly = true
-  if n.s.ocp.save
-   @warn "saving initial optimization results where functions where cached!"
-  end
-  for k in 1:n.mpc.v.initOptNum # initial optimization (s)
-   status = optimize!(n)
-   if status==:Optimal; break; end
-  end
-  # defineSolver!(n,solverConfig(c)) # modifying solver settings NOTE currently not in use
-  n.s.ocp.save = save  # set to false if running in parallel to save time
-  n.s.ocp.cacheOnly = false
-  n.s.ocp.evalConstraints = evalConstraints # set to true to investigate infeasibilities
-  return nothing
+function initOpt!(n; save::Bool=true, evalConstraints::Bool=false)
+
+    if n.s.mpc.on
+        @error "call initOpt!() before defineMPC!(). initOpt!() will destroy n"
+    end
+
+    n.s.ocp.save = false
+    n.s.mpc.on = false
+    n.s.ocp.evalConstraints = false
+    n.s.ocp.cacheOnly = true
+
+    if n.s.ocp.save
+        @warn "saving initial optimization results where functions where cached!"
+    end
+
+    for k in 1:n.mpc.v.initOptNum # initial optimization (s)
+        status = optimize!(n)
+        if status == :Optimal
+            break;
+        end
+    end
+
+    # defineSolver!(n,solverConfig(c)) # modifying solver settings NOTE currently not in use
+
+    n.s.ocp.save = save  # set to false if running in parallel to save time
+    n.s.ocp.cacheOnly = false
+    n.s.ocp.evalConstraints = evalConstraints # set to true to investigate infeasibilities
+
+    return nothing
 end
 
 """
@@ -180,15 +180,15 @@ Date Create: 4/12/2018, Last Modified: 4/12/2018 \n
 """
 function defineIP!(n,model;stateNames=[],controlNames=[],X0a=[])
 
-   if isequal(n.s.mpc.mode,:OCP) # this function is called automatically for this mode
+   if n.s.mpc.mode == :OCP # this function is called automatically for this mode
     if !isempty(stateNames)
-     error("stateNames are set automatically for :mode == :OCP and cannot be provided.")
+        @error "stateNames are set automatically for :mode == :OCP and cannot be provided."
     end
     if !isempty(controlNames)
-     error("controlNames are set automatically for :mode == :OCP and cannot be provided.")
+        @error "controlNames are set automatically for :mode == :OCP and cannot be provided."
     end
     if !isempty(X0a)
-     error("X0a is set automatically for :mode == :OCP and cannot be provided.")
+        @error "X0a is set automatically for :mode == :OCP and cannot be provided."
     end
     n.r.ip.X0a = copy(n.ocp.X0)  # NEED to append time
     n.mpc.ip.state.model = model
