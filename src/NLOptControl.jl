@@ -15,171 +15,8 @@ import LinearAlgebra
 include("NLOptBase.jl")
 using .NLOptBase
 
-include("MPC_Module.jl")
-using .MPC_Module
-
-################################################################################
-# Model Classfield
-################################################################################
-mutable struct OCP
-  # general properties
-  state::State              # state data
-  control::Control          # control data
-  tf::Any                   # final time
-  t0::Any                   # initial time TODO consider getting ride of this! or replace it with n.mpc.v.t0Param
-  tV::Any                   # vector for use with time varying constraints
-
-  # boundary constraits
-  X0::Array{Float64,1}      # initial state conditions
-  X0_tol::Array{Float64,1}  # initial state tolerance
-  x0s::Array{JuMP.Variable,1}
-  XF::Array{Float64,1}      # final state conditions
-  XF_tol::Array{Float64,1}  # final state tolerance
-  xFs::Array{JuMP.Variable,1}
-
-  # constant bounds on state variables
-  XL::Array{Float64,1}
-  XU::Array{Float64,1}
-
-  # variables for linear bounds on state variables
-  mXL::Array{Any,1}           # slope on XL -> time always starts at zero
-  mXU::Array{Any,1}           # slope on XU -> time always starts at zero
-  XL_var::Any                 # time varying lower bounds on states NOTE Not used currently
-  XU_var::Any                 # time varying upper bounds on states NOTE Not used currently
-
-  # constant bounds on control variables
-  CL::Array{Float64,1}
-  CU::Array{Float64,1}
-
-  # pseudospectral method data
-  Nck::Array{Int64,1}             # number of collocation points per interval
-  Nck_cum::Array{Int64,1}         # cumulative number of points per interval
-  Nck_full::Array{Int64,1}        # [0;cumsum(n.ocp.Nck+1)]
-  Ni::Int64                       # number of intervals
-  tau::Array{Array{Float64,1},1}  # Node points ---> Nc increasing and distinct numbers ∈ [-1,1]
-  ts::Array{Array{Float64,1},1}   # time scaled based off of tau
-  w::Array{Array{Float64,1},1}    # weights
-  ws::Array{Array{Any,1},1}       # scaled weights
-  DMatrix::Array{Array{Any,2},1}  # differention matrix
-  IMatrix::Array{Array{Any,2},1}  # integration matrix
-
-  # tm method data
-  N::Int64                      # number of points in discretization
-  dt::Array{Any,1}              # array of dts
-
-  mdl::JuMP.Model               # JuMP model
-  params                        # parameters for the models
-  DXexpr
-  NLcon# NOTE Not used currently
-
-  # scaling factors
-  XS::Array{Float64,1}           # scaling factors on states
-  CS::Array{Float64,1}           # scaling factors on controls
-end
-
-# Default Constructor
-function OCP()
-OCP(
-      State(),            # state data
-      Control(),          # control data
-      Any,                # final time
-      0.0,                # initial time
-      Any,                # optional vector for use with time varying constraints
-      Float64[],          # initial state conditions
-      Float64[],          # tolerances on inital state constraint
-      Vector{Any}[],
-      Float64[],          # final state conditions
-      Vector{Any}[],
-      Float64[],          # tolerances on final state constraint
-      Float64[],          # XL
-      Float64[],          # XU
-      Any[],              # slopes on XL -> time always starts at zero
-      Any[],              # slopes on XU -> time always starts at zero
-      Any,                # time varying lower bounds on states
-      Any,                # time varying upper bounds on states
-      Float64[],          # CL
-      Float64[],          # CU
-      Int[],              # number of collocation points per interval
-      Int[],              # Nck_cum
-      Int[],              # Nck_full
-      0,                  # number of intervals
-      Vector{Float64}[],  # tau
-      Vector{Any}[],      # ts
-      Vector{Float64}[],  # weights
-      Vector{Any}[],      # scaled weights
-      Matrix{Any}[],      # DMatrix
-      Matrix{Any}[],      # IMatrix
-      0,                  # number of points in discretization
-      Any[],              # array of dts
-      JuMP.Model(),       # JuMP model
-      Any[],
-      Any[],
-      Any[],
-      Float64[],
-      Float64[]
-      )
-end
-
-mutable struct OCPFlags
-  defined::Bool  # a bool to tell if define() has been called
-end
-
-function OCPFlags()
-  OCPFlags(
-   false
-  )
-end
-
-mutable struct MPCFlags
- defined::Bool
- goalReached::Bool
- simFailed::Array{Any,1}   # a bool to indicate that the simulation failed and a symbol to indicate why
- ipDefined::Bool
- epDefined::Bool
-end
-
-function MPCFlags()
- MPCFlags(
-  false,
-  false,
-  [false, NaN],
-  false,
-  false
-  )
-end
-
-mutable struct Flags
-  ocp::OCPFlags
-  mpc::MPCFlags
-end
-
-function Flags()
-  Flags(
-   OCPFlags(),
-   MPCFlags()
-  )
-end
-
-abstract type AbstractNLOpt end
-struct NLOpt <: AbstractNLOpt
-  # major data structs
-  ocp::OCP
-  mpc::MPC
-  s::Settings
-  r::Results
-  f::Flags
-end
-
-# Default Constructor
-function NLOpt()
-NLOpt(
-  OCP(),
-  MPC(),
-  Settings(),
-  Results(),
-  Flags()
-    )
-end
+include("NLOptMPC.jl")
+using .NLOptMPC
 
 # scripts
 include("utils.jl")
@@ -229,7 +66,7 @@ export
        linearSpline,
        saveOptData,
 
-       # MPC_Module.jl
+       # NLOptMPC.jl
        MPC,
        defineMPC!,
        initOpt!,
@@ -283,4 +120,152 @@ export
         xlims!,
         ylims!,
         plot
+        
+
+# Optimal Control Problem Structure
+mutable struct OCP{T <: Number}
+  # general properties
+  state::State                      # state data
+  control::Control                  # control data
+  tf::T                             # final time
+  t0::T                             # initial time # TODO: consider getting rid of this or replacing it with `n.mpc.v.t0Param`
+  tV::Vector{T}                     # vector for use with time varying constraints
+
+  # Boundary conditions
+  X0::Vector{T}                     # initial state conditions
+  X0_tol::Vector{T}                 # initial state tolerance
+  x0s::Vector{JuMP.Variable}        # initial state variables
+  XF::Vector{T}                     # final state conditions
+  XF_tol::Vector{T}                 # final state tolerance
+  xFs::Vector{JuMP.Variable}        # final state variables
+
+  # Constant bounds on state variables
+  XL::Vector{T}                     # Constant lower bound on state variables
+  XU::Vector{T}                     # Constant upper bound on state variables
+
+  # Variables for linear bounds on state variables
+  mXL::Vector{T}                    # slope on XL -> time always starts at zero
+  mXU::Vector{T}                    # slope on XU -> time always starts at zero
+  XL_var::JuMP.Variable             # time varying lower bounds on states # ! NOTE: not used currently
+  XU_var::JuMP.Variable             # time varying upper bounds on states # ! NOTE: not used currently
+
+  # Constant bounds on control variables
+  CL::Vector{T}                     # Constant lower bound on control variables
+  CU::Vector{T}                     # Constant upper bound on control variables
+
+  # Pseudospectral method data
+  Nck::Vector{Int}                  # number of collocation points per interval
+  Nck_cum::Vector{Int}              # cumulative number of points per interval
+  Nck_full::Vector{Int}             # [0;cumsum(n.ocp.Nck+1)]
+  Ni::Int                           # number of intervals
+  tau::Matrix{T}                    # Node points ---> Nc increasing and distinct numbers ∈ [-1,1]
+  ts::Matrix{T}                     # time scaled based off of tau
+  w::Matrix{T}                      # weights
+  ws::Matrix{T}                     # scaled weights
+  DMatrix::Vector{Matrix{T}}        # differention matrix
+  IMatrix::Vector{Matrix{T}}        # integration matrix
+
+  # tm method data
+  N::Int                            # number of points in discretization
+  dt::Vector{T}                     # array of dts
+
+  mdl::JuMP.Model                   # JuMP model
+  params                            # parameters for the models
+  DXexpr                            # ? DX expression
+  NLcon                             # ! NOTE: not used currently
+
+  # Scaling factors
+  XS::Vector{T}                    # scaling factors on states
+  CS::Vector{T}                    # scaling factors on controls
+
+end
+OCP(T::DataType=Float64) = OCP{T}(
+    State(),                    # state data
+    Control(),                  # control data
+    convert(T, 0),                       # final time
+    convert(T, 0),                       # initial time # TODO: consider getting ride of this! or replace it with n.mpc.v.t0Param
+    Vector{T}(),                # vector for use with time varying constraints
+    Vector{T}(),                # initial state conditions
+    Vector{T}(),                # initial state tolerance
+    Vector{JuMP.Variable}(),    # initial state variables
+    Vector{T}(),                # final state conditions
+    Vector{T}(),                # final state tolerance
+    Vector{JuMP.Variable}(),    # final state variables
+    Vector{T}(),                # Constant lower bound on state variables
+    Vector{T}(),                # Constant upper bound on state variables
+    Vector{T}(),                # slope on XL -> time always starts at zero
+    Vector{T}(),                # slope on XU -> time always starts at zero
+    @variable(JuMP.Model()),    # time varying lower bounds on states # ! NOTE: not used currently
+    @variable(JuMP.Model()),    # time varying upper bounds on states # ! NOTE: not used currently
+    Vector{T}(),                # Constant lower bound on control variables
+    Vector{T}(),                # Constant upper bound on control variables
+    Vector{Int}(),              # number of collocation points per interval
+    Vector{Int}(),              # cumulative number of points per interval
+    Vector{Int}(),              # [0;cumsum(n.ocp.Nck+1)]
+    Int(0),                     # number of intervals
+    Matrix{T}(undef, 0, 0),     # Node points ---> Nc increasing and distinct numbers ∈ [-1,1]
+    Matrix{T}(undef, 0, 0),     # time scaled based off of tau
+    Matrix{T}(undef, 0, 0),     # weights
+    Matrix{T}(undef, 0, 0),     # scaled weights
+    Vector{Matrix{T}}(),        # differention matrix
+    Vector{Matrix{T}}(),        # integration matrix
+    Int(0),                     # number of points in discretization
+    Vector{T}(),                # array of dts
+    JuMP.Model(),               # JuMP model
+    Any[],                      # Jump model parameters
+    Any[],                      # ? DX expression
+    Any[],                      # ! Unused - Nonlinear conditions
+    Vector{T}(),                # scaling factors on states
+    Vector{T}(),                # scaling factors on controls
+)
+
+mutable struct OCPFlags
+  defined::Bool  # a bool to tell if define() has been called
+end
+OCPFlags() = OCPFlags(
+    false
+)
+
+mutable struct MPCFlags
+    defined::Bool
+    goalReached::Bool
+    simFailed::Vector{Union{Bool, Symbol}}   # a bool to indicate that the simulation failed and a symbol to indicate why
+    ipDefined::Bool
+    epDefined::Bool
+end
+MPCFlags() = MPCFlags(
+    false,
+    false,
+    [false, :NaN],
+    false,
+    false
+)
+
+
+mutable struct Flags
+    ocp::OCPFlags
+    mpc::MPCFlags
+end
+Flags() = Flags(
+    OCPFlags(),
+    MPCFlags()
+)
+
+abstract type AbstractNLOpt end
+mutable struct NLOpt{T <: Number} <: AbstractNLOpt
+    # major data structs
+    ocp::OCP{T}
+    mpc::MPC{T}
+    s::Settings
+    r::Results{T}
+    f::Flags
+end
+NLOpt(T::DataType=Float64) = NLOpt{T}(
+    OCP(T),
+    MPC(T),
+    Settings(),
+    Results(T),
+    Flags()
+)
+
 end # module
