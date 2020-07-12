@@ -98,40 +98,40 @@ end
 
 # Optimal Control Problem (OCP) Results
 @with_kw mutable struct OCPResults{ T <: Number }
-    tctr::Vector{Any}                   = Vector{T}()                           # Time vector for control
-    tst::Vector{Any}                    = Vector{T}()                           # Time vector for state
-    x::Matrix{JuMP.JuMPTypes}           = Matrix{JuMP.JuMPTypes}(undef,0,0)     # JuMP states
-    u::Matrix{JuMP.JuMPTypes}           = Matrix{JuMP.JuMPTypes}(undef,0,0)     # JuMP controls
-    X::Matrix{T}                        = Matrix{T}(undef,0,0)                  # States
-    U::Matrix{T}                        = Matrix{T}(undef,0,0)                  # Controls
-    X0::Vector{T}                       = Vector{T}()                           # Initial states for OCP
-    CS::Vector{T}                       = Vector{T}()                           # Costates
-    tpolyPts::Vector{T}                 = Vector{T}()                           # Time sample points for polynomials  (NOTE these interpolated solutions were developed for calculating error, between them and a known Optimal solution)
-    XpolyPts::Matrix{T}                 = Matrix{T}(undef,0,0)                  # State evaluated using Lagrange/Linear polynomial
-    CSpolyPts::Matrix{T}                = Matrix{T}(undef,0,0)                  # Costate evaluated using Lagrange/Linear polynomial
-    UpolyPts::Matrix{T}                 = Matrix{T}(undef,0,0)                  # Control evaluated using Lagrane/Linear polynomial
-    AlltpolyPts::Vector{T}              = Vector{T}()                           # Time sample points for polynomials
-    AllXpolyPts::Matrix{T}              = Matrix{T}(undef,0,0)                  # State evaluated using Lagrange/Linear polynomial
-    AllCSpolyPts::Matrix{T}             = Matrix{T}(undef,0,0)                  # Costate evaluated using Lagrange/Linear polynomial
-    AllUpolyPts::Matrix{T}              = Matrix{T}(undef,0,0)                  # Control evaluated using Lagrane/Linear polynomial
-    tpts::Vector{T}                     = Vector{T}()                           # Vector time sample points
-    Xpts::Matrix{T}                     = Matrix{T}(undef,0,0)                  # Vector state sample points
-    Upts::Matrix{T}                     = Matrix{T}(undef,0,0)                  # Vector control sample points
-    CSpts::Matrix{T}                    = Matrix{T}(undef,0,0)                  # Vector costate sample points
-    x0Con::Array{JuMP.ConstraintRef}    = Array{JuMP.ConstraintRef}(undef)      # Handle for initial state constraints
-    x0sCon::Array{JuMP.ConstraintRef}   = Array{JuMP.ConstraintRef}(undef)      # ? Unsure what this is yet (slack variable constraints?)
-    xfCon::Array{JuMP.ConstraintRef}    = Array{JuMP.ConstraintRef}(undef)      # Handle for final state constraints
-    xfsCon::Array{JuMP.ConstraintRef}   = Array{JuMP.ConstraintRef}(undef)      # ? Unsure what this is yet (slack variable constraints?)
-    dynCon::Array{JuMP.ConstraintRef}   = Array{JuMP.ConstraintRef}(undef)      # Dynamics constraints
-    constraint::Constraint{T}           = Constraint{T}()                       # Constraint handles and data
-    evalNum::Int                        = 1                                     # Number of times optimization has been run
-    iterNum                             = []                                    # Mics. data, perhaps an iteration number for a higher level algorithm
-    status::Symbol                      = :undef                                # Optimization status
-    tSolve::T                           = convert(T,0)                          # Solve time for optimization
-    objVal::T                           = convert(T,0)                          # Objective function value
-    dfs::Vector{DataFrame}              = Vector{DataFrame}()                   # Results in DataFrame for plotting
-    dfsOpt::DataFrame                   = DataFrame()                           # Optimization information in DataFrame for plotting
-    dfsCon::DataFrame                   = DataFrame()                           # Constraint data
+    tctr::Vector{Any}                           = Vector{T}()                           # Time vector for control
+    tst::Vector{Any}                            = Vector{T}()                           # Time vector for state
+    x::Vector{Vector{JuMP.JuMPTypes}}           = Vector{Vector{JuMP.JuMPTypes}}()      # JuMP states
+    u::Vector{Vector{JuMP.JuMPTypes}}           = Vector{Vector{JuMP.JuMPTypes}}()      # JuMP controls
+    X::Vector{Vector{T}}                        = Vector{Vector{T}}()                   # States
+    U::Vector{Vector{T}}                        = Vector{Vector{T}}()                   # Controls
+    X0::Vector{T}                               = Vector{T}()                           # Initial states for OCP
+    CS::Vector{T}                               = Vector{T}()                           # Costates
+    tpolyPts::Vector{T}                         = Vector{T}()                           # Time sample points for polynomials  (NOTE these interpolated solutions were developed for calculating error, between them and a known Optimal solution)
+    XpolyPts::Vector{Vector{T}}                 = Vector{Vector{T}}()                   # State evaluated using Lagrange/Linear polynomial
+    CSpolyPts::Vector{Vector{T}}                = Vector{Vector{T}}()                   # Costate evaluated using Lagrange/Linear polynomial
+    UpolyPts::Vector{Vector{T}}                 = Vector{Vector{T}}()                   # Control evaluated using Lagrane/Linear polynomial
+    AlltpolyPts::Vector{T}                      = Vector{T}()                           # Time sample points for polynomials
+    AllXpolyPts::Vector{Vector{T}}              = Vector{Vector{T}}()                   # State evaluated using Lagrange/Linear polynomial
+    AllCSpolyPts::Vector{Vector{T}}             = Vector{Vector{T}}()                   # Costate evaluated using Lagrange/Linear polynomial
+    AllUpolyPts::Vector{Vector{T}}              = Vector{Vector{T}}()                   # Control evaluated using Lagrane/Linear polynomial
+    tpts::Vector{T}                             = Vector{T}()                           # Vector time sample points
+    Xpts::Vector{Vector{T}}                     = Vector{Vector{T}}()                   # Vector state sample points
+    Upts::Vector{Vector{T}}                     = Vector{Vector{T}}()                   # Vector control sample points
+    CSpts::Vector{Vector{T}}                    = Vector{Vector{T}}()                   # Vector costate sample points
+    x0Con::Vector{JuMP.ConstraintRef}           = Vector{JuMP.ConstraintRef}()          # Handle for initial state constraints
+    x0sCon::Vector{JuMP.ConstraintRef}          = Vector{JuMP.ConstraintRef}()          # ? Unsure what this is yet (slack variable constraints?)
+    xfCon::Vector{JuMP.ConstraintRef}           = Vector{JuMP.ConstraintRef}()          # Handle for final state constraints
+    xfsCon::Vector{JuMP.ConstraintRef}          = Vector{JuMP.ConstraintRef}()          # ? Unsure what this is yet (slack variable constraints?)
+    dynCon::Vector{Vector{JuMP.ConstraintRef}}  = Vector{Vector{JuMP.ConstraintRef}}()  # Dynamics constraints
+    constraint::Constraint{T}                   = Constraint{T}()                       # Constraint handles and data
+    evalNum::Int                                = 1                                     # Number of times optimization has been run
+    iterNum                                     = []                                    # Mics. data, perhaps an iteration number for a higher level algorithm
+    status::Symbol                              = :undef                                # Optimization status
+    tSolve::T                                   = convert(T,0)                          # Solve time for optimization
+    objVal::T                                   = convert(T,0)                          # Objective function value
+    dfs::Vector{DataFrame}                      = Vector{DataFrame}()                   # Results in DataFrame for plotting
+    dfsOpt::DataFrame                           = DataFrame()                           # Optimization information in DataFrame for plotting
+    dfsCon::DataFrame                           = DataFrame()                           # Constraint data
 end
 
 # Optimal Control Problem (OCP) Settings
@@ -162,46 +162,47 @@ end
 
 # Optimal Control Problem (OCP)
 @with_kw mutable struct OCP{T <: Number}
-    # general properties
-    state::State                        = State()                               # state data
-    control::Control                    = Control()                             # control data
-    tf::T                               = convert(T, 0)                         # final time
-    t0::JuMP.JuMPTypes                  = @NLparameter(JuMP.Model(), x == 0)    # initial time # TODO: consider getting rid of this or replacing it with `n.mpc.v.t0Param`
-    tV::Vector{T}                       = Vector{T}()                           # vector for use with time varying constraints
+
+    # General properties
+    state::State                            = State()                               # state data
+    control::Control                        = Control()                             # control data
+    tf::Union{T,JuMP.JuMPTypes}             = convert(T, 0)                         # final time
+    t0::JuMP.JuMPTypes                      = @NLparameter(JuMP.Model(), x == 0)    # initial time # TODO: consider getting rid of this or replacing it with `n.mpc.v.t0Param`
+    tV::Vector{T}                           = Vector{T}()                           # vector for use with time varying constraints
 
     # Boundary conditions
-    X0::Vector{T}                       = Vector{T}()                           # initial state conditions
-    X0_tol::Vector{T}                   = Vector{T}()                           # initial state tolerance
-    x0s::Vector{JuMP.JuMPTypes}         = Vector{JuMP.JuMPTypes}()              # initial state variables
-    XF::Vector{T}                       = Vector{T}()                           # final state conditions
-    XF_tol::Vector{T}                   = Vector{T}()                           # final state tolerance
-    xFs::Vector{JuMP.JuMPTypes}         = Vector{JuMP.JuMPTypes}()              # final state variables
+    X0::Vector{T}                           = Vector{T}()                           # initial state conditions
+    X0_tol::Vector{T}                       = Vector{T}()                           # initial state tolerance
+    x0s::Vector{JuMP.JuMPTypes}             = Vector{JuMP.JuMPTypes}()              # initial state variables
+    XF::Vector{T}                           = Vector{T}()                           # final state conditions
+    XF_tol::Vector{T}                       = Vector{T}()                           # final state tolerance
+    xFs::Vector{JuMP.JuMPTypes}             = Vector{JuMP.JuMPTypes}()              # final state variables
 
     # Constant bounds on state variables
-    XL::Vector{T}                       = Vector{T}()                           # Constant lower bound on state variables
-    XU::Vector{T}                       = Vector{T}()                           # Constant upper bound on state variables
+    XL::Vector{T}                           = Vector{T}()                           # Constant lower bound on state variables
+    XU::Vector{T}                           = Vector{T}()                           # Constant upper bound on state variables
 
     # Variables for linear bounds on state variables
-    mXL::Vector{T}                      = Vector{T}()                           # slope on XL -> time always starts at zero
-    mXU::Vector{T}                      = Vector{T}()                           # slope on XU -> time always starts at zero
-    XL_var::Matrix{T}                   = Matrix{T}(undef,0,0)                  # time varying lower bounds on states # ! NOTE: not used currently - was JuMP.Variable
-    XU_var::Matrix{T}                   = Matrix{T}(undef,0,0)                  # time varying upper bounds on states # ! NOTE: not used currently - was JuMP.Variable
+    mXL::Vector{Bool}                       = Vector{Bool}()                        # slope on XL -> time always starts at zero
+    mXU::Vector{Bool}                       = Vector{Bool}()                        # slope on XU -> time always starts at zero
+    XL_var::Vector{Vector{JuMP.JuMPTypes}}  = Vector{Vector{JuMP.JuMPTypes}}()      # time varying lower bounds on states # ! NOTE: not used currently - was JuMP.Variable
+    XU_var::Vector{Vector{JuMP.JuMPTypes}}  = Vector{Vector{JuMP.JuMPTypes}}()      # time varying upper bounds on states # ! NOTE: not used currently - was JuMP.Variable
 
     # Constant bounds on control variables
-    CL::Vector{T}                       = Vector{T}()                           # Constant lower bound on control variables
-    CU::Vector{T}                       = Vector{T}()                           # Constant upper bound on control variables
+    CL::Vector{T}                           = Vector{T}()                           # Constant lower bound on control variables
+    CU::Vector{T}                           = Vector{T}()                           # Constant upper bound on control variables
 
     # Pseudospectral method data
-    Nck::Vector{Int}                    = Vector{Int}()                         # number of collocation points per interval
-    Nck_cum::Vector{Int}                = Vector{Int}()                         # cumulative number of points per interval
-    Nck_full::Vector{Int}               = Vector{Int}()                         # [0;cumsum(n.ocp.Nck+1)]
-    Ni::Int                             = Int(0)                                # number of intervals
-    tau::Matrix{T}                      = Matrix{T}(undef,0,0)                  # Node points ---> Nc increasing and distinct numbers ∈ [-1,1]
-    ts::Matrix{T}                       = Matrix{T}(undef,0,0)                  # time scaled based off of tau
-    w::Matrix{T}                        = Matrix{T}(undef,0,0)                  # weights
-    ws::Matrix{T}                       = Matrix{T}(undef,0,0)                  # scaled weights
-    DMatrix::Vector{Matrix{T}}          = Vector{Matrix{T}}()                   # differention matrix
-    IMatrix::Vector{Matrix{T}}          = Vector{Matrix{T}}()                   # integration matrix
+    Nck::Vector{Int}                        = Vector{Int}()                         # number of collocation points per interval
+    Nck_cum::Vector{Int}                    = Vector{Int}()                         # cumulative number of points per interval
+    Nck_full::Vector{Int}                   = Vector{Int}()                         # [0;cumsum(n.ocp.Nck+1)]
+    Ni::Int                                 = Int(0)                                # number of intervals
+    tau::Vector{Vector{T}}                  = Vector{Vector{T}}()                   # Node points ---> Nc increasing and distinct numbers ∈ [-1,1]
+    ts::Vector{Vector{T}}                   = Vector{Vector{T}}()                   # time scaled based off of tau
+    w::Vector{Vector{T}}                    = Vector{Vector{T}}()                   # weights
+    ws::Vector{Vector{T}}                   = Vector{Vector{T}}()                   # scaled weights
+    DMatrix::Vector{Matrix{T}}              = Vector{Matrix{T}}()                   # differention matrix
+    IMatrix::Vector{Matrix{T}}              = Vector{Matrix{T}}()                   # integration matrix
 
     # tm method data
     N::Int                              = 0                                     # number of points in discretization
@@ -267,6 +268,7 @@ end
 end
 
 # Plant Results
+# TODO: Figure out what these "Any" types are
 @with_kw mutable struct PlantResults{ T <: Number }
   plant::DataFrame            = DataFrame()             # plant
   X0p::Vector{Any}            = Vector{Any}()           # X0p
