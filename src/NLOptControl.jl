@@ -43,6 +43,9 @@ include("NLOptMPC.jl")
 using .NLOptMPC
 export MPC
 
+const pseudoSpectralMethods = [ :lgrExplicit , :lgrImplicit ]
+const trapezoidalMethods = [ :trapezoidal, :bkwEuler ]
+
 # Optimal Control Problem Structure
 @with_kw mutable struct OCP{T <: Number}
     # general properties

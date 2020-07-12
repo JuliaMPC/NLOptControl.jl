@@ -1,5 +1,16 @@
 """
-n=define(;numControls=1,X0=[0.,1],XF=[0.,-1.],XL=[0.,-Inf],XU=[1/9,Inf],CL=[-Inf],CU=[Inf])
+n = define(;
+    numStates::Int = 0,
+    numControls::Int = 0,
+    X0 = fill(NaN,numStates),
+    XF = fill(NaN,numStates),
+    XL = fill(NaN,numStates),
+    XU = fill(NaN,numStates),
+    CL = fill(NaN,numControls),
+    CU = fill(NaN,numControls),
+    XS = fill(1.0,numStates),
+    CS = fill(1.0,numControls)
+)::NLOpt
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 1/1/2017, Last Modified: 4/13/2018 \n
@@ -56,18 +67,18 @@ function define(;
         error("Length of CS ($(length(CS))) must match number of controls ($numControls)")
     end
 
-    n.ocp.state = initState(numStates)
-    n.ocp.control = initControl(numControls)
-    n.ocp.X0 = X0
-    n.ocp.X0_tol = fill(NaN, size(X0))
-    n.ocp.XF = XF
-    n.ocp.XF_tol = fill(NaN, size(XF))
-    n.ocp.XL = XL
-    n.ocp.XU = XU
-    n.ocp.CL = CL
-    n.ocp.CU = CU
-    n.ocp.XS = XS
-    n.ocp.CS = CS
+    n.ocp.state     = initState(numStates)
+    n.ocp.control   = initControl(numControls)
+    n.ocp.X0        = X0
+    n.ocp.X0_tol    = fill(NaN, size(X0))
+    n.ocp.XF        = XF
+    n.ocp.XF_tol    = fill(NaN, size(XF))
+    n.ocp.XL        = XL
+    n.ocp.XU        = XU
+    n.ocp.CL        = CL
+    n.ocp.CU        = CU
+    n.ocp.XS        = XS
+    n.ocp.CS        = CS
     n.f.ocp.defined = true
 
     return n
@@ -75,6 +86,7 @@ function define(;
 end
 
 """
+defineSolver!(n::NLOpt, kw::Dict{Symbol, Symbol})
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/9/2017, Last Modified: 12/02/2019 \n
@@ -149,24 +161,20 @@ function defineSolver!(n::NLOpt, kw::Dict{Symbol,Symbol})
 
     return nothing
 
-end  # function
+end
 
 """
-OCPdef!(n)
+OCPdef!(n::NLOpt)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 1/14/2017, Last Modified: 12/06/2019 \n
 --------------------------------------------------------------------------------------\n
 """
-function OCPdef!(n::NLOpt)
+function OCPdef!(n::NLOpt{T}) where { T <: Number }
 
     # State variables
     @variable(n.ocp.mdl, x[1:n.ocp.state.pts, 1:n.ocp.state.num])
-    n.r.ocp.x = Matrix{Any}(undef, n.ocp.state.pts, n.ocp.state.num)
-    for st in 1:n.ocp.state.num
-        n.r.ocp.x[:,st] = @NLexpression(n.ocp.mdl, [j=1:n.ocp.state.pts], n.ocp.XS[st]*x[j,st])
-    end
-    #  n.r.ocp.x=x;
+    n.r.ocp.x = Matrix{JuMP.JuMPTypes}([ @NLexpression(n.ocp.mdl, [j=1:n.ocp.state.pts], n.ocp.XS[st]*x[j,st]) for st in 1:n.ocp.state.num ])
 
     for st in 1:n.ocp.state.num
         # lower state constraint
@@ -219,26 +227,26 @@ function OCPdef!(n::NLOpt)
 
     # boundary constraints
     if n.s.ocp.x0slackVariables   # create handles for constraining the entire initial state
-        n.r.ocp.x0Con = Array{Any}(undef, n.ocp.state.num,2) # this is so they can be easily reference when doing MPC
+        n.r.ocp.x0Con = Vector{JuMP.ConstraintRef}(undef, n.ocp.state.num) # this is so they can be easily reference when doing MPC
     else
-        n.r.ocp.x0Con = []
+        n.r.ocp.x0Con = Vector{JuMP.ConstraintRef}(undef, 0)
     end
 
     if n.s.ocp.xFslackVariables # create handles for constraining the entire final state
-        n.r.ocp.xfCon = Array{Any}(undef, n.ocp.state.num,2) # this is so they can be easily reference when doing MPC
+        n.r.ocp.xfCon = Vector{JuMP.ConstraintRef}(undef, n.ocp.state.num) # this is so they can be easily reference when doing MPC
     else
-        n.r.ocp.xfCon = []
+        n.r.ocp.xfCon = Vector{JuMP.ConstraintRef}(undef, 0)
     end
 
     if n.s.ocp.x0slackVariables # currently adding slack variables for all initial states even if there are no constraints on them
-        @variable(n.ocp.mdl,x0s[1:n.ocp.state.num])
+        @variable(n.ocp.mdl, x0s[1:n.ocp.state.num])
         n.ocp.x0s = x0s
-        n.r.ocp.x0sCon = Array{Any}(undef, n.ocp.state.num)
+        n.r.ocp.x0sCon = Vector{JuMP.ConstraintRef}(undef, n.ocp.state.num)
     end
     if n.s.ocp.xFslackVariables # currently adding slack variables for all final states even if there are no constraints on them
-        @variable(n.ocp.mdl,xFs[1:n.ocp.state.num])
+        @variable(n.ocp.mdl, xFs[1:n.ocp.state.num])
         n.ocp.xFs = xFs
-        n.r.ocp.xfsCon = Array{Any}(undef, n.ocp.state.num)
+        n.r.ocp.xfsCon = Vector{JuMP.ConstraintRef}(undef, n.ocp.state.num)
     end
 
     for st in 1:n.ocp.state.num
@@ -247,10 +255,15 @@ function OCPdef!(n::NLOpt)
                 n.r.ocp.x0Con[st,1] = @constraint(n.ocp.mdl, x[1,st]*n.ocp.XS[st] -n.ocp.x0s[st] <=  n.ocp.X0[st])
                 n.r.ocp.x0Con[st,2] = @constraint(n.ocp.mdl,-x[1,st]*n.ocp.XS[st] -n.ocp.x0s[st] <= -n.ocp.X0[st])
                 if !isnan(n.ocp.X0_tol[st])
-                n.r.ocp.x0sCon[st] = @constraint(n.ocp.mdl, n.ocp.x0s[st] <= n.ocp.X0_tol[st])
+                    n.r.ocp.x0sCon[st] = @constraint(n.ocp.mdl, n.ocp.x0s[st] <= n.ocp.X0_tol[st])
                 end
             else
-                n.r.ocp.x0Con = [n.r.ocp.x0Con; @constraint(n.ocp.mdl, x[1,st]*n.ocp.XS[st] == n.ocp.X0[st])]
+                @info "OCPdef!: size of n.r.ocp.x0Con:     $(size(n.r.ocp.x0Con))"
+                x_temp = [ n.r.ocp.x0Con ; @constraint(n.ocp.mdl, x[1,st]*n.ocp.XS[st] == n.ocp.X0[st]) ]
+                @info "OCPdef!: size of x_temp:            $(size(x_temp))"
+                @info "OCPdef!: type of x_temp:            $(typeof(x_temp))"
+                n.r.ocp.x0Con = Vector{JuMP.ConstraintRef}(x_temp)
+                @info "OCPdef!: size of n.r.ocp.x0Con (2): $(size(n.r.ocp.x0Con))"
             end
         end
         if !isnan(n.ocp.XF[st])
@@ -261,7 +274,7 @@ function OCPdef!(n::NLOpt)
                     n.r.ocp.xfsCon[st] = @constraint(n.ocp.mdl, n.ocp.xFs[st] <= n.ocp.XF_tol[st])
                 end
             else
-                n.r.ocp.xfCon = [n.r.ocp.xfCon; @constraint(n.ocp.mdl, x[end,st]*n.ocp.XS[st] == n.ocp.XF[st])]
+                n.r.ocp.xfCon = [n.r.ocp.xfCon ; @constraint(n.ocp.mdl, x[end,st]*n.ocp.XS[st] == n.ocp.XF[st]) ]
             end
         end
     end
@@ -270,8 +283,8 @@ function OCPdef!(n::NLOpt)
     n.ocp.t0 = t0_param  # NOTE consider making a constraint that t0 < tf
 
     if n.s.ocp.integrationMethod == :ps
-        n.r.ocp.dynCon = [ Array{Any}(undef, n.ocp.Nck[int],n.ocp.state.num) for int in 1:n.ocp.Ni]
-        dynamics_expr  = [ Array{Any}(undef, n.ocp.Nck[int],n.ocp.state.num) for int in 1:n.ocp.Ni]
+        n.r.ocp.dynCon = [ Matrix{JuMP.ConstraintRef}(undef, n.ocp.Nck[int], n.ocp.state.num) for int in 1:n.ocp.Ni ]
+        dynamics_expr  = [ Matrix{JuMP.ConstraintRef}(undef, n.ocp.Nck[int], n.ocp.state.num) for int in 1:n.ocp.Ni ]
 
         if n.s.ocp.finalTimeDV
             @variable(n.ocp.mdl, n.s.ocp.tfMin <= tf <=  n.s.ocp.tfMax)
@@ -309,7 +322,7 @@ function OCPdef!(n::NLOpt)
         end
 
     elseif n.s.ocp.integrationMethod == :tm
-        n.r.ocp.dynCon = Array{Any}(undef, n.ocp.N,n.ocp.state.num)
+        n.r.ocp.dynCon = Matrix{JuMP.ConstraintRef}(undef, n.ocp.N, n.ocp.state.num)
         if n.s.ocp.finalTimeDV
             @variable(n.ocp.mdl, n.s.ocp.tfMin <= tf <= n.s.ocp.tfMax)
             n.ocp.tf = tf
@@ -318,9 +331,9 @@ function OCPdef!(n::NLOpt)
         n.ocp.dt = n.ocp.tf/n.ocp.N*ones(n.ocp.N,)
 
         L = size(n.r.ocp.x)[1]
-        dx = Array{Any}(undef, L,n.ocp.state.num)
+        dx = Matrix{JuMP.NonlinearExpression}(undef, L, n.ocp.state.num)
         for st in 1:n.ocp.state.num
-            dx[:,st] = DiffEq(n,n.r.ocp.x,n.r.ocp.u,L,st)
+            dx[:,st] = DiffEq(n, n.r.ocp.x, n.r.ocp.u, L, st)
         end
 
         if n.s.ocp.integrationScheme == :bkwEuler
@@ -340,10 +353,17 @@ function OCPdef!(n::NLOpt)
         end
     end
 
+    @info "OCPdef!: size of n.r.ocp.x0Con  : $(size(  n.r.ocp.x0Con ))"
+    @info "OCPdef!: type of n.r.ocp.x0Con  : $(typeof(n.r.ocp.x0Con ))"
+    @info "OCPdef!: size of n.r.ocp.xfCon  : $(size(  n.r.ocp.xfCon ))"
+    @info "OCPdef!: type of n.r.ocp.xfCon  : $(typeof(n.r.ocp.xfCon ))"
+    @info "OCPdef!: size of n.r.ocp.dynCon : $(size(  n.r.ocp.dynCon))"
+    @info "OCPdef!: type of n.r.ocp.dynCon : $(typeof(n.r.ocp.dynCon))"
+
     # save constraint data
-    newConstraint!(n,n.r.ocp.x0Con,:x0_con)
-    newConstraint!(n,n.r.ocp.xfCon,:xf_con)
-    newConstraint!(n,n.r.ocp.dynCon,:dyn_con)
+    newConstraint!(n, n.r.ocp.x0Con , :x0_con )
+    newConstraint!(n, n.r.ocp.xfCon , :xf_con )
+    newConstraint!(n, n.r.ocp.dynCon, :dyn_con)
 
     # save the current working directory for navigation purposes
     n.r.mainDir = pwd()
@@ -353,108 +373,99 @@ function OCPdef!(n::NLOpt)
 end
 
 """
-
+configure!(n::NLOpt; kwargs...)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 1/1/2017, Last Modified: 12/06/2019 \n
 -------------------------------------------------------------------------------------\n
 """
-function configure!(n::NLOpt; kwargs... )
+function configure!(n::NLOpt{T}; kwargs... ) where { T <: Number }
 
     kw = Dict(kwargs)
 
-    # final time
-    if !haskey(kw,:finalTimeDV)
-        n.s.ocp.finalTimeDV = false;
-    else
-        n.s.ocp.finalTimeDV = get(kw,:finalTimeDV,0)
-    end
+    # Determine whether final time is a design variable (:finalTimeDV)
+    # defaults to not a design variable
+    n.s.ocp.finalTimeDV = get(kw, :finalTimeDV, false)
 
-    if !haskey(kw,:tf) && !n.s.ocp.finalTimeDV
-        error("\n If the final time is not a design variable pass it as: (:tf=>Float64(some #)) \n
-            If the final time is a design variable, indicate that as: (:finalTimeDV=>true)\n")
-    elseif haskey(kw,:tf) && !n.s.ocp.finalTimeDV
-        n.ocp.tf = get(kw,:tf,0)
-    elseif n.s.ocp.finalTimeDV
-        n.ocp.tf = Any
-    end
+    # Determine final time (:tf)
+    # TODO: find a more specific replacement for the "Any" type here
+    n.ocp.tf = n.s.ocp.finalTimeDV ? Any : get(kw, :tf, error("If the final time (:tf) is not a design variable, pass it as: `( :tf => $T(some #) )`") )
 
-    # x0 slack variables
-    if !haskey(kw,:x0slackVariables)
-        n.s.ocp.x0slackVariables = !any(isnan.(n.ocp.X0_tol))
-    else
-        n.s.ocp.x0slackVariables = get(kw,:x0slackVariables,0) # TODO check to see if user is using tolerances and passed false to configure
-    end
+    # Initial State Slack Variables (:x0slackVariables)
+    # TODO: figure out a better default value than "true/false"
+    # TODO: check to see if user is using tolerances and passed false to configure
+    n.s.ocp.x0slackVariables = get(kw, :x0slackVariables, !any(isnan.(n.ocp.X0_tol)))
 
-    # xF slack variables
-    if !haskey(kw,:xFslackVariables)
-        n.s.ocp.xFslackVariables = !any(isnan.(n.ocp.XF_tol))
-    else
-        n.s.ocp.xFslackVariables = get(kw,:xFslackVariables,0)
-    end
+    # Final State Slack Variables (:xFslackVariables)
+    # TODO: figure out a better default value than "true/false"
+    n.s.ocp.xFslackVariables = get(kw, :xFslackVariables, !any(isnan.(n.ocp.XF_tol)))
 
-    # integrationScheme
-    if !haskey(kw,:integrationScheme)
-         n.s.ocp.integrationScheme = :lgrExplicit # default
-    else
-         n.s.ocp.integrationScheme = get(kw,:integrationScheme,0)
-    end
+    # Integration Scheme (:integrationScheme)
+    # Default = :lgrExplicit
+    n.s.ocp.integrationScheme = get(kw, :integrationScheme, :lgrExplicit)
 
-    if n.s.ocp.integrationScheme == :lgrExplicit ||  n.s.ocp.integrationScheme == :lgrImplicit
+    # Integration Method (:integrationMethod)
+    if in( n.s.ocp.integrationScheme,  NLOptControl.pseudoSpectralMethods )
+
+        # Use Pseudospectral Integration Method
         n.s.ocp.integrationMethod = :ps
-    elseif n.s.ocp.integrationScheme == :trapezoidal || n.s.ocp.integrationScheme == :bkwEuler
+
+        if haskey(kw, :N)
+            error(":N is not an appropriate keyword argument for :ps method :$(n.s.ocp.integrationScheme), use :Nck")
+        else
+
+            n.ocp.Nck = get(kw, :Nck, [10 , 10 , 10 , 10] )
+
+            if any(n.ocp.Nck < 0)
+                error(":Nck must be > 0")
+            end
+
+            # Determine number of points
+            n.ocp.Ni            = length(n.ocp.Nck)
+            n.ocp.state.pts     = sum(n.ocp.Nck) + 1
+            n.ocp.control.pts   = sum(n.ocp.Nck)
+            n.ocp.Nck_full      = [ 0 ; cumsum(n.ocp.Nck .+ 1) ]
+            n.ocp.Nck_cum       = [ 0 ; cumsum(n.ocp.Nck) ]
+
+            # Initialize node data
+            taus_and_weights    = [ gaussradau(n.ocp.Nck[int]) for int in 1:n.ocp.Ni ]
+            n.ocp.tau           = hcat([ taus_and_weights[int][1] for int in 1:n.ocp.Ni ]...)
+            n.ocp.w             = hcat([ taus_and_weights[int][2] for int in 1:n.ocp.Ni ]...)
+            
+            # Create Intervals
+            createIntervals!(n)
+
+            #? Create DMatrix
+            DMatrix!(n)
+
+        end
+
+
+    elseif in( n.s.ocp.integrationScheme, NLOptControl.trapezoidalMethods )
+
+        # Use Trapezoidal Method
         n.s.ocp.integrationMethod = :tm
+
+        if haskey(kw, :Nck)
+            error(":Nck is not an appropriate keyword argument for :tm method :$(n.s.ocp.integrationScheme), use :N")
+        else
+
+            # Default number of points is 100
+            n.ocp.N = get(kw, :N, 100)
+
+            # Set number of integration points for state and control
+            n.ocp.state.pts = n.ocp.N + 1
+            n.ocp.control.pts = n.ocp.N + 1
+        end
+
     else
         error("The :integrationScheme that you specified ($(n.s.ocp.integrationScheme)) is not currently implemeted \n")
     end
 
-    if n.s.ocp.integrationMethod == :ps
-        if haskey(kw,:N)
-            error(" \n N is not an appropriate kwargs for :ps methods \n")
-        end
-        if !haskey(kw,:Nck)
-            n.ocp.Nck = [10,10,10,10] # default
-        else
-             n.ocp.Nck = get(kw,:Nck,0)
-        end
-        n.ocp.Ni = length(n.ocp.Nck)
-
-        for int in 1:n.ocp.Ni
-            if (n.ocp.Nck[int] < 0)
-                error("\n Nck must be > 0");
-            end
-        end
-
-        n.ocp.state.pts = sum(n.ocp.Nck) + 1
-        n.ocp.control.pts = sum(n.ocp.Nck)
-        n.ocp.Nck_full = [0 ; cumsum(n.ocp.Nck.+1)]
-        n.ocp.Nck_cum = [0 ; cumsum(n.ocp.Nck)]
-
-        # initialize node data
-        if n.s.ocp.integrationScheme == :lgrExplicit ||  n.s.ocp.integrationScheme == :lgrImplicit
-            taus_and_weights = [ gaussradau(n.ocp.Nck[int]) for int in 1:n.ocp.Ni ]
-        end
-        n.ocp.tau = hcat([ taus_and_weights[int][1] for int in 1:n.ocp.Ni ]...)
-        n.ocp.w = hcat([ taus_and_weights[int][2] for int in 1:n.ocp.Ni ]...)
-        createIntervals!(n)
-        DMatrix!(n)
-
-    elseif n.s.ocp.integrationMethod == :tm
-        if haskey(kw, :Nck)
-            error(" \n :$(:Nck) is not appropriate kwargs for :$(:tm) methods \n")
-        end
-        if !haskey(kw, :N)
-            n.ocp.N = 100 # default
-        else
-            n.ocp.N = get(kw,:N,0)
-        end
-        n.ocp.state.pts = n.ocp.N + 1
-        n.ocp.control.pts = n.ocp.N + 1
-    end
-    n.ocp.mXL = falses(n.ocp.state.num)
-    n.ocp.mXU = falses(n.ocp.state.num)
-    n.ocp.XL_var = Matrix{Float64}(undef, n.ocp.state.num, n.ocp.state.pts)
-    n.ocp.XU_var = Matrix{Float64}(undef, n.ocp.state.num, n.ocp.state.pts)
+    n.ocp.mXL    = falses(n.ocp.state.num)
+    n.ocp.mXU    = falses(n.ocp.state.num)
+    n.ocp.XL_var = Matrix{T}(undef, n.ocp.state.num, n.ocp.state.pts)
+    n.ocp.XU_var = Matrix{T}(undef, n.ocp.state.num, n.ocp.state.pts)
 
     # solver settings
     if !haskey(kw,:solverSettings)

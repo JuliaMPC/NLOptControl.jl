@@ -131,18 +131,29 @@ Date Create: 2/7/2017, Last Modified: 4/13/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function initConstraint!(n::NLOpt)
-  if n.r.ocp.constraint === nothing
-    n.r.ocp.constraint = Constraint()
-  end
-  return nothing
+    if n.r.ocp.constraint === nothing
+        n.r.ocp.constraint = Constraint()
+    end
+    return nothing
 end
 
-function newConstraint!(n::NLOpt,handle,name::Symbol)
-  initConstraint!(n)
-  n.r.ocp.constraint::Constraint = n.r.ocp.constraint
-  push!(n.r.ocp.constraint.handle,handle)
-  push!(n.r.ocp.constraint.name,name)
-  return nothing
+function newConstraint!(n::NLOpt, handle::Array{JuMP.ConstraintRef}, name::Symbol)
+    initConstraint!(n)
+    @info "\nEntering newConstraint!\n"
+    @info "newConstraint!: size of n.r.ocp.constraint.handle:   $(size(n.r.ocp.constraint.handle))"
+    @info "newConstraint!: type of n.r.ocp.constraint.handle:   $(typeof(n.r.ocp.constraint.handle))"
+    @info "newConstraint!: size of n.r.ocp.constraint.name:     $(size(n.r.ocp.constraint.name))"
+    @info "newConstraint!: type of n.r.ocp.constraint.name:     $(typeof(n.r.ocp.constraint.name))"
+    @info "newConstraint!: size of handle:                      $(size(handle))"
+    @info "newConstraint!: type of handle:                      $(typeof(handle))"
+    # @info "newConstraint!: value of handle:                     $handle"
+    @info "newConstraint!: type of name:                        $(typeof(name))"
+    # @info "newConstraint!: value of name:                       $name"
+    @info "newConstraint!: testing vcat:                        $(vcat(n.r.ocp.constraint.handle, handle))"
+
+    push!(n.r.ocp.constraint.name, name)
+    n.r.ocp.constraint.handle = vcat(n.r.ocp.constraint.handle, handle)
+    return nothing
 end
 
 """
@@ -154,36 +165,36 @@ Date Create: 2/13/2017, Last Modified: 4/13/2018 \n
 --------------------------------------------------------------------------------------\n
 """
 function evalMaxDualInf(n::NLOpt)
-  num=length(n.r.ocp.constraint.handle); dual_con_temp=zeros(num);
-  for i = 1:length(n.r.ocp.constraint.handle)
-    if !isempty(n.r.ocp.constraint.handle[i])
-      if n.r.ocp.constraint.name[i]==:dyn_con  # state constraits
-        temp1=zeros(n.ocp.state.num);
-        for st in 1:n.ocp.state.num
-          if n.s.ocp.integrationMethod==:ps
-            temp=[getdual(n.r.ocp.constraint.handle[i][int][:,st]) for int in 1:n.ocp.Ni];
-            vals=[idx for tempM in temp for idx=tempM];
-            temp1[st]=maximum(vals);
-          else
-            temp1[st] = maximum(getdual(n.r.ocp.constraint.handle[i][:,st]));
-          end
+    num=length(n.r.ocp.constraint.handle); dual_con_temp=zeros(num);
+    for i = 1:length(n.r.ocp.constraint.handle)
+        if !isempty(n.r.ocp.constraint.handle[i])
+            if n.r.ocp.constraint.name[i]==:dyn_con  # state constraits
+                temp1=zeros(n.ocp.state.num);
+                for st in 1:n.ocp.state.num
+                    if n.s.ocp.integrationMethod==:ps
+                        temp=[getdual(n.r.ocp.constraint.handle[i][int][:,st]) for int in 1:n.ocp.Ni];
+                        vals=[idx for tempM in temp for idx=tempM];
+                        temp1[st]=maximum(vals);
+                    else
+                        temp1[st] = maximum(getdual(n.r.ocp.constraint.handle[i][:,st]));
+                    end
+                end
+                dual_con_temp[i]=maximum(temp1);
+            else
+                S=JuMP.size(n.r.ocp.constraint.handle[i])
+                if length(S)==1
+                dual_con_temp[i]=maximum(getdual(n.r.ocp.constraint.handle[i][:]));
+                elseif length(S)==2
+                temp1=zeros(S[1]);
+                for idx in 1:S[1]
+                    temp1[idx] = maximum(getdual(n.r.ocp.constraint.handle[i][idx,:]));
+                end
+                dual_con_temp[i]=maximum(temp1);
+                end
+            end
         end
-        dual_con_temp[i]=maximum(temp1);
-      else
-        S=JuMP.size(n.r.ocp.constraint.handle[i])
-        if length(S)==1
-          dual_con_temp[i]=maximum(getdual(n.r.ocp.constraint.handle[i][:]));
-        elseif length(S)==2
-          temp1=zeros(S[1]);
-          for idx in 1:S[1]
-            temp1[idx] = maximum(getdual(n.r.ocp.constraint.handle[i][idx,:]));
-          end
-          dual_con_temp[i]=maximum(temp1);
-        end
-      end
     end
-  end
-  return maximum(maximum(maximum(dual_con_temp)))
+    return maximum(maximum(maximum(dual_con_temp)))
 end
 
 ########################################################################################
@@ -196,7 +207,7 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/7/2017, Last Modified: 4/13/2018 \n
 --------------------------------------------------------------------------------------\n
 """
-function initState(numStates)
+function initState(numStates)::State
   s = State()
   s.num = numStates
   s.name = [Symbol("x$i") for i in 1:numStates]
@@ -238,7 +249,7 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/7/2017, Last Modified: 4/13/2018 \n
 --------------------------------------------------------------------------------------\n
 """
-function initControl(numControls)
+function initControl(numControls)::Control
   c = Control()
   c.num = numControls
   c.name = [Symbol("u$i") for i in 1:numControls]
