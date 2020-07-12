@@ -88,53 +88,53 @@ mutable struct OCP{T <: Number}
   XS::Vector{T}                    # scaling factors on states
   CS::Vector{T}                    # scaling factors on controls
 
+    OCP(T::DataType=Float64) = new{T}(
+        State(),                              # state data
+        Control(),                            # control data
+        convert(T, 0),                        # final time
+        @NLparameter(JuMP.Model(), x == 0),   # initial time # TODO: consider getting ride of this! or replace it with n.mpc.v.t0Param
+        Vector{T}(),                          # vector for use with time varying constraints
+        Vector{T}(),                          # initial state conditions
+        Vector{T}(),                          # initial state tolerance
+        Vector{JuMP.Variable}(),              # initial state variables
+        Vector{T}(),                          # final state conditions
+        Vector{T}(),                          # final state tolerance
+        Vector{JuMP.Variable}(),              # final state variables
+        Vector{T}(),                          # Constant lower bound on state variables
+        Vector{T}(),                          # Constant upper bound on state variables
+        Vector{T}(),                          # slope on XL -> time always starts at zero
+        Vector{T}(),                          # slope on XU -> time always starts at zero
+        Matrix{T}(undef, 1, 1),               # time varying lower bounds on states # ! NOTE: not used currently
+        Matrix{T}(undef, 1, 1),               # time varying upper bounds on states # ! NOTE: not used currently
+        Vector{T}(),                          # Constant lower bound on control variables
+        Vector{T}(),                          # Constant upper bound on control variables
+        Vector{Int}(),                        # number of collocation points per interval
+        Vector{Int}(),                        # cumulative number of points per interval
+        Vector{Int}(),                        # [0;cumsum(n.ocp.Nck+1)]
+        Int(0),                               # number of intervals
+        Matrix{T}(undef, 1, 1),               # Node points ---> Nc increasing and distinct numbers ∈ [-1,1]
+        Matrix{T}(undef, 1, 1),               # time scaled based off of tau
+        Matrix{T}(undef, 1, 1),               # weights
+        Matrix{T}(undef, 1, 1),               # scaled weights
+        Vector{Matrix{T}}(),                  # differention matrix
+        Vector{Matrix{T}}(),                  # integration matrix
+        Int(0),                               # number of points in discretization
+        Vector{T}(),                          # array of dts
+        JuMP.Model(),                         # JuMP model
+        Any[],                                # Jump model parameters
+        Any[],                                # ? DX expression
+        Any[],                                # ! Unused - Nonlinear conditions
+        Vector{T}(),                          # scaling factors on states
+        Vector{T}(),                          # scaling factors on controls
+    )
 end
-OCP(T::DataType=Float64) = OCP{T}(
-    State(),                    # state data
-    Control(),                  # control data
-    convert(T, 0),                       # final time
-    convert(T, 0),                       # initial time # TODO: consider getting ride of this! or replace it with n.mpc.v.t0Param
-    Vector{T}(),                # vector for use with time varying constraints
-    Vector{T}(),                # initial state conditions
-    Vector{T}(),                # initial state tolerance
-    Vector{JuMP.Variable}(),    # initial state variables
-    Vector{T}(),                # final state conditions
-    Vector{T}(),                # final state tolerance
-    Vector{JuMP.Variable}(),    # final state variables
-    Vector{T}(),                # Constant lower bound on state variables
-    Vector{T}(),                # Constant upper bound on state variables
-    Vector{T}(),                # slope on XL -> time always starts at zero
-    Vector{T}(),                # slope on XU -> time always starts at zero
-    @variable(JuMP.Model()),    # time varying lower bounds on states # ! NOTE: not used currently
-    @variable(JuMP.Model()),    # time varying upper bounds on states # ! NOTE: not used currently
-    Vector{T}(),                # Constant lower bound on control variables
-    Vector{T}(),                # Constant upper bound on control variables
-    Vector{Int}(),              # number of collocation points per interval
-    Vector{Int}(),              # cumulative number of points per interval
-    Vector{Int}(),              # [0;cumsum(n.ocp.Nck+1)]
-    Int(0),                     # number of intervals
-    Matrix{T}(undef, 0, 0),     # Node points ---> Nc increasing and distinct numbers ∈ [-1,1]
-    Matrix{T}(undef, 0, 0),     # time scaled based off of tau
-    Matrix{T}(undef, 0, 0),     # weights
-    Matrix{T}(undef, 0, 0),     # scaled weights
-    Vector{Matrix{T}}(),        # differention matrix
-    Vector{Matrix{T}}(),        # integration matrix
-    Int(0),                     # number of points in discretization
-    Vector{T}(),                # array of dts
-    JuMP.Model(),               # JuMP model
-    Any[],                      # Jump model parameters
-    Any[],                      # ? DX expression
-    Any[],                      # ! Unused - Nonlinear conditions
-    Vector{T}(),                # scaling factors on states
-    Vector{T}(),                # scaling factors on controls
-)
 
 mutable struct OCPFlags
   defined::Bool  # a bool to tell if define() has been called
-end
-OCPFlags() = OCPFlags(
+  OCPFlags() = new(
     false
 )
+end
 
 mutable struct MPCFlags
     defined::Bool
@@ -142,24 +142,23 @@ mutable struct MPCFlags
     simFailed::Vector{Union{Bool, Symbol}}   # a bool to indicate that the simulation failed and a symbol to indicate why
     ipDefined::Bool
     epDefined::Bool
-end
-MPCFlags() = MPCFlags(
+    MPCFlags() = new(
     false,
     false,
     [false, :NaN],
     false,
     false
 )
-
+end
 
 mutable struct Flags
     ocp::OCPFlags
     mpc::MPCFlags
-end
-Flags() = Flags(
+    Flags() = new(
     OCPFlags(),
     MPCFlags()
 )
+end
 
 abstract type AbstractNLOpt end
 mutable struct NLOpt{T <: Number} <: AbstractNLOpt
@@ -169,14 +168,14 @@ mutable struct NLOpt{T <: Number} <: AbstractNLOpt
     s::Settings
     r::Results{T}
     f::Flags
-end
-NLOpt(T::DataType=Float64) = NLOpt{T}(
+    NLOpt(T::DataType=Float64) = new{T}(
     OCP(T),
     MPC(T),
     Settings(),
     Results(T),
     Flags()
 )
+end
 
 export  NLOpt,
         OCP
