@@ -32,7 +32,7 @@ const pseudoSpectralMethods = [ :lgrExplicit , :lgrImplicit ]
 const trapezoidalMethods = [ :trapezoidal, :bkwEuler ]
 
 include("math.jl")
-include("NLOptTypes.jl")
+include("types.jl")
 
 include("NLOptBaseutils.jl")
 export  resultsDir!,
