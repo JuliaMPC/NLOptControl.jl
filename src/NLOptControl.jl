@@ -14,6 +14,11 @@ import LinearAlgebra
 
 include("NLOptBase.jl")
 using .NLOptBase
+export  State,
+        Control,
+        Constraint,
+        Results,
+        Settings
 
 include("NLOptMPC.jl")
 using .NLOptMPC
@@ -267,5 +272,16 @@ NLOpt(T::DataType=Float64) = NLOpt{T}(
     Results(T),
     Flags()
 )
+
+include("NLOptBaseutils.jl")
+export  resultsDir!,
+        evalConstraints!,
+        postProcess!,
+        optimize!,
+        interpolateLagrange!,
+        interpolateLinear!,
+        interpolate_lagrange,
+        opt2dfs!
+# TODO: make a hamiltonian function
 
 end # module
