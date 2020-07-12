@@ -32,9 +32,11 @@ const pseudoSpectralMethods = [ :lgrExplicit , :lgrImplicit ]
 const trapezoidalMethods = [ :trapezoidal, :bkwEuler ]
 
 include("math.jl")
+
 include("types.jl")
 
-include("NLOptBaseutils.jl")
+include("utils.jl")
+# TODO: make a hamiltonian function
 export  resultsDir!,
         evalConstraints!,
         postProcess!,
@@ -42,11 +44,8 @@ export  resultsDir!,
         interpolateLagrange!,
         interpolateLinear!,
         interpolate_lagrange,
-        opt2dfs!
-# TODO: make a hamiltonian function
-
-include("NLOptMPCutils.jl")
-export  defineMPC!,
+        opt2dfs!,
+        defineMPC!,
         initOpt!,
         defineIP!,
         mapNames!,
@@ -56,10 +55,8 @@ export  defineMPC!,
         goalReached!,
         simMPC!,
         plant2dfs!,
-        predictX0!
-
-include("utils.jl")
-export  defineTolerances!,
+        predictX0!,
+        defineTolerances!,
         linearStateTolerances!,
         newConstraint!,
         evalMaxDualInf,
