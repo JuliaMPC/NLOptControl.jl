@@ -128,7 +128,7 @@ mutable struct PlantResults{ T <: Number }
       Vector{Any}(),           # X0p
       Vector{Any}(),           # X0a
       Vector{Any}(),           # X0e
-      Matrix{Any}(undef,1,1),  # e
+      Matrix{Any}(undef,0,0),  # e
       Vector{DataFrame}(),     # dfsplant
       DataFrame(),             # dfsplantPts
       DataFrame(),             # dfsX0p
@@ -142,73 +142,73 @@ end
 mutable struct OCPResults{ T <: Number }
     tctr::Vector{Any}          # time vector for control
     tst::Vector{Any}           # time vector for state
-    x                          # JuMP states
-    u                          # JuMP controls
-    X                          # states
-    U                          # controls
-    X0                         # initial states for OCP
-    CS                         # costates
-    tpolyPts                   # time sample points for polynomials  (NOTE these interpolated solutions were developed for calulaing error, between them and a known Optimal solution)
-    XpolyPts                   # state evaluated using Lagrange/Linear polynomial
-    CSpolyPts                  # costate evaluated using Lagrange/Linear polynomial
-    UpolyPts                   # control evaluated using Lagrane/Linear polynomial
-    AlltpolyPts                # time sample points for polynomials
-    AllXpolyPts                # state evaluated using Lagrange/Linear polynomial
-    AllCSpolyPts               # costate evaluated using Lagrange/Linear polynomial
-    AllUpolyPts                # control evaluated using Lagrane/Linear polynomial
-    tpts                       # vector time sample points
-    Xpts                       # vector state sample points
-    Upts                       # vector control sample points
-    CSpts                      # vector costate sample points
+    x::Matrix{JuMP.Variable}   # JuMP states
+    u::Matrix{JuMP.Variable}   # JuMP controls
+    X::Matrix{T}               # states
+    U::Matrix{T}               # controls
+    X0::Vector{T}              # initial states for OCP
+    CS::Vector{T}              # costates
+    tpolyPts::Vector{T}        # time sample points for polynomials  (NOTE these interpolated solutions were developed for calculating error, between them and a known Optimal solution)
+    XpolyPts::Matrix{T}        # state evaluated using Lagrange/Linear polynomial
+    CSpolyPts::Matrix{T}       # costate evaluated using Lagrange/Linear polynomial
+    UpolyPts::Matrix{T}        # control evaluated using Lagrane/Linear polynomial
+    AlltpolyPts::Vector{T}     # time sample points for polynomials
+    AllXpolyPts::Matrix{T}     # state evaluated using Lagrange/Linear polynomial
+    AllCSpolyPts::Matrix{T}    # costate evaluated using Lagrange/Linear polynomial
+    AllUpolyPts::Matrix{T}     # control evaluated using Lagrane/Linear polynomial
+    tpts::Vector{T}            # vector time sample points
+    Xpts::Matrix{T}            # vector state sample points
+    Upts::Matrix{T}            # vector control sample points
+    CSpts::Matrix{T}           # vector costate sample points
     x0Con                      # handle for initial state constraints
     x0sCon
     xfCon                      # handle for final state constraints
     xfsCon
     dynCon                     # dynamics constraints
     constraint::Constraint{T}  # constraint handles and data
-    evalNum                    # number of times optimization has been run
+    evalNum::Int               # number of times optimization has been run
     iterNum                    # mics. data, perhaps an iteration number for a higher level algorithm
-    status                     # optimization status
-    tSolve                     # solve time for optimization
-    objVal                     # objective function value
+    status::Symbol             # optimization status
+    tSolve::T                  # solve time for optimization
+    objVal::T                  # objective function value
     dfs::Vector{DataFrame}     # results in DataFrame for plotting
     dfsOpt::DataFrame          # optimization information in DataFrame for plotting
     dfsCon                     # constraint data
     OCPResults(T::DataType=Float64) = new{T}(
-        Vector{Any}(),          # time vector for control
-        Vector{Any}(),          # time vector for state
-        Matrix{Any}(undef,1,1), # JuMP states
-        Matrix{Any}(undef,1,1), # JuMP controls
-        Matrix{Any}(undef,1,1), # states
-        Matrix{Any}(undef,1,1), # controls
-        Vector{Any}(),          # initial states for OCP
-        [],                     # costates
-        [],                     # time sample points for polynomials
-        [],                     # state evaluated using Lagrange polynomial
-        [],                     # costate evaluated using Lagrange polynomial
-        [],                     # control evaluated using Lagrange polynomial
-        [],
-        [],
-        [],
-        [],
-        Vector{Any}(),      # vector time sample points
-        Vector{Any}(),      # vector state sample points
-        Vector{Any}(),      # vector control sample points
-        Vector{Any}(),      # vector costate sample points
-        nothing,            # handle for initial state constraints
+        Vector{T}(),                        # time vector for control
+        Vector{T}(),                        # time vector for state
+        Matrix{JuMP.Variable}(undef,0,0),   # JuMP states
+        Matrix{JuMP.Variable}(undef,0,0),   # JuMP controls
+        Matrix{T}(undef,0,0),               # states
+        Matrix{T}(undef,0,0),               # controls
+        Vector{T}(),                        # initial states for OCP
+        Vector{T}(),                        # costates
+        Vector{T}(),                        # time sample points for polynomials
+        Matrix{T}(undef,0,0),               # state evaluated using Lagrange/Linear polynomial
+        Matrix{T}(undef,0,0),               # costate evaluated using Lagrange/Linear polynomial
+        Matrix{T}(undef,0,0),               # control evaluated using Lagrane/Linear polynomial
+        Vector{T}(),                        # time sample points for polynomials
+        Matrix{T}(undef,0,0),               # state evaluated using Lagrange/Linear polynomial
+        Matrix{T}(undef,0,0),               # costate evaluated using Lagrange/Linear polynomial
+        Matrix{T}(undef,0,0),               # control evaluated using Lagrane/Linear polynomial
+        Vector{T}(),                        # vector time sample points
+        Matrix{T}(undef,0,0),               # vector state sample points
+        Matrix{T}(undef,0,0),               # vector control sample points
+        Matrix{T}(undef,0,0),               # vector costate sample points
         nothing,
-        nothing,            # handle for final state constraints
         nothing,
-        nothing,            # dynamics constraint
-        Constraint(Float64), # constraint data
-        1,                  # current evaluation number
-        [],                 # mics. data, perhaps an iteration number for a higher level algorithm
-        Symbol,             # optimization status
-        Float64,            # solve time for optimization
-        Float64,            # objective function value
-        Vector{DataFrame}(),                 # results in DataFrame for plotting
-        DataFrame(),        # optimization information in DataFrame for plotting
-        []                  # constraint data
+        nothing,                            # handle for final state constraints
+        nothing,
+        nothing,                            # dynamics constraint
+        Constraint(T), # constraint data
+        1,                                  # current evaluation number
+        [],                                 # mics. data, perhaps an iteration number for a higher level algorithm
+        :undef,                             # optimization status
+        parse(T,0),                         # solve time for optimization
+        parse(T,0),                         # objective function value
+        Vector{DataFrame}(),                # results in DataFrame for plotting
+        DataFrame(),                        # optimization information in DataFrame for plotting
+        []                                  # constraint data
     )
 end
 

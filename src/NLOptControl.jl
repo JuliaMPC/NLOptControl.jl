@@ -4,14 +4,22 @@ module NLOptControl
 #TODO  enable setvalue() functionality
 
 using JuMP
-import JuMP: setRHS, 
-             getvalue, 
-             setvalue, 
-             @NLexpression, 
-             @NLobjective, 
-             @NLparameter, 
-             @NLconstraint, 
+import JuMP: setRHS,
+             getvalue,
+             setvalue,
+             @NLexpression,
+             @NLobjective,
+             @NLparameter,
+             @NLconstraint,
              internalmodel
+export @NLexpression,
+       @NLobjective,
+       @NLparameter,
+       @NLconstraint,
+       setvalue,
+       getvalue,
+       setRHS
+
 using Ipopt
 using FastGaussQuadrature
 using DataFrames
@@ -34,59 +42,59 @@ export MPC
 
 # Optimal Control Problem Structure
 mutable struct OCP{T <: Number}
-  # general properties
-  state::State                      # state data
-  control::Control                  # control data
-  tf::T                             # final time
-  t0::T                             # initial time # TODO: consider getting rid of this or replacing it with `n.mpc.v.t0Param`
-  tV::Vector{T}                     # vector for use with time varying constraints
+    # general properties
+    state::State                      # state data
+    control::Control                  # control data
+    tf::T                             # final time
+    t0::JuMP.NonlinearParameter       # initial time # TODO: consider getting rid of this or replacing it with `n.mpc.v.t0Param`
+    tV::Vector{T}                     # vector for use with time varying constraints
 
-  # Boundary conditions
-  X0::Vector{T}                     # initial state conditions
-  X0_tol::Vector{T}                 # initial state tolerance
-  x0s::Vector{JuMP.Variable}        # initial state variables
-  XF::Vector{T}                     # final state conditions
-  XF_tol::Vector{T}                 # final state tolerance
-  xFs::Vector{JuMP.Variable}        # final state variables
+    # Boundary conditions
+    X0::Vector{T}                     # initial state conditions
+    X0_tol::Vector{T}                 # initial state tolerance
+    x0s::Vector{JuMP.Variable}        # initial state variables
+    XF::Vector{T}                     # final state conditions
+    XF_tol::Vector{T}                 # final state tolerance
+    xFs::Vector{JuMP.Variable}        # final state variables
 
-  # Constant bounds on state variables
-  XL::Vector{T}                     # Constant lower bound on state variables
-  XU::Vector{T}                     # Constant upper bound on state variables
+    # Constant bounds on state variables
+    XL::Vector{T}                     # Constant lower bound on state variables
+    XU::Vector{T}                     # Constant upper bound on state variables
 
-  # Variables for linear bounds on state variables
-  mXL::Vector{T}                    # slope on XL -> time always starts at zero
-  mXU::Vector{T}                    # slope on XU -> time always starts at zero
-  XL_var::JuMP.Variable             # time varying lower bounds on states # ! NOTE: not used currently
-  XU_var::JuMP.Variable             # time varying upper bounds on states # ! NOTE: not used currently
+    # Variables for linear bounds on state variables
+    mXL::Vector{T}                    # slope on XL -> time always starts at zero
+    mXU::Vector{T}                    # slope on XU -> time always starts at zero
+    XL_var::Matrix{T}                 # time varying lower bounds on states # ! NOTE: not used currently - was JuMP.Variable
+    XU_var::Matrix{T}                 # time varying upper bounds on states # ! NOTE: not used currently - was JuMP.Variable
 
-  # Constant bounds on control variables
-  CL::Vector{T}                     # Constant lower bound on control variables
-  CU::Vector{T}                     # Constant upper bound on control variables
+    # Constant bounds on control variables
+    CL::Vector{T}                     # Constant lower bound on control variables
+    CU::Vector{T}                     # Constant upper bound on control variables
 
-  # Pseudospectral method data
-  Nck::Vector{Int}                  # number of collocation points per interval
-  Nck_cum::Vector{Int}              # cumulative number of points per interval
-  Nck_full::Vector{Int}             # [0;cumsum(n.ocp.Nck+1)]
-  Ni::Int                           # number of intervals
-  tau::Matrix{T}                    # Node points ---> Nc increasing and distinct numbers ∈ [-1,1]
-  ts::Matrix{T}                     # time scaled based off of tau
-  w::Matrix{T}                      # weights
-  ws::Matrix{T}                     # scaled weights
-  DMatrix::Vector{Matrix{T}}        # differention matrix
-  IMatrix::Vector{Matrix{T}}        # integration matrix
+    # Pseudospectral method data
+    Nck::Vector{Int}                  # number of collocation points per interval
+    Nck_cum::Vector{Int}              # cumulative number of points per interval
+    Nck_full::Vector{Int}             # [0;cumsum(n.ocp.Nck+1)]
+    Ni::Int                           # number of intervals
+    tau::Matrix{T}                    # Node points ---> Nc increasing and distinct numbers ∈ [-1,1]
+    ts::Matrix{T}                     # time scaled based off of tau
+    w::Matrix{T}                      # weights
+    ws::Matrix{T}                     # scaled weights
+    DMatrix::Vector{Matrix{T}}        # differention matrix
+    IMatrix::Vector{Matrix{T}}        # integration matrix
 
-  # tm method data
-  N::Int                            # number of points in discretization
-  dt::Vector{T}                     # array of dts
+    # tm method data
+    N::Int                            # number of points in discretization
+    dt::Vector{T}                     # array of dts
 
-  mdl::JuMP.Model                   # JuMP model
-  params                            # parameters for the models
-  DXexpr                            # ? DX expression
-  NLcon                             # ! NOTE: not used currently
+    mdl::JuMP.Model                   # JuMP model
+    params                            # parameters for the models
+    DXexpr                            # ? DX expression
+    NLcon                             # ! NOTE: not used currently
 
-  # Scaling factors
-  XS::Vector{T}                    # scaling factors on states
-  CS::Vector{T}                    # scaling factors on controls
+    # Scaling factors
+    XS::Vector{T}                    # scaling factors on states
+    CS::Vector{T}                    # scaling factors on controls
 
     OCP(T::DataType=Float64) = new{T}(
         State(),                              # state data
@@ -132,8 +140,8 @@ end
 mutable struct OCPFlags
   defined::Bool  # a bool to tell if define() has been called
   OCPFlags() = new(
-    false
-)
+      false
+  )
 end
 
 mutable struct MPCFlags
@@ -143,21 +151,21 @@ mutable struct MPCFlags
     ipDefined::Bool
     epDefined::Bool
     MPCFlags() = new(
-    false,
-    false,
-    [false, :NaN],
-    false,
-    false
-)
+        false,
+        false,
+        [false, :NaN],
+        false,
+        false
+    )
 end
 
 mutable struct Flags
     ocp::OCPFlags
     mpc::MPCFlags
     Flags() = new(
-    OCPFlags(),
-    MPCFlags()
-)
+        OCPFlags(),
+        MPCFlags()
+    )
 end
 
 abstract type AbstractNLOpt end
@@ -169,12 +177,12 @@ mutable struct NLOpt{T <: Number} <: AbstractNLOpt
     r::Results{T}
     f::Flags
     NLOpt(T::DataType=Float64) = new{T}(
-    OCP(T),
-    MPC(T),
-    Settings(),
-    Results(T),
-    Flags()
-)
+        OCP(T),
+        MPC(T),
+        Settings(),
+        Results(T),
+        Flags()
+    )
 end
 
 export  NLOpt,
@@ -251,14 +259,5 @@ export  minDF,
         xlims!,
         ylims!,
         plot
-
-# JuMP functions
-export @NLexpression,
-       @NLobjective,
-       @NLparameter,
-       @NLconstraint,
-       setvalue,
-       getvalue,
-       setRHS
 
 end # module

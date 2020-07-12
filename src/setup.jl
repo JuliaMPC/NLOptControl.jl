@@ -12,14 +12,14 @@ Source: DecisionVector.m [located here](https://sourceforge.net/p/gmat/git/ci/26
 function define(;
     numStates::Int = 0,
     numControls::Int = 0,
-    X0 = fill(NaN,numStates,),
-    XF = fill(NaN,numStates,),
-    XL = fill(NaN,numStates,),
-    XU = fill(NaN,numStates,),
-    CL = fill(NaN,numControls,),
-    CU = fill(NaN,numControls,),
-    XS = fill(1.,numStates,),
-    CS = fill(1.,numControls,)
+    X0 = fill(NaN,numStates),
+    XF = fill(NaN,numStates),
+    XL = fill(NaN,numStates),
+    XU = fill(NaN,numStates),
+    CL = fill(NaN,numControls),
+    CU = fill(NaN,numControls),
+    XS = fill(1.0,numStates),
+    CS = fill(1.0,numControls)
 )::NLOpt
 
     n = NLOpt()
@@ -171,28 +171,28 @@ function OCPdef!(n::NLOpt)
     for st in 1:n.ocp.state.num
         # lower state constraint
         if !isnan.(n.ocp.XL[st])
-        if n.ocp.mXL[st] == false
-            for j in 1:n.ocp.state.pts
-            setlowerbound(x[j,st], n.ocp.XL[st]/n.ocp.XS[st])
+            if n.ocp.mXL[st] == false
+                for j in 1:n.ocp.state.pts
+                    setlowerbound(x[j,st], n.ocp.XL[st]/n.ocp.XS[st])
+                end
+            else
+                for j in 1:n.ocp.state.pts
+                    setlowerbound(x[j,st], n.ocp.XL_var[st,j]/n.ocp.XS[st])
+                end
             end
-        else
-            for j in 1:n.ocp.state.pts
-            setlowerbound(x[j,st], n.ocp.XL_var[st,j]/n.ocp.XS[st])
-            end
-        end
         end
 
         # upper state constraint
         if !isnan.(n.ocp.XU[st])
-        if n.ocp.XU[st] != false
-            for j in 1:n.ocp.state.pts
-            setupperbound(x[j,st], n.ocp.XU[st]/n.ocp.XS[st])
+            if n.ocp.XU[st] != false
+                for j in 1:n.ocp.state.pts
+                setupperbound(x[j,st], n.ocp.XU[st]/n.ocp.XS[st])
+                end
+            else
+                for j in 1:n.ocp.state.pts
+                setlowerbound(x[j,st], n.ocp.XU_var[st,j]/n.ocp.XS[st])
+                end
             end
-        else
-            for j in 1:n.ocp.state.pts
-            setlowerbound(x[j,st], n.ocp.XU_var[st,j]/n.ocp.XS[st])
-            end
-        end
         end
     end
 
@@ -206,14 +206,14 @@ function OCPdef!(n::NLOpt)
 
     for ctr in 1:n.ocp.control.num
         if !isnan.(n.ocp.CL[ctr])
-        for j in 1:n.ocp.control.pts
-            setlowerbound(u[j,ctr], n.ocp.CL[ctr]/n.ocp.CS[ctr])
-        end
+            for j in 1:n.ocp.control.pts
+                setlowerbound(u[j,ctr], n.ocp.CL[ctr]/n.ocp.CS[ctr])
+            end
         end
         if !isnan.(n.ocp.CU[ctr])
-        for j in 1:n.ocp.control.pts
-            setupperbound(u[j,ctr], n.ocp.CU[ctr]/n.ocp.CS[ctr])
-        end
+            for j in 1:n.ocp.control.pts
+                setupperbound(u[j,ctr], n.ocp.CU[ctr]/n.ocp.CS[ctr])
+            end
         end
     end
 
@@ -243,26 +243,26 @@ function OCPdef!(n::NLOpt)
 
     for st in 1:n.ocp.state.num
         if !isnan(n.ocp.X0[st]) # could have a bool for this
-        if n.s.ocp.x0slackVariables
-            n.r.ocp.x0Con[st,1] = @constraint(n.ocp.mdl, x[1,st]*n.ocp.XS[st] -n.ocp.x0s[st] <=  n.ocp.X0[st])
-            n.r.ocp.x0Con[st,2] = @constraint(n.ocp.mdl,-x[1,st]*n.ocp.XS[st] -n.ocp.x0s[st] <= -n.ocp.X0[st])
-            if !isnan(n.ocp.X0_tol[st])
-            n.r.ocp.x0sCon[st] = @constraint(n.ocp.mdl, n.ocp.x0s[st] <= n.ocp.X0_tol[st])
+            if n.s.ocp.x0slackVariables
+                n.r.ocp.x0Con[st,1] = @constraint(n.ocp.mdl, x[1,st]*n.ocp.XS[st] -n.ocp.x0s[st] <=  n.ocp.X0[st])
+                n.r.ocp.x0Con[st,2] = @constraint(n.ocp.mdl,-x[1,st]*n.ocp.XS[st] -n.ocp.x0s[st] <= -n.ocp.X0[st])
+                if !isnan(n.ocp.X0_tol[st])
+                n.r.ocp.x0sCon[st] = @constraint(n.ocp.mdl, n.ocp.x0s[st] <= n.ocp.X0_tol[st])
+                end
+            else
+                n.r.ocp.x0Con = [n.r.ocp.x0Con; @constraint(n.ocp.mdl, x[1,st]*n.ocp.XS[st] == n.ocp.X0[st])]
             end
-        else
-            n.r.ocp.x0Con = [n.r.ocp.x0Con; @constraint(n.ocp.mdl, x[1,st]*n.ocp.XS[st] == n.ocp.X0[st])]
-        end
         end
         if !isnan(n.ocp.XF[st])
-        if n.s.ocp.xFslackVariables
-            n.r.ocp.xfCon[st,1] = @constraint(n.ocp.mdl, x[end,st]*n.ocp.XS[st] -n.ocp.xFs[st] <=  n.ocp.XF[st] )
-            n.r.ocp.xfCon[st,2] = @constraint(n.ocp.mdl,-x[end,st]*n.ocp.XS[st] -n.ocp.xFs[st] <= -n.ocp.XF[st] )
-            if !isnan(n.ocp.XF_tol[st])
-            n.r.ocp.xfsCon[st] = @constraint(n.ocp.mdl, n.ocp.xFs[st] <= n.ocp.XF_tol[st])
+            if n.s.ocp.xFslackVariables
+                n.r.ocp.xfCon[st,1] = @constraint(n.ocp.mdl, x[end,st]*n.ocp.XS[st] -n.ocp.xFs[st] <=  n.ocp.XF[st] )
+                n.r.ocp.xfCon[st,2] = @constraint(n.ocp.mdl,-x[end,st]*n.ocp.XS[st] -n.ocp.xFs[st] <= -n.ocp.XF[st] )
+                if !isnan(n.ocp.XF_tol[st])
+                    n.r.ocp.xfsCon[st] = @constraint(n.ocp.mdl, n.ocp.xFs[st] <= n.ocp.XF_tol[st])
+                end
+            else
+                n.r.ocp.xfCon = [n.r.ocp.xfCon; @constraint(n.ocp.mdl, x[end,st]*n.ocp.XS[st] == n.ocp.XF[st])]
             end
-        else
-            n.r.ocp.xfCon = [n.r.ocp.xfCon; @constraint(n.ocp.mdl, x[end,st]*n.ocp.XS[st] == n.ocp.XF[st])]
-        end
         end
     end
 
@@ -270,71 +270,73 @@ function OCPdef!(n::NLOpt)
     n.ocp.t0 = t0_param  # NOTE consider making a constraint that t0 < tf
 
     if n.s.ocp.integrationMethod == :ps
-        n.r.ocp.dynCon = [Array{Any}(undef, n.ocp.Nck[int],n.ocp.state.num) for int in 1:n.ocp.Ni]
-        dynamics_expr = [Array{Any}(undef, n.ocp.Nck[int],n.ocp.state.num) for int in 1:n.ocp.Ni]
+        n.r.ocp.dynCon = [ Array{Any}(undef, n.ocp.Nck[int],n.ocp.state.num) for int in 1:n.ocp.Ni]
+        dynamics_expr  = [ Array{Any}(undef, n.ocp.Nck[int],n.ocp.state.num) for int in 1:n.ocp.Ni]
 
         if n.s.ocp.finalTimeDV
-        @variable(n.ocp.mdl, n.s.ocp.tfMin <= tf <=  n.s.ocp.tfMax)
-        n.ocp.tf = tf
-        create_tV!(n)          # make a time vector
+            @variable(n.ocp.mdl, n.s.ocp.tfMin <= tf <=  n.s.ocp.tfMax)
+            n.ocp.tf = tf
+            create_tV!(n)          # make a time vector
         end
 
         for int in 1:n.ocp.Ni
-        x_int,u_int = intervals(n,int,n.r.ocp.x,n.r.ocp.u)
+            x_int,u_int = intervals(n,int,n.r.ocp.x,n.r.ocp.u)
 
-        # dynamics
-        L = size(x_int)[1]-1;
-        dx = Matrix{Any}(undef, L,n.ocp.state.num)
-        for st in 1:n.ocp.state.num
-            dx[:,st] = DiffEq(n,x_int,u_int,L,st)
-        end
-
-        for st in 1:n.ocp.state.num # TODO consider multiplying X*D to reduce computations (i.e. remove this for loop for the states)
-            if n.s.ocp.integrationScheme == :lgrExplicit
-            dynamics_expr[int][:,st] = @NLexpression(n.ocp.mdl, [j in 1:n.ocp.Nck[int]], sum(n.ocp.DMatrix[int][j,i]*x_int[i,st] for i in 1:n.ocp.Nck[int]+1) - ((n.ocp.tf)/2)*dx[j,st]  )
-            elseif n.s.ocp.integrationScheme==:lgrImplicit
-            dynamics_expr[int][:,st] = @NLexpression(n.ocp.mdl, [j in 1:n.ocp.Nck[int]], x_int[j+1,st] - x_int[1,st] - ((n.ocp.tf)/2)*sum(n.ocp.IMatrix[int][j,i]*dx[i,st] for i in 1:n.ocp.Nck[int]) )
+            # dynamics
+            L = size(x_int)[1]-1;
+            dx = Matrix{Any}(undef, L,n.ocp.state.num)
+            for st in 1:n.ocp.state.num
+                dx[:,st] = DiffEq(n,x_int,u_int,L,st)
             end
-            for j in 1:n.ocp.Nck[int]
-            n.r.ocp.dynCon[int][j,st] = @NLconstraint(n.ocp.mdl, 0. == dynamics_expr[int][j,st])
+
+            for st in 1:n.ocp.state.num # TODO consider multiplying X*D to reduce computations (i.e. remove this for loop for the states)
+                if n.s.ocp.integrationScheme == :lgrExplicit
+                    dynamics_expr[int][:,st] = @NLexpression(n.ocp.mdl, [j in 1:n.ocp.Nck[int]], sum(n.ocp.DMatrix[int][j,i]*x_int[i,st] for i in 1:n.ocp.Nck[int]+1) - ((n.ocp.tf)/2)*dx[j,st]  )
+                elseif n.s.ocp.integrationScheme==:lgrImplicit
+                    dynamics_expr[int][:,st] = @NLexpression(n.ocp.mdl, [j in 1:n.ocp.Nck[int]], x_int[j+1,st] - x_int[1,st] - ((n.ocp.tf)/2)*sum(n.ocp.IMatrix[int][j,i]*dx[i,st] for i in 1:n.ocp.Nck[int]) )
+                end
+                for j in 1:n.ocp.Nck[int]
+                    n.r.ocp.dynCon[int][j,st] = @NLconstraint(n.ocp.mdl, 0. == dynamics_expr[int][j,st])
+                end
             end
+
+            # additional constraints
+            for num in 1:length(n.ocp.NLcon)
+                ch = addCon(n,x_int,u_int,L,num)
+                newConstraint!(n,ch,Symbol(string("ch",num))) # TODO could let the user name these
+            end
+
         end
 
-        # additional constraints
-        for num in 1:length(n.ocp.NLcon)
-            ch = addCon(n,x_int,u_int,L,num)
-            newConstraint!(n,ch,Symbol(string("ch",num))) # TODO could let the user name these
-        end
-        end
     elseif n.s.ocp.integrationMethod == :tm
         n.r.ocp.dynCon = Array{Any}(undef, n.ocp.N,n.ocp.state.num)
         if n.s.ocp.finalTimeDV
-        @variable(n.ocp.mdl, n.s.ocp.tfMin <= tf <= n.s.ocp.tfMax)
-        n.ocp.tf = tf
-        create_tV!(n)          # make a time vector
+            @variable(n.ocp.mdl, n.s.ocp.tfMin <= tf <= n.s.ocp.tfMax)
+            n.ocp.tf = tf
+            create_tV!(n) # make a time vector
         end
         n.ocp.dt = n.ocp.tf/n.ocp.N*ones(n.ocp.N,)
 
         L = size(n.r.ocp.x)[1]
         dx = Array{Any}(undef, L,n.ocp.state.num)
         for st in 1:n.ocp.state.num
-        dx[:,st] = DiffEq(n,n.r.ocp.x,n.r.ocp.u,L,st)
+            dx[:,st] = DiffEq(n,n.r.ocp.x,n.r.ocp.u,L,st)
         end
 
-        if n.s.ocp.integrationScheme==:bkwEuler
-        for st in 1:n.ocp.state.num
-            n.r.ocp.dynCon[:,st] = @NLconstraint(n.ocp.mdl, [j in 1:n.ocp.N], n.r.ocp.x[j+1,st] - n.r.ocp.x[j,st] ==  dx[j+1,st]*n.ocp.tf/(n.ocp.N) );
-        end
-        elseif n.s.ocp.integrationScheme==:trapezoidal
-        for st in 1:n.ocp.state.num
-            n.r.ocp.dynCon[:,st] = @NLconstraint(n.ocp.mdl, [j in 1:n.ocp.N], n.r.ocp.x[j+1,st] - n.r.ocp.x[j,st] == 0.5*(dx[j,st] + dx[j+1,st])*n.ocp.tf/(n.ocp.N) )
-        end
+        if n.s.ocp.integrationScheme == :bkwEuler
+            for st in 1:n.ocp.state.num
+                n.r.ocp.dynCon[:,st] = @NLconstraint(n.ocp.mdl, [j in 1:n.ocp.N], n.r.ocp.x[j+1,st] - n.r.ocp.x[j,st] ==  dx[j+1,st]*n.ocp.tf/(n.ocp.N) );
+            end
+        elseif n.s.ocp.integrationScheme == :trapezoidal
+            for st in 1:n.ocp.state.num
+                n.r.ocp.dynCon[:,st] = @NLconstraint(n.ocp.mdl, [j in 1:n.ocp.N], n.r.ocp.x[j+1,st] - n.r.ocp.x[j,st] == 0.5*(dx[j,st] + dx[j+1,st])*n.ocp.tf/(n.ocp.N) )
+            end
         end
 
         # additional constraints
         for num in 1:length(n.ocp.NLcon)
-        ch = addCon(n,n.r.ocp.x,n.r.ocp.u,L,num)
-        newConstraint!(n,ch,Symbol(string("ch",num))) # TODO could let the user name these
+            ch = addCon(n,n.r.ocp.x,n.r.ocp.u,L,num)
+            newConstraint!(n,ch,Symbol(string("ch",num))) # TODO could let the user name these
         end
     end
 
@@ -345,7 +347,9 @@ function OCPdef!(n::NLOpt)
 
     # save the current working directory for navigation purposes
     n.r.mainDir = pwd()
+
     return nothing
+
 end
 
 """
@@ -356,112 +360,120 @@ Date Create: 1/1/2017, Last Modified: 12/06/2019 \n
 -------------------------------------------------------------------------------------\n
 """
 function configure!(n::NLOpt; kwargs... )
-  kw = Dict(kwargs)
 
-  # final time
-  if !haskey(kw,:finalTimeDV);n.s.ocp.finalTimeDV=false;
-  else; n.s.ocp.finalTimeDV=get(kw,:finalTimeDV,0);
-  end
+    kw = Dict(kwargs)
 
-  if !haskey(kw,:tf) && !n.s.ocp.finalTimeDV
-    error("\n If the final is not a design variable pass it as: (:tf=>Float64(some #)) \n
-        If the final time is a design variable, indicate that as: (:finalTimeDV=>true)\n")
-  elseif haskey(kw,:tf) && !n.s.ocp.finalTimeDV
-    n.ocp.tf = get(kw,:tf,0)
-  elseif n.s.ocp.finalTimeDV
-    n.ocp.tf = Any
-  end
-
-  # x0 slack variables
-  if !haskey(kw,:x0slackVariables)
-    if !any(isnan.(n.ocp.X0_tol))
-      n.s.ocp.x0slackVariables = true
+    # final time
+    if !haskey(kw,:finalTimeDV)
+        n.s.ocp.finalTimeDV = false;
     else
-      n.s.ocp.x0slackVariables = false # default
+        n.s.ocp.finalTimeDV = get(kw,:finalTimeDV,0)
     end
-  else; n.s.ocp.x0slackVariables=get(kw,:x0slackVariables,0);  # TODO check to see if user is using tolerances and passed false to configure
-  end
 
-  # xF slack variables
-  if !haskey(kw,:xFslackVariables)
-    if !any(isnan.(n.ocp.XF_tol))
-      n.s.ocp.xFslackVariables = true
+    if !haskey(kw,:tf) && !n.s.ocp.finalTimeDV
+        error("\n If the final time is not a design variable pass it as: (:tf=>Float64(some #)) \n
+            If the final time is a design variable, indicate that as: (:finalTimeDV=>true)\n")
+    elseif haskey(kw,:tf) && !n.s.ocp.finalTimeDV
+        n.ocp.tf = get(kw,:tf,0)
+    elseif n.s.ocp.finalTimeDV
+        n.ocp.tf = Any
+    end
+
+    # x0 slack variables
+    if !haskey(kw,:x0slackVariables)
+        n.s.ocp.x0slackVariables = !any(isnan.(n.ocp.X0_tol))
     else
-      n.s.ocp.xFslackVariables = false # default
+        n.s.ocp.x0slackVariables = get(kw,:x0slackVariables,0) # TODO check to see if user is using tolerances and passed false to configure
     end
-  else; n.s.ocp.xFslackVariables=get(kw,:xFslackVariables,0);
-  end
 
-  # integrationScheme
-  if !haskey(kw,:integrationScheme); n.s.ocp.integrationScheme=:lgrExplicit; # default
-  else; n.s.ocp.integrationScheme=get(kw,:integrationScheme,0);
-  end
-
-  if n.s.ocp.integrationScheme==:lgrExplicit ||  n.s.ocp.integrationScheme==:lgrImplicit
-    n.s.ocp.integrationMethod = :ps
-  elseif n.s.ocp.integrationScheme==:trapezoidal || n.s.ocp.integrationScheme==:bkwEuler
-    n.s.ocp.integrationMethod = :tm
-  else
-    error("the :integrationScheme that you specified is not currently implemeted \n")
-  end
-
-  if n.s.ocp.integrationMethod==:ps
-    if haskey(kw,:N)
-      error(" \n N is not an appropriate kwargs for :ps methods \n")
+    # xF slack variables
+    if !haskey(kw,:xFslackVariables)
+        n.s.ocp.xFslackVariables = !any(isnan.(n.ocp.XF_tol))
+    else
+        n.s.ocp.xFslackVariables = get(kw,:xFslackVariables,0)
     end
-    if !haskey(kw,:Nck);n.ocp.Nck = [10,10,10,10]; # default
-    else; n.ocp.Nck = get(kw,:Nck,0);
-    end
-    n.ocp.Ni = length(n.ocp.Nck)
 
-    for int in 1:n.ocp.Ni
-        if (n.ocp.Nck[int]<0)
-            error("\n Nck must be > 0");
+    # integrationScheme
+    if !haskey(kw,:integrationScheme)
+         n.s.ocp.integrationScheme = :lgrExplicit # default
+    else
+         n.s.ocp.integrationScheme = get(kw,:integrationScheme,0)
+    end
+
+    if n.s.ocp.integrationScheme == :lgrExplicit ||  n.s.ocp.integrationScheme == :lgrImplicit
+        n.s.ocp.integrationMethod = :ps
+    elseif n.s.ocp.integrationScheme == :trapezoidal || n.s.ocp.integrationScheme == :bkwEuler
+        n.s.ocp.integrationMethod = :tm
+    else
+        error("The :integrationScheme that you specified ($(n.s.ocp.integrationScheme)) is not currently implemeted \n")
+    end
+
+    if n.s.ocp.integrationMethod == :ps
+        if haskey(kw,:N)
+            error(" \n N is not an appropriate kwargs for :ps methods \n")
         end
+        if !haskey(kw,:Nck)
+            n.ocp.Nck = [10,10,10,10] # default
+        else
+             n.ocp.Nck = get(kw,:Nck,0)
+        end
+        n.ocp.Ni = length(n.ocp.Nck)
+
+        for int in 1:n.ocp.Ni
+            if (n.ocp.Nck[int] < 0)
+                error("\n Nck must be > 0");
+            end
+        end
+
+        n.ocp.state.pts = sum(n.ocp.Nck) + 1
+        n.ocp.control.pts = sum(n.ocp.Nck)
+        n.ocp.Nck_full = [0 ; cumsum(n.ocp.Nck.+1)]
+        n.ocp.Nck_cum = [0 ; cumsum(n.ocp.Nck)]
+
+        # initialize node data
+        if n.s.ocp.integrationScheme == :lgrExplicit ||  n.s.ocp.integrationScheme == :lgrImplicit
+            taus_and_weights = [ gaussradau(n.ocp.Nck[int]) for int in 1:n.ocp.Ni ]
+        end
+        n.ocp.tau = hcat([ taus_and_weights[int][1] for int in 1:n.ocp.Ni ]...)
+        n.ocp.w = hcat([ taus_and_weights[int][2] for int in 1:n.ocp.Ni ]...)
+        createIntervals!(n)
+        DMatrix!(n)
+
+    elseif n.s.ocp.integrationMethod == :tm
+        if haskey(kw, :Nck)
+            error(" \n :$(:Nck) is not appropriate kwargs for :$(:tm) methods \n")
+        end
+        if !haskey(kw, :N)
+            n.ocp.N = 100 # default
+        else
+            n.ocp.N = get(kw,:N,0)
+        end
+        n.ocp.state.pts = n.ocp.N + 1
+        n.ocp.control.pts = n.ocp.N + 1
     end
-    n.ocp.state.pts = sum(n.ocp.Nck) + 1
-    n.ocp.control.pts = sum(n.ocp.Nck)
-    n.ocp.Nck_full = [0;cumsum(n.ocp.Nck.+1)]
-    n.ocp.Nck_cum = [0;cumsum(n.ocp.Nck)]
+    n.ocp.mXL = falses(n.ocp.state.num)
+    n.ocp.mXU = falses(n.ocp.state.num)
+    n.ocp.XL_var = Matrix{Float64}(undef, n.ocp.state.num, n.ocp.state.pts)
+    n.ocp.XU_var = Matrix{Float64}(undef, n.ocp.state.num, n.ocp.state.pts)
 
-    # initialize node data
-    if n.s.ocp.integrationScheme==:lgrExplicit ||  n.s.ocp.integrationScheme==:lgrImplicit
-      taus_and_weights = [ gaussradau(n.ocp.Nck[int]) for int in 1:n.ocp.Ni ];
+    # solver settings
+    if !haskey(kw,:solverSettings)
+        SS = Dict(:name=>:Ipopt) # default
+    else
+        SS = Dict(get(kw, :solverSettings, 0))
     end
-    n.ocp.tau = [ taus_and_weights[int][1] for int in 1:n.ocp.Ni ]
-    n.ocp.w = [ taus_and_weights[int][2] for int in 1:n.ocp.Ni ]
-    createIntervals!(n)
-    DMatrix!(n)
+    defineSolver!(n,SS)
 
-  elseif n.s.ocp.integrationMethod==:tm
-    if haskey(kw,:Nck)
-      error(" \n Nck is not appropriate kwargs for :tm methods \n")
+    # optimal control problem
+    OCPdef!(n)
+
+    if n.s.ocp.evalCostates
+        if n.s.ocp.integrationMethod != :ps
+            error("costates are only implmented for :ps methods")
+        end
+        n.s.ocp.evalConstraints = true
     end
-    if !haskey(kw,:N);n.ocp.N = 100; # default
-    else; n.ocp.N = get(kw,:N,0);
-    end
-    n.ocp.state.pts = n.ocp.N + 1
-    n.ocp.control.pts = n.ocp.N + 1
-  end
-  n.ocp.mXL = falses(n.ocp.state.num)
-  n.ocp.mXU = falses(n.ocp.state.num)
-  n.ocp.XL_var = Matrix{Float64}(undef, n.ocp.state.num, n.ocp.state.pts)
-  n.ocp.XU_var = Matrix{Float64}(undef, n.ocp.state.num, n.ocp.state.pts)
 
-  # solver settings
-  if !haskey(kw,:solverSettings);SS = Dict((:name=>:Ipopt)); # default
-  else; SS = get(kw,:solverSettings,0); SS = Dict(SS);
-  end
-  defineSolver!(n,SS)
+    return nothing
 
-  # optimal control problem
-  OCPdef!(n)
-
-  if n.s.ocp.evalCostates
-     if n.s.ocp.integrationMethod != :ps
-       error("costates are only implmented for :ps methods")
-     end
-     n.s.ocp.evalConstraints = true
-  end
-  return nothing
 end
