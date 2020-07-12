@@ -123,33 +123,67 @@ https://math.stackexchange.com/questions/1105160/evaluate-derivative-of-lagrange
 
 """
 function polyDiff(x)  #TODO get rid of B stuff
-    N = length(x);
-    x = vcat(x...);                     # Make sure x is a column vector
-    M = 1;                        # assume
-    alpha = ones(N,1);
-    B = zeros(M,N);
-    L= Matrix{Bool}(LinearAlgebra.I, N, N);
-    XX = repeat(x,1,N);
-    DX = XX-XX';                 # DX contains entries x(k)-x(j).
-    DX[L] = ones(N,1);           # Put 1's one the main diagonal.
-    c = alpha.*prod(DX,dims=2);       # Quantities c(j).
-    C = repeat(c,1,N);
-    C = C./C';                   # Matrix with entries c(k)/c(j).
-    Z = 1 ./ DX;                   # Z contains entries 1/(x(k)-x(j))
-    Z[L] = zeros(N,1);           # with zeros on the diagonal.
-    X = Z';                      # X is same as Z', but with
-    # diagonal entries removed.
-    flag = trues(size(X));
-    flag[L] .= false;
-    X = X[flag];
-    X = reshape(X,N-1,N);
-    Y = ones(N-1,N);             # Initialize Y and D matrices.
-    D = Matrix{Float64}(LinearAlgebra.I,N,N);                  # Y is matrix of cumulative sums,
-    temp = reshape(B[1,:],1,N)
-    Y   = cumsum([temp; Y[1:N-1,:].*X], dims=1);     # Diagonals
-    D   = Z.*(C.*repeat(LinearAlgebra.diag(D),1,N) - D);   # Off-diagonals
-    D[L]   = Y[N,:];                         # Correct the diagonal
+
+    N = length(x)
+
+    x = x[:]
+
+    M = 1
+
+    alpha = ones(N, 1)
+
+    B = zeros(M, N)
+
+    L = Matrix{Bool}(LinearAlgebra.I, N, N)
+
+    XX = repeat(x, 1, N)
+
+    # DX contains entries x(k)-x(j).
+    DX = XX - XX'
+
+    # Put 1's one the main diagonal.
+    DX[L] = ones(N, 1)
+
+    # Quantities c(j)
+    c = alpha .* prod(DX, dims=2)
+
+    C = repeat(c, 1, N)
+
+    # Matrix with entries c(k)/c(j).
+    C = C ./ C'
+
+    # Z contains entries 1/(x(k)-x(j))
+    Z = 1 ./ DX
+
+    # with zeros on the diagonal.
+    Z[L] = zeros(N, 1)
+
+    # X is same as Z', but with
+    X = Z'
+
+    X = X[~L]
+
+    X = reshape(X, N-1, N)
+
+    # Initialize Y and D matrices.
+    Y = ones(N-1, N)
+
+    # Y is matrix of cumulative sums,
+    D = Matrix{Float64}(LinearAlgebra.I, N, N)
+
+    temp = reshape(B[1,:], 1, N)
+
+    # Diagonals
+    Y = cumsum([ temp ; Y[1:N-1,:] .* X ], dims=1)
+
+    # Off-diagonals
+    D = Z .* (C .* repeat(LinearAlgebra.diag(D),1,N) - D)
+
+    # Correct the diagonal
+    D[L] = Y[N, :]
+
     return D
+
 end
 
 
