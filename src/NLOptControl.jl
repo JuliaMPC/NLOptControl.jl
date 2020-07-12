@@ -29,6 +29,8 @@ using Parameters
 import Printf
 import LinearAlgebra
 
+include("math.jl")
+
 include("NLOptBase.jl")
 using .NLOptBase
 export  State,

@@ -1,54 +1,3 @@
-
-"""
-L = lagrange_basis_poly(x0,x,N,j)
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 12/26/2016, Last Modified: 1/25/2016
-Citations: This function was influenced by the lagrange() function [located here](https://github.com/pjabardo/Jacobi.jl/blob/master/src/gauss_quad.jl)
---------------------------------------------------------------------------------------\n
-# Input Arguments
-* `x0`: point to approximate function value at
-* `x`: x data to used calculate basis polynomials
-* `N`: order of Lagrange interpolating polynomial
-* `j`: index of interest
-
-# Output Arguments
-* `L`: Lagrange basis polynomials
-
-A basic description of Lagrange interpolating polynomials is provided [here](http://127.0.0.1:8000/lagrange_poly.html#lagrange-poly)
-
-"""
-function lagrange_basis_poly(x0::T, x::Vector{T}, N::Int, j::Int) where { T <: Number }
-
-    # L = prod { ( x0 - x_i ) / ( x_j - x_i ) } for i != j
-    return prod( i == j ? T(1) : (x0 - x[i] ) / (x[j] - x[i]) for i = 1:N+1 )
-
-end
-
-"""
-y = interpolate_lagrange(x::Vector{T}, x_data::Vector{T}, y_data::Vector{T}) where {T <: Number}
-"""
-function interpolate_lagrange(x::Vector{T}, x_data::Vector{T}, y_data::Vector{T}) where { T <: Number}
-
-
-    if length(x_data) != length(y_data)
-        error("""
-                ------------------------------------------------------------------
-                There is an error with data vector lengths in `interpolate_lagrange`
-                ------------------------------------------------------------------
-                The following variables should be equal:
-                length(x_data) = $(length(x_data))
-                length(y_data) = $(length(y_data))
-                """)
-    end
-
-    Ni = length(x)
-    Nj = length(x_data)
-
-    return [ sum( (lagrange_basis_poly(x[i], x_data, Nj  - 1, j) * y_data[j]) for j = 1:Nj ) for i = 1:Ni ]
-
-end
-
 """
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
@@ -245,16 +194,7 @@ function interpolateLinear!(n::NLOpt; numPts::Int=250, tfOptimal::Any=false)
   end
   return nothing
 end
-"""
-scale_tau(tau,ta,tb)
---------------------------------------------------------------------------------------\n
-Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 12/23/2017, Last Modified: 12/06/2019 \n
---------------------------------------------------------------------------------------\n
-"""
-function scale_tau(tau,ta,tb)
-  (tb - ta)/2*tau .+ (ta + tb)/2
-end
+
 
 """
 plant2dfs!(n,sol)
