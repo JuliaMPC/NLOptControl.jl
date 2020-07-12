@@ -22,6 +22,7 @@ export  State,
 
 include("NLOptMPC.jl")
 using .NLOptMPC
+export MPC
 
 # scripts
 include("utils.jl")
@@ -283,5 +284,18 @@ export  resultsDir!,
         interpolate_lagrange,
         opt2dfs!
 # TODO: make a hamiltonian function
+
+include("NLOptMPCutils.jl")
+export  defineMPC!,
+        initOpt!,
+        defineIP!,
+        mapNames!,
+        simIPlant!,
+        updateX0!,
+        currentIPState,
+        goalReached!,
+        simMPC!,
+        plant2dfs!,
+        predictX0!
 
 end # module
