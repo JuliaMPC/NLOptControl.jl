@@ -1,5 +1,5 @@
 """
-linearStateTolerances!(n)
+linearStateTolerances!(n::NLOpt)
 # the purpose of this function is to taper the tolerances on the constant state constraints
 # the idea is that when doing MPC, the final states are well within the bounds so that the next optimization is not initalized at an infeasible point
 # if you want a constant bond, set the slope to zero
@@ -38,7 +38,7 @@ function linearStateTolerances!(n::NLOpt;
 end
 
 """
-defineTolerances!(n)
+defineTolerances!(n::NLOpt)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/8/2017, Last Modified: 4/13/2018 \n
@@ -54,7 +54,7 @@ function defineTolerances!(n::NLOpt;
 end
 
 """
-create_tV!(n)
+create_tV!(n::NLOpt)
 # define a time vector (n.ocp.tV) for use with time varying constraints when (finalTimeDV=>true)
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
@@ -86,7 +86,7 @@ function create_tV!(n::NLOpt)
 end
 
 """
-obj=integrate!(n,:(u1))
+obj=integrate!(n::NLOpt,:(u1))
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 1/2/2017, Last Modified: 12/06/2019 \n
@@ -130,14 +130,14 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 2/7/2017, Last Modified: 4/13/2018 \n
 --------------------------------------------------------------------------------------\n
 """
-function initConstraint!(n)
+function initConstraint!(n::NLOpt)
   if n.r.ocp.constraint === nothing
     n.r.ocp.constraint = Constraint()
   end
   return nothing
 end
 
-function newConstraint!(n,handle,name::Symbol)
+function newConstraint!(n::NLOpt,handle,name::Symbol)
   initConstraint!(n)
   n.r.ocp.constraint::Constraint = n.r.ocp.constraint
   push!(n.r.ocp.constraint.handle,handle)
@@ -145,9 +145,8 @@ function newConstraint!(n,handle,name::Symbol)
   return nothing
 end
 
-
 """
-maxDualInf = evalMaxDualInf(n)
+maxDualInf = evalMaxDualInf(n::NLOpt)
 # funtionality to evaluate maximum dual infeasibility of problem
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
@@ -281,7 +280,7 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 3/26/2017, Last Modified: 12/06/2019 \n
 --------------------------------------------------------------------------------------\n
 """
-function savePlantData!(n)
+function savePlantData!(n::NLOpt)
   if isempty(n.r.ip.plant)
     @warn "No plant data to save.\n
           Make sure that n.s.save = true "
@@ -299,7 +298,7 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 6/7/2018, Last Modified: 12/06/2019 \n
 --------------------------------------------------------------------------------------\n
 """
-function saveOptData(n)
+function saveOptData(n::NLOpt)
   if isempty(n.r.ocp.dfsOpt)
     @warn "No optimization data to save.\n
           Make sure that n.s.save = true "
@@ -318,7 +317,7 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 10/3/2017, Last Modified: 11/11/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function saveData(n)
+function saveData(n::NLOpt)
   # all polynomial data
   dfs=DataFrame();
 
@@ -349,7 +348,7 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 9/14/2017, Last Modified: 9/19/2017 \n
 --------------------------------------------------------------------------------------\n
 """
-function saveBenchMarkData!(n)
+function saveBenchMarkData!(n::NLOpt)
   first=2
   dfs=DataFrame();
   temp = [n.r.ocp.dfs[jj][:t][1:end-1,:] for jj in first:length(n.r.ocp.dfs)]; # time

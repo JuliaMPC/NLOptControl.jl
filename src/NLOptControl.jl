@@ -4,12 +4,20 @@ module NLOptControl
 #TODO  enable setvalue() functionality
 
 using JuMP
-import JuMP.setRHS, JuMP.getvalue, JuMP.setvalue, JuMP.@NLexpression, JuMP.@NLobjective, JuMP.@NLparameter, JuMP.@NLconstraint, JuMP.internalmodel
+import JuMP: setRHS, 
+             getvalue, 
+             setvalue, 
+             @NLexpression, 
+             @NLobjective, 
+             @NLparameter, 
+             @NLconstraint, 
+             internalmodel
 using Ipopt
 using FastGaussQuadrature
 using DataFrames
 using CSV
 using Interpolations
+import Printf
 import LinearAlgebra
 
 include("NLOptBase.jl")
@@ -23,110 +31,6 @@ export  State,
 include("NLOptMPC.jl")
 using .NLOptMPC
 export MPC
-
-# scripts
-include("utils.jl")
-include("setup.jl");
-include("ps.jl");
-include("diffeq.jl")
-
-include("PrettyPlots/PrettyPlots.jl")
-using .PrettyPlots
-
-export
-       # Base functions  # TODO: make a hamiltonian function
-       evalConstraints!,
-       postProcess!,
-       optimize!,
-       interpolateLagrange!,
-       interpolateLinear!,
-       interpolate_lagrange,
-       opt2dfs!,
-
-       # setup functions
-       define,
-       configure!,
-       dynamics!,
-       constraints!,
-       NLExpr,
-
-       # extra functions
-       defineSolver!,
-
-       # math functions
-       integrate!,
-
-       # optimization related functions - utils.jl
-       defineTolerances!,
-       linearStateTolerances!,
-
-       # data processing  - utils.jl
-       newConstraint!,
-       evalMaxDualInf,
-       states!,
-       controls!,
-       minDF,
-       maxDF,
-       savePlantData!,
-       saveData,
-       linearSpline,
-       saveOptData,
-
-       # NLOptMPC.jl
-       MPC,
-       defineMPC!,
-       initOpt!,
-       defineIP!,
-       mapNames!,
-       simIPlant!,
-       updateX0!,
-       currentIPState,
-       goalReached!,
-       simMPC!,
-       plant2dfs!,
-       predictX0!,
-
-       # Objects
-       NLOpt,
-
-       # results
-       resultsDir!,  # function to make a results folder
-
-       #JuMP macros and functions
-       @NLexpression,
-       @NLobjective,
-       @NLparameter,
-       @NLconstraint,
-       setvalue,
-       getvalue,
-       setRHS,
-
-
-       # PrettyPlots
-        minDF,
-        maxDF,
-        plotSettings,
-        _pretty_defaults,
-        currentSettings,
-
-        # NLOptControl plots
-        statePlot,
-        controlPlot,
-        costatesPlot,
-        costatesPlots,
-        allPlots,
-        adjust_axis,
-
-        # MPC plots
-        mpcPlot,
-        tPlot,
-        optPlot,
-
-        # Plots.jl exported functions
-        xlims!,
-        ylims!,
-        plot
-        
 
 # Optimal Control Problem Structure
 mutable struct OCP{T <: Number}
@@ -274,6 +178,10 @@ NLOpt(T::DataType=Float64) = NLOpt{T}(
     Flags()
 )
 
+export  NLOpt,
+        OCP
+
+
 include("NLOptBaseutils.jl")
 export  resultsDir!,
         evalConstraints!,
@@ -297,5 +205,61 @@ export  defineMPC!,
         simMPC!,
         plant2dfs!,
         predictX0!
+
+include("utils.jl")
+export  defineTolerances!,
+        linearStateTolerances!,
+        newConstraint!,
+        evalMaxDualInf,
+        states!,
+        controls!,
+        minDF,
+        maxDF,
+        savePlantData!,
+        saveData,
+        linearSpline,
+        saveOptData,
+        integrate!
+
+include("setup.jl");
+export  define,
+        defineSolver!,
+        configure!,
+        dynamics!,
+        constraints!,
+        NLExpr
+
+include("ps.jl");
+include("diffeq.jl")
+
+include("PrettyPlots/PrettyPlots.jl")
+using .PrettyPlots
+
+export  minDF,
+        maxDF,
+        plotSettings,
+        _pretty_defaults,
+        currentSettings,
+        statePlot,
+        controlPlot,
+        costatesPlot,
+        costatesPlots,
+        allPlots,
+        adjust_axis,
+        mpcPlot,
+        tPlot,
+        optPlot,
+        xlims!,
+        ylims!,
+        plot
+
+# JuMP functions
+export @NLexpression,
+       @NLobjective,
+       @NLparameter,
+       @NLconstraint,
+       setvalue,
+       getvalue,
+       setRHS
 
 end # module
