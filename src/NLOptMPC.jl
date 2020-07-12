@@ -3,6 +3,7 @@ module NLOptMPC
 using JuMP
 using OrdinaryDiffEq
 using DiffEqBase
+using Parameters
 
 include("NLOptBase.jl")
 using .NLOptBase
@@ -15,65 +16,38 @@ export MPC
 ########################################################################################
 
 # ? Initial Plant
-mutable struct IP
-    control::Control
-    state::State
-    IP() = new(
-        Control(),
-        State()
-    )
+@with_kw mutable struct IP
+    control::Control    = Control() #
+    state::State        = State()   #
 end
 
 # ? Expected Plant
-mutable struct EP
-    control::Control
-    state::State
-    EP() = new(
-        Control(),
-        State()
-    )
+@with_kw mutable struct EP
+    control::Control    = Control() #
+    state::State        = State()   #
 end
 
 # Model-Predictive Control (MPC) Variables
-mutable struct MPCvariables{ T <: Number }
-    t::T                        # current simulation time (s)
-    tp::Union{T,JuMP.Variable}  # prediction time (if finalTimeDV == true -> this is not known before optimization)
-    tex::T                      # execution horizon time
-    t0Actual::T                 # actual initial time # TODO: ?
-    t0::T                       # mpc initial time # TODO: ?
-    tf::T                       # mpc final time # TODO: ?
-    t0Param::Any                # parameter for mpc t0  # TODO: ? # ! was Any
-    evalNum::Int                # parameter for keeping track of number of MPC evaluations
-    goal::Vector{T}             # goal location w.r.t OCP
-    goalTol::Vector{T}          # tolerance on goal location
-    initOptNum::Int             # number of initial optimization
-    previousSolutionNum::Int    # number of times the previous solution should be used
-    MPCvariables(T::DataType=Float64) = new{T}(
-        convert(T,0.0), # t
-        convert(T,0.0), # tp (might be a JuMP.Variable) # ! was Any
-        convert(T,0.5), # tex
-        convert(T,0.0), # t0Actual
-        convert(T,0.0), # t0
-        convert(T,0.0), # tf
-        Any,            # t0Param
-        1,              # evalNum
-        Vector{T}(),    # goal
-        Vector{T}(),    # goalTol
-        3,              # initOptNum
-        3               # previousSolutionNum
-    )
+@with_kw mutable struct MPCvariables{ T <: Number }
+    t::T                        = convert(T,0.0)    # current simulation time (s)
+    tp::Union{T,JuMP.Variable}  = convert(T,0.0)    # prediction time (if finalTimeDV == true -> this is not known before optimization)
+    tex::T                      = convert(T,0.5)    # execution horizon time
+    t0Actual::T                 = convert(T,0.0)    # actual initial time # TODO: ?
+    t0::T                       = convert(T,0.0)    # mpc initial time # TODO: ?
+    tf::T                       = convert(T,0.0)    # mpc final time # TODO: ?
+    t0Param::Any                = Any               # parameter for mpc t0  # TODO: ? # ! was Any
+    evalNum::Int                = 1                 # parameter for keeping track of number of MPC evaluations
+    goal::Vector{T}             = Vector{T}()       # goal location w.r.t OCP
+    goalTol::Vector{T}          = Vector{T}()       # tolerance on goal location
+    initOptNum::Int             = 3                 # number of initial optimization
+    previousSolutionNum::Int    = 3                 # number of times the previous solution should be used
 end
 
 # Model-Predictive Control (MPC)
-mutable struct MPC{ T <: Number }
-    v::MPCvariables{T}
-    ip::IP
-    ep::EP
-    MPC(T::DataType=Float64) = new{T}(
-        MPCvariables(T),
-        IP(),
-        EP()
-    )
+@with_kw mutable struct MPC{ T <: Number }
+    v::MPCvariables{T}  = MPCvariables{T}() #
+    ip::IP              = IP()              #
+    ep::EP              = EP()              #
 end
 
 end # module
