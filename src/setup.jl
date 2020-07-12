@@ -26,34 +26,34 @@ function define(;
 
     # validate input
     if numControls <= 0
-        @error "numControls ($numControls) must be > 0","\n"
+        error("Controls ($numControls) must be > 0")
     end
     if numStates <= 0
-        @error "numStates ($numStates) must be > 0","\n"
+        error("States ($numStates) must be > 0")
     end
     if length(X0) != numStates
-        @error "\n Length of X0 ($(length(X0))) must match number of states ($numStates)\n"
+        error("Length of X0 ($(length(X0))) must match number of states ($numStates)")
     end
     if length(XF) != numStates
-        @error "\n Length of XF ($(length(XF))) must match number of states ($numStates)\n"
+        error("Length of XF ($(length(XF))) must match number of states ($numStates)")
     end
     if length(XL) != numStates
-        @error "\n Length of XL ($(length(XL))) must match number of states ($numStates)\n"
+        error("Length of XL ($(length(XL))) must match number of states ($numStates)")
     end
     if length(XU) != numStates
-        @error "\n Length of XU ($(length(XU))) must match number of states ($numStates)\n"
+        error("Length of XU ($(length(XU))) must match number of states ($numStates)")
     end
     if length(XS) != numStates
-        @error "\n Length of XS ($(length(XS))) must match number of states ($numStates)\n"
+        error("Length of XS ($(length(XS))) must match number of states ($numStates)")
     end
     if length(CL) != numControls
-        @error "\n Length of CL ($(length(CL))) must match number of controls ($numControls)\n"
+        error("Length of CL ($(length(CL))) must match number of controls ($numControls)")
     end
     if length(CU) != numControls
-        @error "\n Length of CU ($(length(CU))) must match number of controls ($numControls)\n"
+        error("Length of CU ($(length(CU))) must match number of controls ($numControls)")
     end
     if length(CS) != numControls
-        @error "\n Length of CS ($(length(CS))) must match number of controls ($numControls)\n"
+        error("Length of CS ($(length(CS))) must match number of controls ($numControls)")
     end
 
     n.ocp.state = initState(numStates)
@@ -89,7 +89,7 @@ function defineSolver!(n::NLOpt, kw::Dict{Symbol,Symbol})
     end
 
     # Import solver into Julia environment
-    try_import(n.s.ocp.solver.name) ? nothing : @error "Could not import $(n.s.ocp.solver.name) into Julia environment"
+    try_import(n.s.ocp.solver.name) ? nothing : error("Could not import $(n.s.ocp.solver.name) into Julia environment")
 
     # Check if user provided MPC defaults
     if haskey(kw, :mpc_defaults)
@@ -103,13 +103,13 @@ function defineSolver!(n::NLOpt, kw::Dict{Symbol,Symbol})
         if n.s.ocp.solver.name == :Ipopt
             n.s.ocp.solver.settings = NLOptControl.NLOptBase._Ipopt_MPC
         else
-            @error "Solver $(n.s.ocp.solver.name) not defined"
+            error("Solver $(n.s.ocp.solver.name) not defined")
         end
     else # default solver settings
         if n.s.ocp.solver.name == :Ipopt  # NOTE this should already have been done by default, but could get messed up is user is playing with options
             n.s.ocp.solver.settings = NLOptControl.NLOptBase._Ipopt_defaults;
         else
-            @error "Solver $(n.s.ocp.solver.name) not defined"
+            error("Solver $(n.s.ocp.solver.name) not defined")
         end
     end
 
@@ -118,7 +118,7 @@ function defineSolver!(n::NLOpt, kw::Dict{Symbol,Symbol})
         if haskey(n.s.ocp.solver.settings, key)
             n.s.ocp.solver.settings[key] = value
         elseif key != :name && key != :mpc_defaults # ignore the name and default settings option # TODO could remove them from the Dict
-            @error " \n Unknown key: $kw for $(n.s.ocp.solver.name) used in defineSolver!() \n "
+            error(" \n Unknown key: $kw for $(n.s.ocp.solver.name) used in defineSolver!() \n ")
         end
     end
 
@@ -144,7 +144,7 @@ function defineSolver!(n::NLOpt, kw::Dict{Symbol,Symbol})
             )
         )
     else
-        @error "Solver $(n.s.ocp.solver.name) not defined"
+        error("Solver $(n.s.ocp.solver.name) not defined")
     end
 
     return nothing

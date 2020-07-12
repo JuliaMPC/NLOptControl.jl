@@ -359,14 +359,14 @@ function interpolate_lagrange(x::Vector{T}, x_data::Vector{T}, y_data::Vector{T}
 
 
     if length(x_data) != length(y_data)
-        @error  """
+        error("""
                 ------------------------------------------------------------------
                 There is an error with data vector lengths in `interpolate_lagrange`
                 ------------------------------------------------------------------
                 The following variables should be equal:
                 length(x_data) = $(length(x_data))
                 length(y_data) = $(length(y_data))
-                """
+                """)
     end
 
     Ni = length(x)

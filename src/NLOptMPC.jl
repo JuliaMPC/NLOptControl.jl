@@ -141,7 +141,7 @@ Date Create: 4/08/2018, Last Modified: 12/06/2019 \n
 function initOpt!(n; save::Bool=true, evalConstraints::Bool=false)
 
     if n.s.mpc.on
-        @error "call initOpt!() before defineMPC!(). initOpt!() will destroy n"
+        error("call initOpt!() before defineMPC!(). initOpt!() will destroy n")
     end
 
     n.s.ocp.save = false
@@ -182,13 +182,13 @@ function defineIP!(n,model;stateNames=[],controlNames=[],X0a=[])
 
    if n.s.mpc.mode == :OCP # this function is called automatically for this mode
     if !isempty(stateNames)
-        @error "stateNames are set automatically for :mode == :OCP and cannot be provided."
+        error("stateNames are set automatically for :mode == :OCP and cannot be provided.")
     end
     if !isempty(controlNames)
-        @error "controlNames are set automatically for :mode == :OCP and cannot be provided."
+        error("controlNames are set automatically for :mode == :OCP and cannot be provided.")
     end
     if !isempty(X0a)
-        @error "X0a is set automatically for :mode == :OCP and cannot be provided."
+        error("X0a is set automatically for :mode == :OCP and cannot be provided.")
     end
     n.r.ip.X0a = copy(n.ocp.X0)  # NEED to append time
     n.mpc.ip.state.model = model
