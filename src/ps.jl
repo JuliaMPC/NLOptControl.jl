@@ -6,15 +6,11 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 1/15/2017, Last Modified: 12/06/2019 \n
 --------------------------------------------------------------------------------------\n
 """
-function DMatrix!(n::NLOpt, kwargs...)         #TODO make IMatrix and option
+function DMatrix!(n::NLOpt{T}, kwargs...) where { T <: Number } #TODO make IMatrix and option
 
     kw = Dict(kwargs)
 
-    if !haskey(kw,:mode)
-        mode = :defaut
-    else
-        mode = get(kw,:mode,0)
-    end
+    mode = get(kw, :mode, :defaut)
 
     if mode == :defaut
 
@@ -27,30 +23,32 @@ function DMatrix!(n::NLOpt, kwargs...)         #TODO make IMatrix and option
                 """)
         end
 
-        D = [ zeros((n.ocp.Nck[int]+1),(n.ocp.Nck[int]+1)) for int in 1:n.ocp.Ni ]
-
         for int in 1:n.ocp.Ni
-            D[int] = polyDiff(n.ocp.ts[int]) # +1 is already appended onto ts
-        end
 
-        n.ocp.DMatrix = [zeros((n.ocp.Nck[int]),(n.ocp.Nck[int]+1)) for int in 1:n.ocp.Ni]
-        DM = [zeros((n.ocp.Nck[int]),(n.ocp.Nck[int])) for int in 1:n.ocp.Ni]
-        n.ocp.IMatrix = [zeros((n.ocp.Nck[int]),(n.ocp.Nck[int]+1)) for int in 1:n.ocp.Ni]
+            D = polyDiff(n.ocp.ts[int]) # +1 is already appended onto ts
 
-        for int in 1:n.ocp.Ni
-            n.ocp.DMatrix[int] = D[int][1:end-1,:]      # [Nck]X[Nck+1]
+            n.ocp.IMatrix[int] = zeros( (n.ocp.Nck[int]), (n.ocp.Nck[int]+1) )
+
+            n.ocp.DMatrix[int] = D[1:end-1, :] # [Nck] X [Nck+1]
+
             if n.s.ocp.integrationScheme == :lgrImplicit
-                DM[int] = n.ocp.DMatrix[int][:,2:end]   # [Nck]X[Nck]
-                n.ocp.IMatrix[int] = inv(DM[int])       # I = inv(D[:,2:N_k+1])
+
+                DM = n.ocp.DMatrix[int][:,2:end]   # [Nck] X [Nck]
+
+                n.ocp.IMatrix[int] = inv(DM)       # I = inv(D[:,2:N_k+1])
+
             end
+
         end
 
     elseif mode == :symbolic # for validation only, too slow otherwise
+
         error("""
             Cannot precompile with SymPy
             so this fucntion was turned off for typical use!!
             -> do a (using SymPy) in NLOptControl.jl then remove this error message and rerun
             """)
+#=
         Dsym = [Array{Any}(undef, n.ocp.Nck[int],n.ocp.Nck[int]+1) for int in 1:n.ocp.Ni];
         n.ocp.DMatrix = [Array{Any}(undef, n.ocp.Nck[int],n.ocp.Nck[int]+1) for int in 1:n.ocp.Ni]
         test = [Array{Any}(undef, n.ocp.Nck[int]+1) for int in 1:n.ocp.Ni];
@@ -71,8 +69,12 @@ function DMatrix!(n::NLOpt, kwargs...)         #TODO make IMatrix and option
                 end
             end
         end
+=#
+
     end
-    nothing
+
+    return nothing
+
 end
 
 
@@ -84,19 +86,19 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 12/23/2017, Last Modified: 12/06/2019 \n
 --------------------------------------------------------------------------------------\n
 """
-function createIntervals!(n::NLOpt)
-    tm = range(-1,1;length=n.ocp.Ni+1)     # create mesh points
-    di = 2/n.ocp.Ni                           # interval size
+function createIntervals!(n::NLOpt{T}) where { T <: Number }
+    tm = range(-1 , 1 ; length = n.ocp.Ni + 1)  # create mesh points
+    di = 2 / n.ocp.Ni                           # interval size
     # go through each mesh interval creating time intervals; map [tm[i-1],tm[i]] --> [-1,1]
-    n.ocp.ts = hcat([ [ scale_tau(n.ocp.tau[int],tm[int],tm[int+1]) ; di*int-1 ] for int in 1:n.ocp.Ni ]...)
-    n.ocp.ws = hcat([ scale_w(n.ocp.w[int],tm[int],tm[int+1]) for int in 1:n.ocp.Ni ]...)
+    n.ocp.ts = hcat( [ [ scale_tau(n.ocp.tau[int], tm[int], tm[int+1]) ; di * int-1 ] for int in 1:n.ocp.Ni ]... )
+    n.ocp.ws = hcat( [   scale_w(  n.ocp.w[int],   tm[int], tm[int+1])                for int in 1:n.ocp.Ni ]... )
     return nothing
 end
 
 
 # NOTE this function was used for testing, but is currently depreciated. When it is used again figure out why and explain why
 # di = (tf + 1).n.ocp.Ni
-function createIntervals!(n::NLOpt, tf)
+function createIntervals!(n::NLOpt{T}, tf::T) where { T <: Number }
     tm = range(-1,1; length=n.ocp.Ni+1)       # create mesh points
     di = (tf + 1)/n.ocp.Ni                      # interval size
     # go through each mesh interval creating time intervals; map [tm[i-1],tm[i]] --> [-1,1]

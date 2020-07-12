@@ -1074,7 +1074,7 @@ function linearStateTolerances!(n::NLOpt;
     if n.ocp.mXL[st]!=false
       if !isnan(n.ocp.XL[st])
         for j in 1:n.ocp.state.pts
-        n.ocp.XL_var[st,j]=n.ocp.XL[st] + n.ocp.mXL[st]*(j/n.ocp.state.pts); # lower
+            n.ocp.XL_var[st,j]=n.ocp.XL[st] + n.ocp.mXL[st]*(j/n.ocp.state.pts); # lower
         end
       end
     end
@@ -1438,7 +1438,7 @@ function try_import(name::Symbol)
         @eval using $name
         return true
     catch e
-        return false
+        error("Could not import \"$name\" into Julia environment.\nOriginal Error:\n$e")
     end
 end
 

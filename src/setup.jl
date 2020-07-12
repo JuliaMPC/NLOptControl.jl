@@ -1,3 +1,5 @@
+using JuMP
+
 """
 n = define(;
     numStates::Int = 0,
@@ -95,42 +97,42 @@ Last Modified by: Alexander Buck
 """
 function defineSolver!(n::NLOpt, kw::Dict{Symbol,Symbol})
 
-    # Get the name of the solver
-    if haskey(kw,:name)
-        n.s.ocp.solver.name=get(kw,:name,0)
+    # Default solver name is :Ipopt
+    if haskey(kw, :name)
+        n.s.ocp.solver.name = kw[:name]
+    else
+        @warn "No solver specified: using default solver (IPOPT)"
+        n.s.ocp.solver.name = :Ipopt
     end
 
     # Import solver into Julia environment
-    try_import(n.s.ocp.solver.name) ? nothing : error("Could not import $(n.s.ocp.solver.name) into Julia environment")
+    try_import(n.s.ocp.solver.name)
 
     # Check if user provided MPC defaults
-    if haskey(kw, :mpc_defaults)
-        mpc_defaults = get(kw,:mpc_defaults,0)
-    else
-        mpc_defaults=false
-    end
+    mpc_defaults = get(kw, :mpc_defaults, false)
 
-    # Set solver defaults
+    # Setup MPC Solver Settings (if they exist)
     if mpc_defaults
         if n.s.ocp.solver.name == :Ipopt
             n.s.ocp.solver.settings = NLOptControl.NLOptBase._Ipopt_MPC
         else
-            error("Solver $(n.s.ocp.solver.name) not defined")
+            error("Solver $(n.s.ocp.solver.name) not defined.")
         end
-    else # default solver settings
-        if n.s.ocp.solver.name == :Ipopt  # NOTE this should already have been done by default, but could get messed up is user is playing with options
-            n.s.ocp.solver.settings = NLOptControl.NLOptBase._Ipopt_defaults;
+    else
+        # NOTE this should already have been done by default, but could get messed up is user is playing with options
+        if n.s.ocp.solver.name == :Ipopt
+            n.s.ocp.solver.settings = NLOptControl._Ipopt_defaults;
         else
-            error("Solver $(n.s.ocp.solver.name) not defined")
+            error("Solver $(n.s.ocp.solver.name) not defined.")
         end
     end
 
     # Modify additional defaults individually
-    for (key,value) in kw
+    for (key, value) in kw
         if haskey(n.s.ocp.solver.settings, key)
             n.s.ocp.solver.settings[key] = value
         elseif key != :name && key != :mpc_defaults # ignore the name and default settings option # TODO could remove them from the Dict
-            error(" \n Unknown key: $kw for $(n.s.ocp.solver.name) used in defineSolver!() \n ")
+            error("Unknown key: $kw for $(n.s.ocp.solver.name) used in defineSolver!()")
         end
     end
 
@@ -174,31 +176,32 @@ function OCPdef!(n::NLOpt{T}) where { T <: Number }
 
     # State variables
     @variable(n.ocp.mdl, x[1:n.ocp.state.pts, 1:n.ocp.state.num])
-    n.r.ocp.x = Matrix{JuMP.JuMPTypes}([ @NLexpression(n.ocp.mdl, [j=1:n.ocp.state.pts], n.ocp.XS[st]*x[j,st]) for st in 1:n.ocp.state.num ])
+    n.r.ocp.x = [ @NLexpression(n.ocp.mdl, [j=1:n.ocp.state.pts], n.ocp.XS[st] * x[j,st] ) for st in 1:n.ocp.state.num ]
 
     for st in 1:n.ocp.state.num
-        # lower state constraint
-        if !isnan.(n.ocp.XL[st])
-            if n.ocp.mXL[st] == false
+
+        # Lower state constraints
+        if !isnan(n.ocp.XL[st])
+            if !n.ocp.mXL[st]
                 for j in 1:n.ocp.state.pts
                     setlowerbound(x[j,st], n.ocp.XL[st]/n.ocp.XS[st])
                 end
             else
                 for j in 1:n.ocp.state.pts
-                    setlowerbound(x[j,st], n.ocp.XL_var[st,j]/n.ocp.XS[st])
+                    setlowerbound(x[j,st], n.ocp.XL_var[st][j]/n.ocp.XS[st])
                 end
             end
         end
 
-        # upper state constraint
-        if !isnan.(n.ocp.XU[st])
-            if n.ocp.XU[st] != false
+        # Upper state constraint
+        if !isnan(n.ocp.XU[st])
+            if !n.ocp.mXU[st]
                 for j in 1:n.ocp.state.pts
-                setupperbound(x[j,st], n.ocp.XU[st]/n.ocp.XS[st])
+                    setupperbound(x[j,st], n.ocp.XU[st]/n.ocp.XS[st])
                 end
             else
                 for j in 1:n.ocp.state.pts
-                setlowerbound(x[j,st], n.ocp.XU_var[st,j]/n.ocp.XS[st])
+                    setlowerbound(x[j,st], n.ocp.XU_var[st,j]/n.ocp.XS[st])
                 end
             end
         end
@@ -206,11 +209,7 @@ function OCPdef!(n::NLOpt{T}) where { T <: Number }
 
     # control variables
     @variable(n.ocp.mdl,u[1:n.ocp.control.pts,1:n.ocp.control.num])
-    n.r.ocp.u = Matrix{Any}(undef, n.ocp.control.pts,n.ocp.control.num)
-    for ctr in 1:n.ocp.control.num
-        n.r.ocp.u[:,ctr] = @NLexpression(n.ocp.mdl, [j=1:n.ocp.control.pts], n.ocp.CS[ctr]*u[j,ctr])
-    end
-    #n.r.ocp.u=u;
+    n.r.ocp.u = [ @NLexpression(n.ocp.mdl, [j=1:n.ocp.control.pts], n.ocp.CS[ctr]*u[j,ctr]) for ctr in 1:n.ocp.control.num ]
 
     for ctr in 1:n.ocp.control.num
         if !isnan.(n.ocp.CL[ctr])
@@ -259,11 +258,7 @@ function OCPdef!(n::NLOpt{T}) where { T <: Number }
                 end
             else
                 @info "OCPdef!: size of n.r.ocp.x0Con:     $(size(n.r.ocp.x0Con))"
-                x_temp = [ n.r.ocp.x0Con ; @constraint(n.ocp.mdl, x[1,st]*n.ocp.XS[st] == n.ocp.X0[st]) ]
-                @info "OCPdef!: size of x_temp:            $(size(x_temp))"
-                @info "OCPdef!: type of x_temp:            $(typeof(x_temp))"
-                n.r.ocp.x0Con = Vector{JuMP.ConstraintRef}(x_temp)
-                @info "OCPdef!: size of n.r.ocp.x0Con (2): $(size(n.r.ocp.x0Con))"
+                n.r.ocp.x0Con = [ n.r.ocp.x0Con ; @constraint(n.ocp.mdl, x[1,st]*n.ocp.XS[st] == n.ocp.X0[st]) ]
             end
         end
         if !isnan(n.ocp.XF[st])
@@ -322,28 +317,24 @@ function OCPdef!(n::NLOpt{T}) where { T <: Number }
         end
 
     elseif n.s.ocp.integrationMethod == :tm
-        n.r.ocp.dynCon = Matrix{JuMP.ConstraintRef}(undef, n.ocp.N, n.ocp.state.num)
+
         if n.s.ocp.finalTimeDV
             @variable(n.ocp.mdl, n.s.ocp.tfMin <= tf <= n.s.ocp.tfMax)
             n.ocp.tf = tf
             create_tV!(n) # make a time vector
         end
-        n.ocp.dt = n.ocp.tf/n.ocp.N*ones(n.ocp.N,)
+        @info "OCPdef!: n.ocp.dt = $(n.ocp.dt)"
+        @info "OCPdef!: n.ocp.tf = $(n.ocp.tf)"
+        @info "OCPdef!: n.ocp.N  = $(n.ocp.N)"
+        n.ocp.dt = n.ocp.tf / n.ocp.N * ones(n.ocp.N,)
 
         L = size(n.r.ocp.x)[1]
-        dx = Matrix{JuMP.NonlinearExpression}(undef, L, n.ocp.state.num)
-        for st in 1:n.ocp.state.num
-            dx[:,st] = DiffEq(n, n.r.ocp.x, n.r.ocp.u, L, st)
-        end
+        dx = [ DiffEq(n, n.r.ocp.x, n.r.ocp.u, L, st) for st in 1:n.ocp.state.num ]
 
         if n.s.ocp.integrationScheme == :bkwEuler
-            for st in 1:n.ocp.state.num
-                n.r.ocp.dynCon[:,st] = @NLconstraint(n.ocp.mdl, [j in 1:n.ocp.N], n.r.ocp.x[j+1,st] - n.r.ocp.x[j,st] ==  dx[j+1,st]*n.ocp.tf/(n.ocp.N) );
-            end
+            n.r.ocp.dynCon = [ @NLconstraint(n.ocp.mdl, [j in 1:n.ocp.N], n.r.ocp.x[j+1,st] - n.r.ocp.x[j,st] ==  dx[j+1,st]*n.ocp.tf/(n.ocp.N) ) for st in 1:n.ocp.state.num ]
         elseif n.s.ocp.integrationScheme == :trapezoidal
-            for st in 1:n.ocp.state.num
-                n.r.ocp.dynCon[:,st] = @NLconstraint(n.ocp.mdl, [j in 1:n.ocp.N], n.r.ocp.x[j+1,st] - n.r.ocp.x[j,st] == 0.5*(dx[j,st] + dx[j+1,st])*n.ocp.tf/(n.ocp.N) )
-            end
+            n.r.ocp.dynCon = [ @NLconstraint(n.ocp.mdl, [j in 1:n.ocp.N], n.r.ocp.x[j+1,st] - n.r.ocp.x[j,st] == 0.5*(dx[j,st] + dx[j+1,st])*n.ocp.tf/(n.ocp.N) ) for st in 1:n.ocp.state.num ]
         end
 
         # additional constraints
@@ -351,6 +342,17 @@ function OCPdef!(n::NLOpt{T}) where { T <: Number }
             ch = addCon(n,n.r.ocp.x,n.r.ocp.u,L,num)
             newConstraint!(n,ch,Symbol(string("ch",num))) # TODO could let the user name these
         end
+    end
+
+    # If evaluate costates, make sure using Pseudospectral Method
+    if n.s.ocp.evalCostates
+
+        if n.s.ocp.integrationMethod != :ps
+            error("Costates are only implmented for :ps methods")
+        else
+            n.s.ocp.evalConstraints = true
+        end
+
     end
 
     @info "OCPdef!: size of n.r.ocp.x0Con  : $(size(  n.r.ocp.x0Con ))"
@@ -381,6 +383,7 @@ Date Create: 1/1/2017, Last Modified: 12/06/2019 \n
 """
 function configure!(n::NLOpt{T}; kwargs... ) where { T <: Number }
 
+    # Gather keyword arguments
     kw = Dict(kwargs)
 
     # Determine whether final time is a design variable (:finalTimeDV)
@@ -389,7 +392,12 @@ function configure!(n::NLOpt{T}; kwargs... ) where { T <: Number }
 
     # Determine final time (:tf)
     # TODO: find a more specific replacement for the "Any" type here
-    n.ocp.tf = n.s.ocp.finalTimeDV ? Any : get(kw, :tf, error("If the final time (:tf) is not a design variable, pass it as: `( :tf => $T(some #) )`") )
+    if n.s.ocp.finalTimeDV
+        n.ocp.tf = get(kw, :tf, error("If the final time (:tf) is not a design variable, pass it as: `( :tf => $T(some #) )`") )
+    else
+        # Final time is a variable to be optimized (time-optimal control)
+        n.ocp.tf = JuMP.Variable(n.ocp.mdl, -Inf, Inf, :tf, "tf")
+    end
 
     # Initial State Slack Variables (:x0slackVariables)
     # TODO: figure out a better default value than "true/false"
@@ -431,7 +439,7 @@ function configure!(n::NLOpt{T}; kwargs... ) where { T <: Number }
             taus_and_weights    = [ gaussradau(n.ocp.Nck[int]) for int in 1:n.ocp.Ni ]
             n.ocp.tau           = hcat([ taus_and_weights[int][1] for int in 1:n.ocp.Ni ]...)
             n.ocp.w             = hcat([ taus_and_weights[int][2] for int in 1:n.ocp.Ni ]...)
-            
+
             # Create Intervals
             createIntervals!(n)
 
@@ -456,34 +464,23 @@ function configure!(n::NLOpt{T}; kwargs... ) where { T <: Number }
             # Set number of integration points for state and control
             n.ocp.state.pts = n.ocp.N + 1
             n.ocp.control.pts = n.ocp.N + 1
+
         end
 
     else
-        error("The :integrationScheme that you specified ($(n.s.ocp.integrationScheme)) is not currently implemeted \n")
+        error("The :integrationScheme that you specified ($(n.s.ocp.integrationScheme)) is not currently implemeted.")
     end
 
     n.ocp.mXL    = falses(n.ocp.state.num)
     n.ocp.mXU    = falses(n.ocp.state.num)
-    n.ocp.XL_var = Matrix{T}(undef, n.ocp.state.num, n.ocp.state.pts)
-    n.ocp.XU_var = Matrix{T}(undef, n.ocp.state.num, n.ocp.state.pts)
+    n.ocp.XL_var = Vector{Vector{JuMP.JuMPTypes}}([ [ @variable(JuMP.Model(), tmp) for i = 1:n.ocp.state.num ] for j = 1:n.ocp.state.pts] )
+    n.ocp.XU_var = Vector{Vector{JuMP.JuMPTypes}}([ [ @variable(JuMP.Model(), tmp) for i = 1:n.ocp.state.num ] for j = 1:n.ocp.state.pts] )
 
-    # solver settings
-    if !haskey(kw,:solverSettings)
-        SS = Dict(:name=>:Ipopt) # default
-    else
-        SS = Dict(get(kw, :solverSettings, 0))
-    end
-    defineSolver!(n,SS)
+    # Define Solver Settings
+    defineSolver!(n, Dict(get(kw, :solverSettings, (:name => :Ipopt) )))
 
-    # optimal control problem
+    # Definie Optimal Control Problem
     OCPdef!(n)
-
-    if n.s.ocp.evalCostates
-        if n.s.ocp.integrationMethod != :ps
-            error("costates are only implmented for :ps methods")
-        end
-        n.s.ocp.evalConstraints = true
-    end
 
     return nothing
 
