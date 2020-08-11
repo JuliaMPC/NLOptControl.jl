@@ -1,9 +1,4 @@
 BrysonDenham_EXP=[:(x2[j]),:(u1[j])]; L=1/6;
-"""
-using NLOptControl
-BrysonDenham_EXP=[:(x2[j]),:(u1[j])]; L=1/6;
-integrationConfig = :trapezoidal
-"""
 @testset "BrysonDenham with (:integrationScheme=>$(integrationConfig)) using expressions)" for integrationConfig in integrationConfigs
   n=define(numStates=2,numControls=1,X0=[0.,1],XF=[0.,-1.],XL=[0.,NaN],XU=[L,NaN]);
   dynamics!(n,BrysonDenham_EXP)

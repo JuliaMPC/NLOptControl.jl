@@ -23,12 +23,14 @@ function DMatrix!(n::NLOpt{T}, kwargs...) where { T <: Number } #TODO make IMatr
                 """)
         end
 
+        n.ocp.DMatrix = [zeros((n.ocp.Nck[int]),(n.ocp.Nck[int]+1)) for int in 1:n.ocp.Ni];
+        DM = [zeros((n.ocp.Nck[int]),(n.ocp.Nck[int])) for int in 1:n.ocp.Ni];
+        n.ocp.IMatrix = [zeros((n.ocp.Nck[int]),(n.ocp.Nck[int]+1)) for int in 1:n.ocp.Ni];
+
         for int in 1:n.ocp.Ni
 
             D = polyDiff(n.ocp.ts[int]) # +1 is already appended onto ts
-
             n.ocp.IMatrix[int] = zeros( (n.ocp.Nck[int]), (n.ocp.Nck[int]+1) )
-
             n.ocp.DMatrix[int] = D[1:end-1, :] # [Nck] X [Nck+1]
 
             if n.s.ocp.integrationScheme == :lgrImplicit
@@ -77,8 +79,6 @@ function DMatrix!(n::NLOpt{T}, kwargs...) where { T <: Number } #TODO make IMatr
 
 end
 
-
-
 """
 n = create_intervals(n)
 --------------------------------------------------------------------------------------\n
@@ -90,21 +90,7 @@ function createIntervals!(n::NLOpt{T}) where { T <: Number }
     tm = range(-1 , 1 ; length = n.ocp.Ni + 1)  # create mesh points
     di = 2 / n.ocp.Ni                           # interval size
     # go through each mesh interval creating time intervals; map [tm[i-1],tm[i]] --> [-1,1]
-    n.ocp.ts = hcat( [ [ scale_tau(n.ocp.tau[int], tm[int], tm[int+1]) ; di * int-1 ] for int in 1:n.ocp.Ni ]... )
-    n.ocp.ws = hcat( [   scale_w(  n.ocp.w[int],   tm[int], tm[int+1])                for int in 1:n.ocp.Ni ]... )
+    n.ocp.ts = [[scale_tau(n.ocp.tau[int],tm[int],tm[int+1]);di*int-1] for int in 1:n.ocp.Ni]
+    n.ocp.ws = [scale_w(n.ocp.w[int],tm[int],tm[int+1]) for int in 1:n.ocp.Ni]
     return nothing
 end
-
-
-# NOTE this function was used for testing, but is currently depreciated. When it is used again figure out why and explain why
-# di = (tf + 1).n.ocp.Ni
-function createIntervals!(n::NLOpt{T}, tf::T) where { T <: Number }
-    tm = range(-1,1; length=n.ocp.Ni+1)       # create mesh points
-    di = (tf + 1)/n.ocp.Ni                      # interval size
-    # go through each mesh interval creating time intervals; map [tm[i-1],tm[i]] --> [-1,1]
-    n.ocp.ts = hcat([ [scale_tau(n.ocp.tau[int],tm[int],tm[int+1]) ; di*int-1 ] for int in 1:n.ocp.Ni]...)
-    n.ocp.ws = hcat([ scale_w(n.ocp.w[int],tm[int],tm[int+1]) for int in 1:n.ocp.Ni]...)
-    return nothing
-end
-
-

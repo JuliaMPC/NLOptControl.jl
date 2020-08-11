@@ -29,7 +29,9 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 6/11/2017, Last Modified: 4/13/2018 \n
 -------------------------------------------------------------------------------------\n
 """
-function DiffEq(n::NLOpt,x::Matrix{JuMP.JuMPTypes},u::Matrix{JuMP.JuMPTypes},L::Int,st::Int)::Vector{JuMP.NonlinearExpression}
+#function DiffEq(n::NLOpt,x::Matrix{JuMP.JuMPTypes},u::Matrix{JuMP.JuMPTypes},L::Int,st::Int)::Vector{JuMP.NonlinearExpression}
+#function DiffEq(n::NLOpt,x,u,L::Int64,st::Int64)
+function DiffEq(n::NLOpt,x::Array{Any,2},u::Array{Any,2},L::Int64,st::Int64)
     expr = n.ocp.DXexpr[st]
     return NLExpr(n,expr,x,u,L)
 end
@@ -40,7 +42,8 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 7/04/2017, Last Modified: 4/13/2018 \n
 -------------------------------------------------------------------------------------\n
 """
-function addCon(n::NLOpt,x::Matrix{JuMP.JuMPTypes},u::Matrix{JuMP.JuMPTypes},L::Int,num::Int)
+#function addCon(n::NLOpt,x::Matrix{JuMP.JuMPTypes},u::Matrix{JuMP.JuMPTypes},L::Int,num::Int)
+function addCon(n::NLOpt,x::Array{Any,2},u::Array{Any,2},L::Int64,num::Int64)
     expr = n.ocp.NLcon[num]
     return NLCon(n,expr,x,u,L)
 end
@@ -53,6 +56,7 @@ Date Create: 6/29/2017, Last Modified: 12/06/2019 \n
 -------------------------------------------------------------------------------------\n
 """
 function NLExpr(n::NLOpt, expr::Expr, args...)::Vector{JuMP.NonlinearExpression}
+#function NLExpr(n::NLOpt,expr::Expr,args...)
 
     if length(args) == 3
         xxx = args[1]

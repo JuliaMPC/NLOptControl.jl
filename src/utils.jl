@@ -26,16 +26,20 @@ function intervals(n::NLOpt,int,x,u)
 
   else
     # states
-    x_int=Matrix{Any}(undef, length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]),n.ocp.state.num)
+    @show "hh"
+    @show n.ocp.Nck_full
+    @show size(x)
+    x_int = Matrix{Any}(undef,length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]),n.ocp.state.num);
+    @show x_int
     for st in 1:n.ocp.state.num # +1 adds the DV in the next interval
       x_int[:,st] = x[n.ocp.Nck_cum[int]+1:n.ocp.Nck_cum[int+1]+1,st]
     end
 
     # controls
     if int!=n.ocp.Ni
-      u_int = Matrix{Any}(undef, length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]),n.ocp.control.num)
+      u_int = Matrix{Any}(undef,length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]),n.ocp.control.num)
     else                    # -1 -> removing control in last mesh interval
-      u_int = Matrix{Any}(undef, length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]-1),n.ocp.control.num)
+      u_int = Matrix{Any}(length(undef,n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]-1),n.ocp.control.num)
     end
     for ctr in 1:n.ocp.control.num
       if int!=n.ocp.Ni          # +1 adds the DV in the next interval
@@ -436,7 +440,8 @@ function postProcess!(n::NLOpt; kwargs...)
 
         if n.s.ocp.save && stateDataExists
             push!(n.r.ocp.dfs,dvs2dfs(n))
-            push!(n.r.ocp.dfsCon,con2dfs(n))
+          # TODO figure out why the following line is broken
+          #  push!(n.r.ocp.dfsCon,con2dfs(n))
             if n.s.ocp.interpolationOn
                 if (n.r.ocp.status != :Error) # (n.r.ocp.status != :Infeasible) &&
                     if n.s.ocp.integrationMethod==:ps && (n.r.ocp.status != :Infeasible) && !n.s.ocp.linearInterpolation
@@ -1177,7 +1182,7 @@ end
 
 """
 """
-function newConstraint!(n::NLOpt, handle::Array{JuMP.ConstraintRef}, name::Symbol)
+function newConstraint!(n::NLOpt, handle, name::Symbol)
     initConstraint!(n)
     @info "\nEntering newConstraint!\n"
     @info "newConstraint!: size of n.r.ocp.constraint.handle:   $(size(n.r.ocp.constraint.handle))"
@@ -1189,10 +1194,13 @@ function newConstraint!(n::NLOpt, handle::Array{JuMP.ConstraintRef}, name::Symbo
     # @info "newConstraint!: value of handle:                     $handle"
     @info "newConstraint!: type of name:                        $(typeof(name))"
     # @info "newConstraint!: value of name:                       $name"
-    @info "newConstraint!: testing vcat:                        $(vcat(n.r.ocp.constraint.handle, handle))"
+    # TODO test if this is the test that is making sure constraints can be entered in results in postProcess
+    #@info "newConstraint!: testing vcat:                        $(vcat(n.r.ocp.constraint.handle, handle))"
 
-    push!(n.r.ocp.constraint.name, name)
-    n.r.ocp.constraint.handle = vcat(n.r.ocp.constraint.handle, handle)
+    push!(n.r.ocp.constraint.name,name)
+    #n.r.ocp.constraint.handle = vcat(n.r.ocp.constraint.handle, handle)
+    push!(n.r.ocp.constraint.handle,handle)
+
     return nothing
 end
 
@@ -1441,4 +1449,3 @@ function try_import(name::Symbol)
         error("Could not import \"$name\" into Julia environment.\nOriginal Error:\n$e")
     end
 end
-

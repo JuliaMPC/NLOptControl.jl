@@ -161,7 +161,10 @@ function polyDiff(x)  #TODO get rid of B stuff
     # X is same as Z', but with
     X = Z'
 
-    X = X[~L]
+    # diagonal entries removed.
+    flag = trues(size(X));
+    flag[L] .= false;
+    X = X[flag];
 
     X = reshape(X, N-1, N)
 

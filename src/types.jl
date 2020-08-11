@@ -85,7 +85,7 @@ end
 # Constraint
 @with_kw mutable struct Constraint{ T <: Number }
     name::Vector{Symbol}                    = Vector{Symbol}()                  #
-    handle::Vector{JuMP.ConstraintRef}      = Vector{JuMP.ConstraintRef}()      #
+    handle::Vector{Any}      = Vector{Any}()      #
     value::Vector{T}                        = Vector{T}()                       #
     nums::Vector{Any}                       = Vector{Any}()                     # range of indices in g(x)
 end
@@ -100,10 +100,10 @@ end
 @with_kw mutable struct OCPResults{ T <: Number }
     tctr::Vector{Any}                           = Vector{T}()                           # Time vector for control
     tst::Vector{Any}                            = Vector{T}()                           # Time vector for state
-    x::Vector{Vector{JuMP.JuMPTypes}}           = Vector{Vector{JuMP.JuMPTypes}}()      # JuMP states
-    u::Vector{Vector{JuMP.JuMPTypes}}           = Vector{Vector{JuMP.JuMPTypes}}()      # JuMP controls
-    X::Vector{Vector{T}}                        = Vector{Vector{T}}()                   # States
-    U::Vector{Vector{T}}                        = Vector{Vector{T}}()                   # Controls
+    x           = Matrix{Any}[]      # JuMP states
+    u           = Matrix{Any}[]      # JuMP controls
+    X                        = Matrix{T}[]                   # States
+    U                        =  Matrix{T}[]                 # Controls
     X0::Vector{T}                               = Vector{T}()                           # Initial states for OCP
     CS::Vector{T}                               = Vector{T}()                           # Costates
     tpolyPts::Vector{T}                         = Vector{T}()                           # Time sample points for polynomials  (NOTE these interpolated solutions were developed for calculating error, between them and a known Optimal solution)
@@ -122,7 +122,7 @@ end
     x0sCon::Vector{JuMP.ConstraintRef}          = Vector{JuMP.ConstraintRef}()          # ? Unsure what this is yet (slack variable constraints?)
     xfCon::Vector{JuMP.ConstraintRef}           = Vector{JuMP.ConstraintRef}()          # Handle for final state constraints
     xfsCon::Vector{JuMP.ConstraintRef}          = Vector{JuMP.ConstraintRef}()          # ? Unsure what this is yet (slack variable constraints?)
-    dynCon::Vector{Vector{JuMP.ConstraintRef}}  = Vector{Vector{JuMP.ConstraintRef}}()  # Dynamics constraints
+    dynCon = Any[]  # Dynamics constraints
     constraint::Constraint{T}                   = Constraint{T}()                       # Constraint handles and data
     evalNum::Int                                = 1                                     # Number of times optimization has been run
     iterNum                                     = []                                    # Mics. data, perhaps an iteration number for a higher level algorithm
@@ -166,7 +166,7 @@ end
     # General properties
     state::State                            = State()                               # state data
     control::Control                        = Control()                             # control data
-    tf::Union{T,JuMP.JuMPTypes}             = convert(T, 0)                         # final time
+    tf             = Any                         # final time
     t0::JuMP.JuMPTypes                      = @NLparameter(JuMP.Model(), x == 0)    # initial time # TODO: consider getting rid of this or replacing it with `n.mpc.v.t0Param`
     tV::Vector{T}                           = Vector{T}()                           # vector for use with time varying constraints
 
@@ -185,8 +185,8 @@ end
     # Variables for linear bounds on state variables
     mXL::Vector{Bool}                       = Vector{Bool}()                        # slope on XL -> time always starts at zero
     mXU::Vector{Bool}                       = Vector{Bool}()                        # slope on XU -> time always starts at zero
-    XL_var::Vector{Vector{JuMP.JuMPTypes}}  = Vector{Vector{JuMP.JuMPTypes}}()      # time varying lower bounds on states # ! NOTE: not used currently - was JuMP.Variable
-    XU_var::Vector{Vector{JuMP.JuMPTypes}}  = Vector{Vector{JuMP.JuMPTypes}}()      # time varying upper bounds on states # ! NOTE: not used currently - was JuMP.Variable
+    XL_var = Any[]     # time varying lower bounds on states # ! NOTE: not used currently - was JuMP.Variable
+    XU_var = Any[]     # time varying upper bounds on states # ! NOTE: not used currently - was JuMP.Variable
 
     # Constant bounds on control variables
     CL::Vector{T}                           = Vector{T}()                           # Constant lower bound on control variables
@@ -197,16 +197,16 @@ end
     Nck_cum::Vector{Int}                    = Vector{Int}()                         # cumulative number of points per interval
     Nck_full::Vector{Int}                   = Vector{Int}()                         # [0;cumsum(n.ocp.Nck+1)]
     Ni::Int                                 = Int(0)                                # number of intervals
-    tau::Vector{Vector{T}}                  = Vector{Vector{T}}()                   # Node points ---> Nc increasing and distinct numbers ∈ [-1,1]
-    ts::Vector{Vector{T}}                   = Vector{Vector{T}}()                   # time scaled based off of tau
-    w::Vector{Vector{T}}                    = Vector{Vector{T}}()                   # weights
-    ws::Vector{Vector{T}}                   = Vector{Vector{T}}()                   # scaled weights
+    tau::Array{Array{T,1},1}                = Array{Array{T,1},1}()                 # Node points ---> Nc increasing and distinct numbers ∈ [-1,1]
+    ts::Array{Array{T,1},1} = Array{Array{T,1},1}()                                 # time scaled based off of tau
+    w::Array{Array{T,1},1}  = Array{Array{T,1},1}()                                 # weights
+    ws::Array{Array{T,1},1} = Array{Array{T,1},1}()                                 # scaled weights
     DMatrix::Vector{Matrix{T}}              = Vector{Matrix{T}}()                   # differention matrix
     IMatrix::Vector{Matrix{T}}              = Vector{Matrix{T}}()                   # integration matrix
 
     # tm method data
     N::Int                              = 0                                     # number of points in discretization
-    dt::Vector{T}                       = Vector{T}()                           # array of dts
+    dt::Array{Any,1}                    = Array{Any,1}()       # array of dts
 
     mdl::JuMP.Model                     = JuMP.Model()                          # JuMP model
     params                              = Any[]                                 # parameters for the models
@@ -324,7 +324,7 @@ end
     mpc::MPCFlags   = MPCFlags()    #
 end
 
-# Non-Linear Optimal Control (NLOpt) Problem
+# Nonlinear Optimal Control (NLOpt) Problem
 @with_kw mutable struct NLOpt{T <: Number}
     # major data structs
     ocp::OCP{T}     = OCP{T}()      #
