@@ -401,6 +401,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "tutorials/MoonLander/main.html#Change-Solver-Options-1",
+    "page": "Quick Ex#2: Moon Lander",
+    "title": "Change Solver Options",
+    "category": "section",
+    "text": "Solver options can be easily changed, for example, consider changing the print level in Ipopt asdefineSolver!(n,((:name=>:Ipopt),(:print_level=>8)))"
+},
+
+{
     "location": "tutorials/MoonLander/main.html#Optimize-1",
     "page": "Quick Ex#2: Moon Lander",
     "title": "Optimize",
