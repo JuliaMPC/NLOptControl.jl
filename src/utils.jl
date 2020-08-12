@@ -26,11 +26,7 @@ function intervals(n::NLOpt,int,x,u)
 
   else
     # states
-    @show "hh"
-    @show n.ocp.Nck_full
-    @show size(x)
     x_int = Matrix{Any}(undef,length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]),n.ocp.state.num);
-    @show x_int
     for st in 1:n.ocp.state.num # +1 adds the DV in the next interval
       x_int[:,st] = x[n.ocp.Nck_cum[int]+1:n.ocp.Nck_cum[int+1]+1,st]
     end
@@ -39,7 +35,7 @@ function intervals(n::NLOpt,int,x,u)
     if int!=n.ocp.Ni
       u_int = Matrix{Any}(undef,length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]),n.ocp.control.num)
     else                    # -1 -> removing control in last mesh interval
-      u_int = Matrix{Any}(length(undef,n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]-1),n.ocp.control.num)
+      u_int = Matrix{Any}(undef,length(n.ocp.Nck_full[int]+1:n.ocp.Nck_full[int+1]-1),n.ocp.control.num)
     end
     for ctr in 1:n.ocp.control.num
       if int!=n.ocp.Ni          # +1 adds the DV in the next interval
@@ -55,7 +51,7 @@ end
 
 """
 """
-function interpolateLagrange!(n::NLOpt; numPts::Int=250, tfOptimal::Any=false)
+function interpolateLagrange!(n::NLOpt{T}; numPts::Int=250, tfOptimal::Any=false) where { T <: Number }
   # TODO throw an error if tfOptimal does not make sense given current solution
   if isa(tfOptimal,Bool)
     if n.s.ocp.finalTimeDV
@@ -371,7 +367,7 @@ function postProcess!(n::NLOpt; kwargs...)
             if !n.s.ocp.save
                 error("This functionality currently needs to have n.s.ocp.save==true")
             end
-            optIdx = find(n.r.ocp.dfsOpt[:status].==:Optimal)[end]  # use the last :Optimal solution
+            optIdx = findall(n.r.ocp.dfsOpt[:status].==:Optimal)[end]  # use the last :Optimal solution
             @show n.r.ocp.dfsOpt
             @show optIdx
             @show n.r.ocp.dfs[optIdx]
@@ -384,7 +380,7 @@ function postProcess!(n::NLOpt; kwargs...)
                 n.f.mpc.simFailed = [true, n.r.ocp.status]
                 return nothing
             else
-                timeIdx = find(n.r.ocp.dfs[optIdx][:t] - n.mpc.v.t .<= 0)[end]     # find the nearest index in time
+                timeIdx = findall(n.r.ocp.dfs[optIdx][:t] .- n.mpc.v.t .<= 0)[end]     # find the nearest index in time
             end
             # TODO: make an error message or fix      ERROR: LoadError: BoundsError: attempt to access 0-element Array{Int,1} at index [0]
             n.r.ocp.tst = n.r.ocp.dfs[optIdx][:t][timeIdx:end]
@@ -570,7 +566,7 @@ resultsDir!(r;resultsName=resultsName,description=description)
 # removes results folder and creates a new one
 # TODO consider putting in a warning or some sort of an interaction with user
 """
-function resultsDir!(n::NLOpt;resultsName::String = "",description::DataFrame = DataFrame())
+function resultsDir!(n; resultsName::String = "",description::DataFrame = DataFrame())
 
     results_dir=string(n.r.mainDir,"/results/",resultsName)  # define directories
     n.r.resultsDir = results_dir
@@ -610,7 +606,7 @@ function defineMPC!(n::NLOpt;
 
     n.s.mpc.on = true
 
-    n.mpc::MPC = MPC()
+    #n.mpc::MPC{T} = MPC()
     n.s.mpc.mode = mode
     n.s.mpc.predictX0 = predictX0
     n.s.mpc.fixedTp = fixedTp
@@ -770,13 +766,13 @@ function mapNames!(n::NLOpt)
   idxOCP = 1
   for var in s1
     # go through all states in IP
-    idxIP = find(var.==s2)
+    idxIP = findall(var.==s2)
     if !isempty(idxIP)
       push!(m, [var; :stOCP; idxOCP; :stIP; idxIP[1]])
     end
 
     # go through all controls in IP
-    idxIP = find(var.==c2)
+    idxIP = findall(var.==c2)
     if !isempty(idxIP)
       push!(m, [var; :stOCP; idxOCP; :ctrIP; idxIP[1]])
     end
@@ -787,13 +783,13 @@ function mapNames!(n::NLOpt)
   idxOCP = 1
   for var in c1
     # go through all states in IP
-    idxIP = find(var.==s2)
+    idxIP = findall(var.==s2)
     if !isempty(idxIP)
       push!(m, [var; :ctrOCP; idxOCP; :stIP; idxIP[1]])
     end
 
     # go through all controls in IP
-    idxIP = find(var.==c2)
+    idxIP = findall(var.==c2)
     if !isempty(idxIP)
       push!(m, [var; :ctrOCP; idxOCP; :ctrIP; idxIP[1]])
     end
@@ -822,8 +818,8 @@ function simIPlant!(n::NLOpt)
    error("isqual(n.mpc.ip.state.pts,0), cannot simulate with zero points.")
   end
   X0 = currentIPState(n)[1]
-  t0 = round(n.mpc.v.t,3) # if rounding is too rough, then the tex will be essentially 0!
-  tf = round(n.mpc.v.t + n.mpc.v.tex,3)
+  t0 = round(n.mpc.v.t, digits=3) # if rounding is too rough, then the tex will be essentially 0!
+  tf = round(n.mpc.v.t + n.mpc.v.tex, digits=3)
 
   if isequal(n.s.mpc.mode,:OCP)
    if isequal(n.mpc.v.evalNum,1)
@@ -858,7 +854,7 @@ function currentIPState(n::NLOpt)
 
   # even though may have solution for plant ahead of time
   # can only get the state up to n.mpc.v.t
-  idx = find((n.mpc.v.t - n.r.ip.plant[:t]) .>= 0)
+  idx = findall((n.mpc.v.t .- n.r.ip.plant[:t]) .>= 0)
   if isempty(idx)
     error("(n.mpc.v.t - n.r.ip.plant[:t]) .>= 0) is empty.")
   else
@@ -878,7 +874,7 @@ function predictX0!(n::NLOpt)
 
   if n.s.mpc.fixedTp
    # NOTE consider passing back (n.mpc.v.t + n.mpc.v.tex) from simIPlant!()
-   tp = round(n.mpc.v.t + n.mpc.v.tex,1)  # TODO add 1 as an MPCparamss
+   tp = round(n.mpc.v.t + n.mpc.v.tex, digits=1)  # TODO add 1 as an MPCparamss
   else
    error("TODO")
   end
@@ -921,8 +917,8 @@ function updateX0!(n::NLOpt,args...)
    else
     n.ocp.X0 = n.r.ip.X0p[end][1] # the n.ocp. structure is for running things
    end
-   push!(n.r.ocp.X0,n.ocp.X0)    # NOTE this may be for saving data
-   setvalue(n.ocp.t0,copy(n.r.ip.X0p[end][2]))
+   push!(n.r.ocp.X0, n.ocp.X0)    # NOTE this may be for saving data
+   setvalue(n.ocp.t0, copy(n.r.ip.X0p[end][2]))
  else
   error("not set up for this mode")
  end
@@ -1184,15 +1180,15 @@ end
 """
 function newConstraint!(n::NLOpt, handle, name::Symbol)
     initConstraint!(n)
-    @info "\nEntering newConstraint!\n"
-    @info "newConstraint!: size of n.r.ocp.constraint.handle:   $(size(n.r.ocp.constraint.handle))"
-    @info "newConstraint!: type of n.r.ocp.constraint.handle:   $(typeof(n.r.ocp.constraint.handle))"
-    @info "newConstraint!: size of n.r.ocp.constraint.name:     $(size(n.r.ocp.constraint.name))"
-    @info "newConstraint!: type of n.r.ocp.constraint.name:     $(typeof(n.r.ocp.constraint.name))"
-    @info "newConstraint!: size of handle:                      $(size(handle))"
-    @info "newConstraint!: type of handle:                      $(typeof(handle))"
+    # @info "\nEntering newConstraint!\n"
+    # @info "newConstraint!: size of n.r.ocp.constraint.handle:   $(size(n.r.ocp.constraint.handle))"
+    # @info "newConstraint!: type of n.r.ocp.constraint.handle:   $(typeof(n.r.ocp.constraint.handle))"
+    # @info "newConstraint!: size of n.r.ocp.constraint.name:     $(size(n.r.ocp.constraint.name))"
+    # @info "newConstraint!: type of n.r.ocp.constraint.name:     $(typeof(n.r.ocp.constraint.name))"
+    # @info "newConstraint!: size of handle:                      $(size(handle))"
+    # @info "newConstraint!: type of handle:                      $(typeof(handle))"
     # @info "newConstraint!: value of handle:                     $handle"
-    @info "newConstraint!: type of name:                        $(typeof(name))"
+    #@info "newConstraint!: type of name:                        $(typeof(name))"
     # @info "newConstraint!: value of name:                       $name"
     # TODO test if this is the test that is making sure constraints can be entered in results in postProcess
     #@info "newConstraint!: testing vcat:                        $(vcat(n.r.ocp.constraint.handle, handle))"

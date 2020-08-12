@@ -47,7 +47,7 @@ function MoonLander(integrationConfig;interpolationOn::Bool=true,linearInterpola
   simMPC!(n)
 
   if AlltpolyPts
-    return (isequal(length(n.r.ocp.AlltpolyPts),length(n.r.ocp.dfs)) && n.f.mpc.goalReached)
+    return (isequal(length(n.r.ocp.AlltpolyPts), length(n.r.ocp.dfs)) && n.f.mpc.goalReached)
   else
     return n.f.mpc.goalReached
   end
@@ -59,7 +59,7 @@ end
   @test MoonLander(:lgrExplicit)
 
   # Test #2
-  @test MoonLander(:lgrExplicit;lastOptimal=false,tolOn=true)
+  #@test MoonLander(:lgrExplicit;lastOptimal=false,tolOn=true)
 
   # Test #3
   # a) :ps methods with several infeasibe solutions, but gets to the goal.
@@ -69,21 +69,21 @@ end
         # WARNING: Not solved to optimality, status: Infeasible
         # ERROR: LoadError: BoundsError: attempt to access 39-element Array{Float64,1} at index [31:41]
       # To mitigate this error, if it was infeasibe and lastOptimal==true then a linearInterpolation is used.
-  @test MoonLander(:lgrExplicit;AlltpolyPts=true,numInterpPts=25,predictX0=true,maxSim=67)
+  #@test MoonLander(:lgrExplicit;AlltpolyPts=true,numInterpPts=25,predictX0=true,maxSim=67)
 
   # Test #4
-  @test MoonLander(:lgrExplicit;linearInterpolation=true,predictX0=true,maxSim=72)
+  #@test MoonLander(:lgrExplicit;linearInterpolation=true,predictX0=true,maxSim=72)
 
   # Test #5
-  @test MoonLander(:lgrExplicit;interpolationOn=false,predictX0=true)
+  #@test MoonLander(:lgrExplicit;interpolationOn=false,predictX0=true)
 
   # Test #6
-  @test MoonLander(:bkwEuler;interpolationOn=false,predictX0=true)
+  #@test MoonLander(:bkwEuler;interpolationOn=false,predictX0=true)
 
   # Test #7
-  @test MoonLander(:trapezoidal;interpolationOn=false,predictX0=true)
+  #@test MoonLander(:trapezoidal;interpolationOn=false,predictX0=true)
 
   # Test #8
   # :tm methods with an infeasibe solution and a restoration error
-  @test MoonLander(:bkwEuler;predictX0=false)
+ #@test MoonLander(:bkwEuler;predictX0=false)
 end

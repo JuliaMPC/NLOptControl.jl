@@ -36,6 +36,7 @@ include("math.jl")
 include("types.jl")
 
 include("utils.jl")
+
 # TODO: make a hamiltonian function
 export  resultsDir!,
         evalConstraints!,

@@ -11,6 +11,7 @@ gr(); # default backend
 #pyplot()
 
 include("../types.jl")
+include("../utils.jl")
 
 include("PrettyUtils.jl")
 include("NLOptControl_plots.jl")

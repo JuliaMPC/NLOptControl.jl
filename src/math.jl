@@ -18,35 +18,43 @@ Citations: This function was influenced by the lagrange() function [located here
 A basic description of Lagrange interpolating polynomials is provided [here](http://127.0.0.1:8000/lagrange_poly.html#lagrange-poly)
 
 """
-function lagrange_basis_poly(x0::T, x::Vector{T}, N::Int, j::Int) where { T <: Number }
-
-    # L = prod { ( x0 - x_i ) / ( x_j - x_i ) } for i != j
-    return prod( i == j ? T(1) : (x0 - x[i] ) / (x[j] - x[i]) for i = 1:N+1 )
-
+function lagrange_basis_poly(x,x_data,Nc,j)
+    L = 1;
+    for idx in 1:Nc+1 # use all of the data
+      if idx!=j
+        L = L*(x - x_data[idx])/(x_data[j]-x_data[idx]);
+      end
+    end
+  return L
 end
-
 """
 y = interpolate_lagrange(x::Vector{T}, x_data::Vector{T}, y_data::Vector{T}) where {T <: Number}
 """
-function interpolate_lagrange(x::Vector{T}, x_data::Vector{T}, y_data::Vector{T}) where { T <: Number}
+function interpolate_lagrange(x, x_data, y_data)
 
 
-    if length(x_data) != length(y_data)
-        error("""
-                ------------------------------------------------------------------
-                There is an error with data vector lengths in `interpolate_lagrange`
-                ------------------------------------------------------------------
-                The following variables should be equal:
-                length(x_data) = $(length(x_data))
-                length(y_data) = $(length(y_data))
-                """)
-    end
+    Nc = length(x_data) - 1
 
-    Ni = length(x)
-    Nj = length(x_data)
-
-    return [ sum( (lagrange_basis_poly(x[i], x_data, Nj  - 1, j) * y_data[j]) for j = 1:Nj ) for i = 1:Ni ]
-
+    if length(x_data)!=length(y_data)
+        error(string("\n",
+                      "-------------------------------------------------------", "\n",
+                      "There is an error with the data vector lengths!!", "\n",
+                      "-------------------------------------------------------", "\n",
+                      "The following variables should be equal:", "\n",
+                      "length(x_data) = ",length(x_data),"\n",
+                      "length(y_data) = ",length(y_data),"\n"
+                      )
+              )
+      end
+      ns = length(x)
+      L = zeros(Float64,Nc+1,ns)
+      x = x[:]; x_data = x_data[:]; y_data = y_data[:]; # make sure data is in a column
+      for idx in 1:Nc+1
+        for j in 1:ns
+            L[idx,j] = lagrange_basis_poly(x[j],x_data,Nc,idx);
+        end
+      end
+      return y_data'*L
 end
 
 """
@@ -203,7 +211,7 @@ function linearSpline(t::Vector, V::Vector)
         error("!isequal(length(t),length(V))")
     end
     # remove any repeating values
-    M = Array{Bool}(length(t)); M[1:length(t)] = false;
+    M = Array{Bool}(undef, length(t)); M[1:length(t)] .= false;
     for i in 1:length(t)-1
         if t[i]==t[i+1]
             M[i]=true
@@ -211,7 +219,7 @@ function linearSpline(t::Vector, V::Vector)
             M[i]=false
         end
     end
-    rm_idx = find(M)
+    rm_idx = findall(M)
     if (length(t)==length(rm_idx))
         error("No time has elapsed and there will be an issue with interpolation. \n
             Cannot simulate the vehicle.")

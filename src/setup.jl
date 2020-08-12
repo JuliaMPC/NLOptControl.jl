@@ -95,8 +95,12 @@ Date Create: 2/9/2017, Last Modified: 12/02/2019 \n
 Last Modified by: Alexander Buck
 -------------------------------------------------------------------------------------\n
 """
-function defineSolver!(n::NLOpt, kw::Dict{Symbol,Symbol})
+function defineSolver!(n, kw)
 
+    if typeof(kw)!=Dict{Symbol,Symbol}
+      kw = Dict(kw)
+    end
+    
     # Default solver name is :Ipopt
     if haskey(kw, :name)
         n.s.ocp.solver.name = kw[:name]
@@ -234,26 +238,26 @@ function OCPdef!(n::NLOpt{T}) where { T <: Number }
 
     # boundary constraints
     if n.s.ocp.x0slackVariables   # create handles for constraining the entire initial state
-        n.r.ocp.x0Con = Vector{JuMP.ConstraintRef}(undef, n.ocp.state.num) # this is so they can be easily reference when doing MPC
+        n.r.ocp.x0Con = Array{Any}(undef, n.ocp.state.num,2) # this is so they can be easily reference when doing MPC
     else
-        n.r.ocp.x0Con = Vector{JuMP.ConstraintRef}(undef, 0)
+        n.r.ocp.x0Con = []
     end
 
     if n.s.ocp.xFslackVariables # create handles for constraining the entire final state
-        n.r.ocp.xfCon = Vector{JuMP.ConstraintRef}(undef, n.ocp.state.num) # this is so they can be easily reference when doing MPC
+        n.r.ocp.xfCon = Array{Any}(undef, n.ocp.state.num,2) # this is so they can be easily reference when doing MPC
     else
-        n.r.ocp.xfCon = Vector{JuMP.ConstraintRef}(undef, 0)
+        n.r.ocp.xfCon = []
     end
 
     if n.s.ocp.x0slackVariables # currently adding slack variables for all initial states even if there are no constraints on them
         @variable(n.ocp.mdl, x0s[1:n.ocp.state.num])
         n.ocp.x0s = x0s
-        n.r.ocp.x0sCon = Vector{JuMP.ConstraintRef}(undef, n.ocp.state.num)
+        n.r.ocp.x0sCon = Array{Any}(undef, n.ocp.state.num)
     end
     if n.s.ocp.xFslackVariables # currently adding slack variables for all final states even if there are no constraints on them
         @variable(n.ocp.mdl, xFs[1:n.ocp.state.num])
         n.ocp.xFs = xFs
-        n.r.ocp.xfsCon = Vector{JuMP.ConstraintRef}(undef, n.ocp.state.num)
+        n.r.ocp.xfsCon = Array{Any}(undef, n.ocp.state.num)
     end
 
     for st in 1:n.ocp.state.num
@@ -285,8 +289,8 @@ function OCPdef!(n::NLOpt{T}) where { T <: Number }
     n.ocp.t0 = t0_param  # NOTE consider making a constraint that t0 < tf
 
     if n.s.ocp.integrationMethod == :ps
-        n.r.ocp.dynCon = [(n.ocp.Nck[int],n.ocp.state.num) for int in 1:n.ocp.Ni]
-        dynamics_expr = [(n.ocp.Nck[int],n.ocp.state.num) for int in 1:n.ocp.Ni]
+        n.r.ocp.dynCon = [Array{Any}(undef, n.ocp.Nck[int],n.ocp.state.num) for int in 1:n.ocp.Ni]
+        dynamics_expr = [Array{Any}(undef, n.ocp.Nck[int],n.ocp.state.num) for int in 1:n.ocp.Ni]
 
         if n.s.ocp.finalTimeDV
             @variable(n.ocp.mdl, n.s.ocp.tfMin <= tf <=  n.s.ocp.tfMax)
@@ -331,13 +335,8 @@ function OCPdef!(n::NLOpt{T}) where { T <: Number }
             n.ocp.tf = tf
             create_tV!(n) # make a time vector
         end
-        @info "OCPdef!: n.ocp.dt = $(n.ocp.dt) $(typeof(n.ocp.dt))"
-        @info "OCPdef!: n.ocp.tf = $(n.ocp.tf) $(typeof(n.ocp.tf))"
-        @info "OCPdef!: n.ocp.N  = $(n.ocp.N)"
         n.ocp.dt = n.ocp.tf / n.ocp.N * ones(n.ocp.N,)
-
         L = size(n.r.ocp.x)[1]
-        @show typeof(n.r.ocp.x)
         #dx = [ DiffEq(n, n.r.ocp.x, n.r.ocp.u, L, st) for st in 1:n.ocp.state.num ]
         dx = Array{Any}(undef,L,n.ocp.state.num)
         for st in 1:n.ocp.state.num
@@ -371,12 +370,12 @@ function OCPdef!(n::NLOpt{T}) where { T <: Number }
 
     end
 
-    @info "OCPdef!: size of n.r.ocp.x0Con  : $(size(  n.r.ocp.x0Con ))"
-    @info "OCPdef!: type of n.r.ocp.x0Con  : $(typeof(n.r.ocp.x0Con ))"
-    @info "OCPdef!: size of n.r.ocp.xfCon  : $(size(  n.r.ocp.xfCon ))"
-    @info "OCPdef!: type of n.r.ocp.xfCon  : $(typeof(n.r.ocp.xfCon ))"
-    @info "OCPdef!: size of n.r.ocp.dynCon : $(size(  n.r.ocp.dynCon))"
-    @info "OCPdef!: type of n.r.ocp.dynCon : $(typeof(n.r.ocp.dynCon))"
+    # @info "OCPdef!: size of n.r.ocp.x0Con  : $(size(  n.r.ocp.x0Con ))"
+    # @info "OCPdef!: type of n.r.ocp.x0Con  : $(typeof(n.r.ocp.x0Con ))"
+    # @info "OCPdef!: size of n.r.ocp.xfCon  : $(size(  n.r.ocp.xfCon ))"
+    # @info "OCPdef!: type of n.r.ocp.xfCon  : $(typeof(n.r.ocp.xfCon ))"
+    # @info "OCPdef!: size of n.r.ocp.dynCon : $(size(  n.r.ocp.dynCon))"
+    # @info "OCPdef!: type of n.r.ocp.dynCon : $(typeof(n.r.ocp.dynCon))"
 
     # save constraint data
     newConstraint!(n, n.r.ocp.x0Con , :x0_con )

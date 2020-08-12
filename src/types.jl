@@ -79,7 +79,7 @@ end
     description::Vector{AbstractString}  = Vector{AbstractString}()  #
     num::Int                             = 0                         #
     pts::Int                             = 0                         #
-    model::JuMP.Model                    = JuMP.Model()              #
+    model::Any                    = Any           #
 end
 
 # Constraint
@@ -104,25 +104,25 @@ end
     u           = Matrix{Any}[]      # JuMP controls
     X                        = Matrix{T}[]                   # States
     U                        =  Matrix{T}[]                 # Controls
-    X0::Vector{T}                               = Vector{T}()                           # Initial states for OCP
-    CS::Vector{T}                               = Vector{T}()                           # Costates
-    tpolyPts::Vector{T}                         = Vector{T}()                           # Time sample points for polynomials  (NOTE these interpolated solutions were developed for calculating error, between them and a known Optimal solution)
-    XpolyPts::Vector{Vector{T}}                 = Vector{Vector{T}}()                   # State evaluated using Lagrange/Linear polynomial
-    CSpolyPts::Vector{Vector{T}}                = Vector{Vector{T}}()                   # Costate evaluated using Lagrange/Linear polynomial
-    UpolyPts::Vector{Vector{T}}                 = Vector{Vector{T}}()                   # Control evaluated using Lagrane/Linear polynomial
-    AlltpolyPts::Vector{T}                      = Vector{T}()                           # Time sample points for polynomials
-    AllXpolyPts::Vector{Vector{T}}              = Vector{Vector{T}}()                   # State evaluated using Lagrange/Linear polynomial
-    AllCSpolyPts::Vector{Vector{T}}             = Vector{Vector{T}}()                   # Costate evaluated using Lagrange/Linear polynomial
-    AllUpolyPts::Vector{Vector{T}}              = Vector{Vector{T}}()                   # Control evaluated using Lagrane/Linear polynomial
+    X0                              = Vector{T}[]                           # Initial states for OCP
+    CS                               = []                           # Costates
+    tpolyPts                         = []                           # Time sample points for polynomials  (NOTE these interpolated solutions were developed for calculating error, between them and a known Optimal solution)
+    XpolyPts                = []                   # State evaluated using Lagrange/Linear polynomial
+    CSpolyPts                = []               # Costate evaluated using Lagrange/Linear polynomial
+    UpolyPts                 = []                  # Control evaluated using Lagrane/Linear polynomial
+    AlltpolyPts                      = []                           # Time sample points for polynomials
+    AllXpolyPts              = []                  # State evaluated using Lagrange/Linear polynomial
+    AllCSpolyPts             = []                   # Costate evaluated using Lagrange/Linear polynomial
+    AllUpolyPts              = []                   # Control evaluated using Lagrane/Linear polynomial
     tpts::Vector{T}                             = Vector{T}()                           # Vector time sample points
-    Xpts::Vector{Vector{T}}                     = Vector{Vector{T}}()                   # Vector state sample points
-    Upts::Vector{Vector{T}}                     = Vector{Vector{T}}()                   # Vector control sample points
-    CSpts::Vector{Vector{T}}                    = Vector{Vector{T}}()                   # Vector costate sample points
-    x0Con::Vector{JuMP.ConstraintRef}           = Vector{JuMP.ConstraintRef}()          # Handle for initial state constraints
-    x0sCon::Vector{JuMP.ConstraintRef}          = Vector{JuMP.ConstraintRef}()          # ? Unsure what this is yet (slack variable constraints?)
-    xfCon::Vector{JuMP.ConstraintRef}           = Vector{JuMP.ConstraintRef}()          # Handle for final state constraints
-    xfsCon::Vector{JuMP.ConstraintRef}          = Vector{JuMP.ConstraintRef}()          # ? Unsure what this is yet (slack variable constraints?)
-    dynCon = Any[]  # Dynamics constraints
+    Xpts                    = Vector{T}[]                   # Vector state sample points
+    Upts                     = Vector{T}[]                  # Vector control sample points
+    CSpts                    = Vector{T}[]                  # Vector costate sample points
+    x0Con          = nothing          # Handle for initial state constraints
+    x0sCon          = nothing           # ? Unsure what this is yet (slack variable constraints?)
+    xfCon           =  nothing          # Handle for final state constraints
+    xfsCon          = nothing     # ? Unsure what this is yet (slack variable constraints?)
+    dynCon = nothing   # Dynamics constraints
     constraint::Constraint{T}                   = Constraint{T}()                       # Constraint handles and data
     evalNum::Int                                = 1                                     # Number of times optimization has been run
     iterNum                                     = []                                    # Mics. data, perhaps an iteration number for a higher level algorithm
@@ -168,7 +168,7 @@ end
     control::Control                        = Control()                             # control data
     tf             = Any                         # final time
     t0::JuMP.JuMPTypes                      = @NLparameter(JuMP.Model(), x == 0)    # initial time # TODO: consider getting rid of this or replacing it with `n.mpc.v.t0Param`
-    tV::Vector{T}                           = Vector{T}()                           # vector for use with time varying constraints
+    tV                           = Any                          # vector for use with time varying constraints
 
     # Boundary conditions
     X0::Vector{T}                           = Vector{T}()                           # initial state conditions
@@ -237,7 +237,7 @@ end
 # Model-Predictive Control (MPC) Variables
 @with_kw mutable struct MPCvariables{ T <: Number }
     t::T                        = convert(T,0.0)    # current simulation time (s)
-    tp::Union{T,JuMP.Variable}  = convert(T,0.0)    # prediction time (if finalTimeDV == true -> this is not known before optimization)
+    tp::Any  = Any   # prediction time (if finalTimeDV == true -> this is not known before optimization)
     tex::T                      = convert(T,0.5)    # execution horizon time
     t0Actual::T                 = convert(T,0.0)    # actual initial time # TODO: ?
     t0::T                       = convert(T,0.0)    # mpc initial time # TODO: ?
