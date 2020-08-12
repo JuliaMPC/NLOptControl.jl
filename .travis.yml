@@ -3,12 +3,14 @@ language: julia
 sudo: required
 os:
   - linux
+  - windows
   - osx
 julia:
   - 1.5
 matrix:
     allow_failures:
         - julia: nightly
+        - os: windows
 notifications:
   email: false
 addons:
