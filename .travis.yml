@@ -3,7 +3,6 @@ language: julia
 sudo: required
 os:
   - linux
-  - windows
   - osx
 julia:
   - 1.5
