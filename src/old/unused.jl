@@ -44,7 +44,7 @@ end
 #TODO consider appending a zero so it is not just a jump variable
 --------------------------------------------------------------------------------------\n
 Author: Huckleberry Febbo, Graduate Student, University of Michigan
-Date Create: 6/11/2017, Last Modified: 6/11/2017 \n
+Date Create: 6/11/2017, Last Modified: 12/06/2019 \n
 -------------------------------------------------------------------------------------\n
 """
 
@@ -57,11 +57,11 @@ function parse_DiffEq{T<:Any}(n::NLOpt,x::Array{T,2},u::Array{T,2})
   end
 
   #TODO use the statenames here! -> currently running too often!
-  state=Array{Symbol}(n.ocp.state.num,1)
+  state=Array{Symbol}(undef, n.ocp.state.num,1)
   for st in 1:n.ocp.state.num
     state[st]=Symbol(string("x",:($(st))))
   end
-  control=Array{Symbol}(n.ocp.control.num,1)
+  control=Array{Symbol}(undef, n.ocp.control.num,1)
   for ctr in 1:n.ocp.control.num
     control[ctr]=Symbol(string("u",:($(ctr))))
   end

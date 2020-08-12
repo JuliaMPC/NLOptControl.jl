@@ -7,7 +7,7 @@ using VehicleModels
 main_dir="/home/febbo/Documents/workspace/OCP"
 results_name = "testing_clp76"; # Name Folder to Store Comparison Results in
 results_dir = string(main_dir,"/results/",results_name)
-warn("you may have the wrong senario!")
+@warn "you may have the wrong senario!"
 senario = "s1.jl"  #TODO save this with the actual test data!
 
 # define vehicle parameters; has constraints on vehicle model for optimization

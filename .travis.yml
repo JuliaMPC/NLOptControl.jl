@@ -3,14 +3,14 @@ language: julia
 sudo: required
 os:
   - linux
+  - windows
+  - osx
 julia:
-  - 0.6
-  - 0.7
-  - 1.0
+  - 1.5
 matrix:
     allow_failures:
-        - julia: 0.7
-        - julia: 1.0
+        - julia: nightly
+        - os: windows
 notifications:
   email: false
 addons:
@@ -18,18 +18,7 @@ addons:
         - gfortran
         - liblapack-dev
         - libblas-dev
-install:
-  - sudo pip install matplotlib
 
-script:
-  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-  - julia -e 'Pkg.add("ReverseDiffSparse")'
-  - julia -e 'Pkg.checkout("ReverseDiffSparse")'
-  - julia -e 'Pkg.add("KNITRO")'
-  - julia -e 'Pkg.pin("KNITRO",v"0.4")'
-  - julia -e 'Pkg.clone(pwd())'
-  - julia -e 'Pkg.test("NLOptControl")'
-#  - julia -e 'run(`lualatex -v`)'
-  - julia -e 'Pkg.checkout("NLOptControl")'
-  - julia -e 'Pkg.add("Documenter");'
-  - julia -e 'cd(Pkg.dir("NLOptControl"));ENV["DOCUMENTER_DEBUG"]=true; include(joinpath("docs", "make.jl"))'
+after_success:
+  - julia -e 'using Pkg; Pkg.add("Documenter");'
+  - julia -e 'using Pkg; ENV["DOCUMENTER_DEBUG"]=true; import NLOptControl; cd(joinpath(dirname(pathof(NLOptControl)), "..")); ; include(joinpath("docs", "make.jl"))'

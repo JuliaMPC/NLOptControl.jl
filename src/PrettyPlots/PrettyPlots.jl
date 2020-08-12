@@ -10,8 +10,8 @@ import Plots.xlims!, Plots.ylims!, Plots.plot
 gr(); # default backend
 #pyplot()
 
-include("../Base.jl")
-using .Base
+include("../types.jl")
+include("../utils.jl")
 
 include("PrettyUtils.jl")
 include("NLOptControl_plots.jl")

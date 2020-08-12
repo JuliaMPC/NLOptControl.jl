@@ -33,7 +33,7 @@ deploydocs(
     repo="github.com/JuliaMPC/NLOptControl.jl.git",
     target="build",
     osname="linux",
-    julia="0.6",
+    julia="1.0",
     make=nothing)
 
 #=
