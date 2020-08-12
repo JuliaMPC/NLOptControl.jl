@@ -6,6 +6,7 @@ os:
   - windows
 julia:
   - 1.2
+  - 1.5 
 matrix:
     allow_failures:
         - julia: nightly
