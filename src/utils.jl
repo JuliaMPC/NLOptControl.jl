@@ -169,7 +169,7 @@ function interpolateLinear!(n::NLOpt; numPts::Int=250, tfOptimal::Any=false)
   knots = (n.r.ocp.tst,)
   for st in 1:n.ocp.state.num
     sp_st = interpolate(knots,n.r.ocp.X[:,st],Gridded(Linear()))
-    n.r.ocp.Xpts[:,st] = sp_st[n.r.ocp.tpts]
+    n.r.ocp.Xpts[:,st] = sp_st(n.r.ocp.tpts)
   end
 
   for ctr in 1:n.ocp.control.num
@@ -178,7 +178,7 @@ function interpolateLinear!(n::NLOpt; numPts::Int=250, tfOptimal::Any=false)
     else
       sp_ctr = interpolate(knots,n.r.ocp.U[:,ctr],Gridded(Linear()))
     end
-    n.r.ocp.Upts[:,ctr] = sp_ctr[n.r.ocp.tpts]
+    n.r.ocp.Upts[:,ctr] = sp_ctr(n.r.ocp.tpts)
   end
   return nothing
 end
@@ -198,24 +198,24 @@ function plant2dfs!(n::NLOpt,sol,U)
       dfs[n.mpc.ip.control.name[ctr]] = [U[ctr][t] for t in tSample]
     end
   else
-    dfs[:t] = [n.r.ip.plant[:t]; tSample]
+    dfs[!,:t] = [n.r.ip.plant[!,:t]; tSample]
     for st in 1:n.mpc.ip.state.num
-      dfs[n.mpc.ip.state.name[st]] = [n.r.ip.plant[n.mpc.ip.state.name[st]]; [sol(t)[st] for t in tSample]]
+      dfs[!,n.mpc.ip.state.name[st]] = [n.r.ip.plant[!,n.mpc.ip.state.name[st]]; [sol(t)[st] for t in tSample]]
     end
     for ctr in 1:n.mpc.ip.control.num
-      dfs[n.mpc.ip.control.name[ctr]] = [n.r.ip.plant[n.mpc.ip.control.name[ctr]]; [U[ctr][t] for t in tSample] ]
+      dfs[!,n.mpc.ip.control.name[ctr]] = [n.r.ip.plant[!,n.mpc.ip.control.name[ctr]]; [U[ctr][t] for t in tSample] ]
     end
   end
   n.r.ip.plant = dfs
 
   # TODO only run this if saving, it is redundant data, or maybe put time stamps or something in the above data
   dfs = DataFrame()
-  dfs[:t] = tSample
+  dfs[!,:t] = tSample
   for st in 1:n.mpc.ip.state.num
-    dfs[n.mpc.ip.state.name[st]] = [sol(t)[st] for t in tSample]
+    dfs[!,n.mpc.ip.state.name[st]] = [sol(t)[st] for t in tSample]
   end
   for ctr in 1:n.mpc.ip.control.num
-    dfs[n.mpc.ip.control.name[ctr]] = [U[ctr][t] for t in tSample]
+    dfs[!,n.mpc.ip.control.name[ctr]] = [U[ctr][t] for t in tSample]
   end
   push!(n.r.ip.dfsplant,dfs)
   return nothing
@@ -691,12 +691,12 @@ function defineIP!(n::NLOpt,model;stateNames=[],controlNames=[],X0a=[])
     n.mpc.ip.control.pts = n.ocp.control.pts
 
     # add X0 t0 plant dfs
-    n.r.ip.plant[:t] = n.mpc.v.t0
+    n.r.ip.plant[!, :t] = [n.mpc.v.t0]
     for st in 1:n.mpc.ip.state.num
-      n.r.ip.plant[n.mpc.ip.state.name[st]] = copy(n.ocp.X0)[st]
+      n.r.ip.plant[!, n.mpc.ip.state.name[st]] = [copy(n.ocp.X0)[st]]
     end
     for ctr in 1:n.mpc.ip.control.num
-      n.r.ip.plant[n.mpc.ip.control.name[ctr]] = 0
+      n.r.ip.plant[!, n.mpc.ip.control.name[ctr]] = [0]
     end
 
    elseif isequal(n.s.mpc.mode,:IP)
@@ -854,13 +854,13 @@ function currentIPState(n::NLOpt)
 
   # even though may have solution for plant ahead of time
   # can only get the state up to n.mpc.v.t
-  idx = findall((n.mpc.v.t .- n.r.ip.plant[:t]) .>= 0)
+  idx = findall((n.mpc.v.t .- n.r.ip.plant[!,:t]) .>= 0)
   if isempty(idx)
-    error("(n.mpc.v.t - n.r.ip.plant[:t]) .>= 0) is empty.")
+    error("(n.mpc.v.t - n.r.ip.plant[!,:t]) .>= 0) is empty.")
   else
     X0 = [zeros(n.mpc.ip.state.num),n.mpc.v.t]
     for st in 1:n.mpc.ip.state.num
-      X0[1][st] = n.r.ip.plant[n.mpc.ip.state.name[st]][idx[end]]
+      X0[1][st] = n.r.ip.plant[!, n.mpc.ip.state.name[st]][idx[end]]
     end
   end
   return X0
@@ -1357,7 +1357,7 @@ function saveData(n::NLOpt)
   # all polynomial data
   dfs=DataFrame();
 
-  dfs[:t] = n.r.ocp.tpts
+  dfs[!,:t] = n.r.ocp.tpts
   for st in 1:n.ocp.state.num # state
     dfs[n.ocp.state.name[st]]=n.r.ocp.Xpts[:,st];
   end
