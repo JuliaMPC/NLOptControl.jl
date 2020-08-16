@@ -6,7 +6,7 @@ BrysonDenham_EXP=[:(x2[j]),:(u1[j])]; L=1/6;
   obj=integrate!(n,:(0.5*u1[j]^2));
   @NLobjective(n.ocp.mdl,Min,obj);
   optimize!(n);
-  @show n.r.ocp.dfsOpt[:tSolve]
+  @show n.r.ocp.dfsOpt[!,:tSolve]
   @show 4/(9*L)
   @show n.r.ocp.objVal[1]
   if (integrationConfig == :trapezoidal)
@@ -24,7 +24,7 @@ BrysonDenham_EXP=[:(x2[j]),:(u1[j])]; L=1/6;
   obj=integrate!(n,:(0.5*u1[j]^2));
   @NLobjective(n.ocp.mdl,Min,obj + 100*(n.ocp.x0s[1] + n.ocp.x0s[2] + n.ocp.xFs[1] + n.ocp.xFs[2]));
   optimize!(n);
-  @show n.r.ocp.dfsOpt[:tSolve]
+  @show n.r.ocp.dfsOpt[!,:tSolve]
   if (integrationConfig == :trapezoidal)
     @test isapprox(4/(9*L),n.r.ocp.objVal[1],atol = tol + 0.2)
   else
@@ -41,7 +41,7 @@ dx=[:(sin(x2[j])),:(u1[j])]
   obj=integrate!(n,:( u1[j]^2 + 350*cos(x2[j]) ) )
   @NLobjective(n.ocp.mdl,Min,obj);
   optimize!(n);
-  @show n.r.ocp.dfsOpt[:tSolve]
+  @show n.r.ocp.dfsOpt[!,:tSolve]
   @test isapprox(350,n.r.ocp.objVal[1],atol=tol)
 end
 
@@ -55,7 +55,7 @@ dx=Array{Expr}(undef, 2);dx[1]=:(x[j]);dx[2]=:(u[j]-1.625);
   obj=integrate!(n,:(u[j]));
   @NLobjective(n.ocp.mdl, Min, obj);
   optimize!(n);
-  @show n.r.ocp.dfsOpt[:tSolve]
+  @show n.r.ocp.dfsOpt[!,:tSolve]
   @test isapprox(8.9253,n.r.ocp.objVal[1],atol=tol)
 end
 
@@ -69,7 +69,7 @@ dx=Array{Expr}(undef, 2);dx[1]=:(x[j]);dx[2]=:(u[j]-1.625);
   obj=integrate!(n,:(u[j]));
   @NLobjective(n.ocp.mdl, Min, obj);
   optimize!(n);
-  @show n.r.ocp.dfsOpt[:tSolve]
+  @show n.r.ocp.dfsOpt[!,:tSolve]
   @test isapprox(8.9253,n.r.ocp.objVal[1],atol=tol)
 end
 
