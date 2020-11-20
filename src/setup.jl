@@ -179,7 +179,8 @@ Date Create: 1/14/2017, Last Modified: 12/06/2019 \n
 function OCPdef!(n::NLOpt{T}) where { T <: Number }
 
     # State variables
-    @variable(n.ocp.mdl, x[1:n.ocp.state.pts, 1:n.ocp.state.num])
+    varx = @variable(n.ocp.mdl, x[1:n.ocp.state.pts, 1:n.ocp.state.num])
+    n.r.ocp.xUnscaled = varx
     #n.r.ocp.x = [ @NLexpression(n.ocp.mdl, [j=1:n.ocp.state.pts], n.ocp.XS[st] * x[j,st] ) for st in 1:n.ocp.state.num ]
     n.r.ocp.x = Matrix{Any}(undef, n.ocp.state.pts,n.ocp.state.num)
     for st in 1:n.ocp.state.num
@@ -216,7 +217,8 @@ function OCPdef!(n::NLOpt{T}) where { T <: Number }
     end
 
     # control variables
-    @variable(n.ocp.mdl,u[1:n.ocp.control.pts,1:n.ocp.control.num])
+    varu = @variable(n.ocp.mdl,u[1:n.ocp.control.pts,1:n.ocp.control.num])
+    n.r.ocp.uUnscaled = varu
     #n.r.ocp.u = [ @NLexpression(n.ocp.mdl, [j=1:n.ocp.control.pts], n.ocp.CS[ctr]*u[j,ctr]) for ctr in 1:n.ocp.control.num ]
     n.r.ocp.u = Matrix{Any}(undef,n.ocp.control.pts,n.ocp.control.num)
     for ctr in 1:n.ocp.control.num
