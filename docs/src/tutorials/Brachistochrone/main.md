@@ -56,7 +56,7 @@ Variable | Description
 :--- | :---
 `XL` | lower state bound
 `XU` | upper state bound
-`CL` | lower state bound
+`CL` | lower control bound
 `CU` | upper control bound
 
 The above bounds can be set in the same fashion as the initial and final state constraints. i.e. in an Array.
