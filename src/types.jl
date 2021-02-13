@@ -100,8 +100,10 @@ end
 @with_kw mutable struct OCPResults{ T <: Number }
     tctr::Vector{Any}                           = Vector{T}()                           # Time vector for control
     tst::Vector{Any}                            = Vector{T}()                           # Time vector for state
-    x           = Matrix{Any}[]      # JuMP states
-    u           = Matrix{Any}[]      # JuMP controls
+    x           = Matrix{Any}[]      # JuMP states (scaled)
+    u           = Matrix{Any}[]      # JuMP controls (scaled)
+    xUnscaled::Matrix{Variable} = Matrix{Variable}(undef,0,0) # references to actual JuMP states
+    uUnscaled::Matrix{Variable} = Matrix{Variable}(undef,0,0) # references to actual JuMP controls
     X                        = Matrix{T}[]                   # States
     U                        =  Matrix{T}[]                 # Controls
     X0                              = Vector{T}[]                           # Initial states for OCP
@@ -132,6 +134,7 @@ end
     dfs::Vector{DataFrame}                      = Vector{DataFrame}()                   # Results in DataFrame for plotting
     dfsOpt::DataFrame                           = DataFrame()                           # Optimization information in DataFrame for plotting
     dfsCon::DataFrame                           = DataFrame()                           # Constraint data
+
 end
 
 # Optimal Control Problem (OCP) Settings
