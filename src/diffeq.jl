@@ -99,7 +99,7 @@ Author: Huckleberry Febbo, Graduate Student, University of Michigan
 Date Create: 7/04/2017, Last Modified: 12/06/2019 \n
 -------------------------------------------------------------------------------------\n
 """
-function NLCon(n::NLOpt,expr::Expr,args...)::Vector{JuMP.NonlinearConstraint}
+function NLCon(n::NLOpt,expr::Expr,args...)
   if length(args) == 3
     xxx = args[1]
     uuu = args[2]
