@@ -354,14 +354,10 @@ function postProcess!(n::NLOpt; kwargs...)
                     Setting: n.f.mpc.simFailed = [true, n.r.ocp.status] "
                 n.f.mpc.simFailed = [true, n.r.ocp.status]
             end
-            n.r.ocp.X = zeros(Float64,n.ocp.state.pts,n.ocp.state.num)
-            n.r.ocp.U = zeros(Float64,n.ocp.control.pts,n.ocp.control.num)
-            for st in 1:n.ocp.state.num
-                n.r.ocp.X[:,st] = getvalue(n.r.ocp.x[:,st])
-            end
-            for ctr in 1:n.ocp.control.num
-                n.r.ocp.U[:,ctr] = getvalue(n.r.ocp.u[:,ctr])
-            end
+            lengthStates = n.ocp.state.num * n.ocp.state.pts
+            lengthControl = n.ocp.control.num * n.ocp.control.pts
+            n.r.ocp.X = transpose(reshape(n.ocp.mdl.internalModel.inner.x[1:lengthStates], n.ocp.state.num, n.ocp.state.pts))
+            n.r.ocp.U = transpose(reshape(n.ocp.mdl.internalModel.inner.x[lengthStates+1:lengthStates+lengthControl], n.ocp.control.num, n.ocp.control.pts))
 
         elseif n.s.mpc.on && n.s.mpc.lastOptimal && !n.s.mpc.onlyOptimal
             if !n.s.ocp.save
